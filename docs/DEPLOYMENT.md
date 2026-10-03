@@ -1,5 +1,7 @@
 # Deployment & Operations — Hermes Office
 
+> **Status aktual (Okt 2026):** DEPLOYED di `~/niumination/hermes-office` — systemd user unit `hermes-office` aktif di port 7333; akses publik via **Tailscale Funnel** (`https://vm-6-34-ubuntu.tailec8707.ts.net`, unit `tailscale-funnel.service` enabled + linger); cloud bridge aktif di `~/.hermes/hooks/office-bridge`. Lihat §11.
+
 ## 1. Prasyarat Server
 
 - Ubuntu 24.04 (server LightVela saat ini) — sudah ✓
@@ -11,7 +13,7 @@
 ## 2. Struktur Deploy
 
 ```
-/home/agentuser/hermes-office/        # app (git clone dari Niumination/hermes-office)
+/home/agentuser/niumination/hermes-office/        # app (git clone dari Niumination/hermes-office)
 ├── server/ frontend/ scripts/ ...
 ├── dist/                             # hasil vite build (gitignored)
 ├── data/office.db                    # SQLite (gitignored, backup harian)
@@ -22,8 +24,8 @@
 
 ```bash
 # 1. Clone
-git clone git@github.com:Niumination/hermes-office.git ~/hermes-office
-cd ~/hermes-office
+git clone git@github.com:Niumination/hermes-office.git ~/niumination/hermes-office
+cd ~/niumination/hermes-office
 
 # 2. Secret
 cp .env.office.example .env.office
@@ -69,9 +71,19 @@ WantedBy=default.target
 > ⚠️ Restart service ini TIDAK boleh dipanggil dari dalam proses Hermes
 > (pola yang sama dengan hermes-gateway guard). Gunakan dashboard/terminal eksternal.
 
-## 5. Reverse Proxy
+## 5. Akses Publik
 
-**Opsi A (prefer): subdomain** `office.lightvela.ai`
+**Opsi DIPAKAI: Tailscale Funnel** ✓
+
+```bash
+sudo tailscale funnel --bg 7333
+# → https://vm-6-34-ubuntu.tailec8707.ts.net → 127.0.0.1:7333
+```
+- Persisten via unit systemd user `tailscale-funnel.service` (enabled + linger → auto-start saat reboot).
+- WAJIB: origin funnel masuk `ALLOWED_ORIGINS` di `.env.office` — tanpa ini asset browser ditolak 403 → halaman blank.
+- WebSocket `/ws` otomatis ter-route.
+
+**Opsi alternatif: subdomain** `office.lightvela.ai`
 - Tambahkan DNS CNAME → platform LightVela / Cloudflare
 - Konfigurasi proxy: `office.lightvela.ai/* → http://127.0.0.1:7333/*`
 - WAJIB: upgrade header `Connection` & `Upgrade: websocket` diteruskan (untuk /ws)
@@ -85,13 +97,13 @@ WantedBy=default.target
 
 ## 6. Bridges Setup
 
-### 6.1 Cloud bridge (di server ini)
+### 6.1 Cloud bridge / hook (di server ini) — SUDAH TERPASANG ✓
 
 ```bash
-cp bridges/hermes-cloud-plugin ~/.hermes/plugins/office-bridge -r
-hermes config set plugins.office_bridge.url http://127.0.0.1:7333/event
-# token: masukkan OFFICE_CLOUD_TOKEN ke plugin config (bukan plaintext di handler)
-# aktif → perlu restart gateway dari DASHBOARD (atau tunggu reload plugin)
+cp -r bridges/hermes-cloud-hook ~/.hermes/hooks/office-bridge
+# token & URL dibaca otomatis dari ~/.hermes/.env:
+#   OFFICE_CLOUD_TOKEN=...   OFFICE_URL=http://127.0.0.1:7333/event
+# aktif → perlu restart gateway dari DASHBOARD LightVela
 ```
 
 ### 6.2 Mac relay (di Mac)
@@ -108,7 +120,7 @@ Relay membaca `~/.hermes/a2a_audit.jsonl` + heartbeat file. Log: `~/Library/Logs
 ## 7. Update / Rollback
 
 ```bash
-cd ~/hermes-office
+cd ~/niumination/hermes-office
 git pull origin main
 npm ci
 npm run build
@@ -122,7 +134,7 @@ DB migration: office-server menjalankan migrasi idempotent saat start; untuk rol
 
 Cron harian (server):
 ```bash
-0 4 * * * sqlite3 ~/hermes-office/data/office.db ".backup ~/backups/office-$(date +\%F).db" && find ~/backups -name 'office-*.db' -mtime +14 -delete
+0 4 * * * sqlite3 ~/niumination/hermes-office/data/office.db ".backup ~/backups/office-$(date +\%F).db" && find ~/backups -name 'office-*.db' -mtime +14 -delete
 ```
 
 ## 9. Monitoring
@@ -146,3 +158,19 @@ Alert opsional: cron check /health → Telegram topic #5 jika down 3x berturut.
 | Mac tidak pernah `idle` | relay launchd mati | `launchctl list | grep office` |
 | Chat tidak menjawab | Hermes API down / token | cek `HERMES_API` reachable dari office-server |
 | OOM / memory naik | ring buffer bocor | cek retention job; restart |
+
+## 11. Status Deployment Aktual (Okt 2026)
+
+| Komponen | Status |
+|---|---|
+| Service `hermes-office` | aktif (user systemd), port 7333, env `.env.office` (0600) |
+| Akses publik | Tailscale Funnel `https://vm-6-34-ubuntu.tailec8707.ts.net` |
+| Unit funnel | `~/.config/systemd/user/tailscale-funnel.service` (enabled, linger=yes) |
+| `ALLOWED_ORIGINS` | funnel origin + office.lightvela.ai + 127.0.0.1:7333 |
+| Cloud hook | `~/.hermes/hooks/office-bridge` AKTIF — token `OFFICE_CLOUD_TOKEN` di `~/.hermes/.env` |
+| Mac relay | siap, belum ter-install (menunggu Mac online) |
+| Health | `curl -s http://127.0.0.1:7333/health` |
+
+Catatan gotcha yang pernah terjadi:
+- Blank page saat funnel baru aktif → penyebab: origin `*.tailec8707.ts.net` belum di `ALLOWED_ORIGINS` → 403 pada asset JS.
+- Hook diam (tidak kirim event) → penyebab: `OFFICE_CLOUD_TOKEN` belum ada di `~/.hermes/.env`.
