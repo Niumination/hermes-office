@@ -101,8 +101,6 @@ def handle(event_type: str, context: dict) -> None:
             return
         _SENT_STARTUP = True
         base["state"] = "idle"
-        base.pop("agent", None)
-        base["agentId"] = "cloud"
     elif mapped == "agent_spawned":
         base["agent"]["task"] = str(ctx.get("message", ""))[:200]
     elif mapped == "tool_call":
