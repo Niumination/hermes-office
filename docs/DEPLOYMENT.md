@@ -149,6 +149,17 @@ Cron harian (server):
 
 Alert opsional: cron check /health → Telegram topic #5 jika down 3x berturut.
 
+## 9.1 Cron Telegram terkait ekosistem (status 2026-10-04)
+
+Cron Hermes yang mengirim ke Telegram (infra office-bridge) diarahkan ke topik **#55 Cron/Automate** (LightVela-Group):
+
+| Cron | Interval | Catatan |
+|---|---|---|
+| Peringatan Dini Gayo (cec9edba7395) | 3 jam (diperlambat dari 30 mnt) | prakiraan agroclimate |
+| Status Mitigasi Bencana (081c15c134a9) | 6 jam (dari 3 jam) | status mitigasi agroclimate |
+
+Thread ID topik juga dipakai relay laporan warga agroclimate (`POST /api/reports` → topik #55).
+
 ## 10. Troubleshooting
 
 | Gejala | Kemungkinan | Perbaikan |
