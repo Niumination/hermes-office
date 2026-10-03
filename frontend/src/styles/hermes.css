@@ -1,0 +1,232 @@
+/* Hermes Office — shell layout, topbar, side panels, chat, GitHub feed,
+   niu-mode palette. Builds on the ported office.css/rooms.css. */
+
+:root {
+  --ho-bg: #0d0d12;
+  --ho-panel: #16181d;
+  --ho-border: #2a2d34;
+  --ho-text: #e8eaed;
+  --ho-muted: #9aa0a8;
+  --ho-accent: #4da3ff;
+  --ho-ok: #3fbf6f;
+  --ho-warn: #e8c34a;
+}
+
+body.niu-mode {
+  --ho-bg: #14231f;
+  --ho-panel: #1b2f29;
+  --ho-border: #2e4a41;
+  --ho-accent: #ff8c42;
+}
+
+html, body, #root { height: 100%; }
+
+.hermes-shell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--ho-bg);
+  color: var(--ho-text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ---------- topbar ---------- */
+
+.hermes-topbar {
+  height: 40px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 14px;
+  background: var(--ho-panel);
+  border-bottom: 1px solid var(--ho-border);
+}
+
+.hermes-brand { font-weight: 700; letter-spacing: 0.3px; }
+.hermes-wib { color: var(--ho-muted); font-size: 13px; }
+.hermes-conn { margin-left: auto; color: var(--ho-muted); font-size: 12px; }
+
+.hermes-tab-btn {
+  background: transparent;
+  color: var(--ho-text);
+  border: 1px solid var(--ho-border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.hermes-tab-btn:hover { border-color: var(--ho-accent); }
+
+/* ---------- body ---------- */
+
+.hermes-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.hermes-office-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 8px;
+}
+
+/* ---------- side panel ---------- */
+
+.hermes-side {
+  width: 320px;
+  min-width: 320px;
+  display: flex;
+  flex-direction: column;
+  background: var(--ho-panel);
+  border-left: 1px solid var(--ho-border);
+}
+
+.hermes-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--ho-border);
+}
+
+.hermes-tab {
+  flex: 1;
+  padding: 9px 0;
+  background: transparent;
+  border: none;
+  color: var(--ho-muted);
+  font-size: 13px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.hermes-tab.active { color: var(--ho-text); border-bottom-color: var(--ho-accent); }
+
+.hermes-panel-area { flex: 1; display: flex; min-height: 0; flex-direction: column; }
+
+/* ---------- agents panel ---------- */
+
+.agents-panel { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 10px; }
+.agents-panel-title { font-size: 11px; letter-spacing: 1.2px; color: var(--ho-muted); margin-bottom: 8px; }
+.agents-list { display: flex; flex-direction: column; gap: 2px; }
+.agents-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 8px; border-radius: 6px; cursor: pointer;
+}
+.agents-row:hover { background: rgba(255,255,255,0.04); }
+.agents-row-selected { background: rgba(255,255,255,0.07); }
+.agents-name { flex: 1; font-size: 13px; }
+.agents-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.agents-dot.state-working { background: var(--ho-ok); box-shadow: 0 0 6px var(--ho-ok); }
+.agents-dot.state-idle { background: var(--ho-warn); }
+.agents-dot.state-away { background: #666; }
+
+.agents-detail {
+  margin-top: 10px; padding: 10px;
+  border: 1px solid var(--ho-border); border-radius: 8px;
+  font-size: 12px;
+}
+.agents-detail-title { font-weight: 600; }
+.agents-detail-sub { color: var(--ho-muted); margin: 4px 0 8px; }
+.agents-detail-event { display: flex; justify-content: space-between; padding: 3px 0; }
+.agents-detail-type { color: var(--ho-accent); }
+.agents-detail-ts { color: var(--ho-muted); }
+.agents-detail-empty { color: var(--ho-muted); font-style: italic; }
+
+/* ---------- chat panel ---------- */
+
+.chat-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.chat-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; border-bottom: 1px solid var(--ho-border);
+  font-size: 13px; font-weight: 600;
+}
+.chat-niu-badge, .chat-guest-badge {
+  font-size: 10px; padding: 1px 6px; border-radius: 4px;
+  background: var(--ho-accent); color: #111;
+}
+.chat-guest-badge { background: var(--ho-warn); }
+
+.chat-body { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.chat-empty { color: var(--ho-muted); font-size: 12px; font-style: italic; }
+
+.chat-line { font-size: 13px; line-height: 1.4; }
+.chat-line-head { display: flex; gap: 8px; align-items: baseline; }
+.chat-who { font-weight: 600; }
+.chat-hermes .chat-who { color: var(--ho-accent); }
+.chat-you .chat-who { color: var(--ho-ok); }
+.chat-system { color: var(--ho-muted); font-size: 12px; }
+.chat-time { color: var(--ho-muted); font-size: 10px; }
+.chat-text { white-space: pre-wrap; word-break: break-word; }
+.chat-cursor { animation: ho-blink 1s steps(1) infinite; color: var(--ho-accent); }
+@keyframes ho-blink { 50% { opacity: 0; } }
+
+.chat-reactions { display: flex; gap: 4px; margin-top: 3px; }
+.chat-reaction { background: rgba(255,255,255,0.08); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+.chat-react-bar { display: flex; gap: 2px; margin-top: 3px; opacity: 0; transition: opacity 0.15s; }
+.chat-line:hover .chat-react-bar { opacity: 1; }
+.chat-react-btn { background: none; border: none; cursor: pointer; font-size: 12px; padding: 0 3px; }
+
+.chat-typing-label { font-size: 12px; color: var(--ho-muted); }
+.chat-typing-dots span {
+  display: inline-block; width: 5px; height: 5px; margin-left: 3px;
+  border-radius: 50%; background: var(--ho-muted);
+  animation: ho-dot 1.2s ease-in-out infinite;
+}
+.chat-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.chat-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes ho-dot { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+
+.chat-input-wrap { display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid var(--ho-border); }
+.chat-input {
+  flex: 1; background: var(--ho-bg); color: var(--ho-text);
+  border: 1px solid var(--ho-border); border-radius: 6px;
+  padding: 7px 10px; font-size: 13px; outline: none;
+}
+.chat-input:focus { border-color: var(--ho-accent); }
+.chat-send {
+  background: var(--ho-accent); color: #111; border: none;
+  border-radius: 6px; padding: 0 14px; cursor: pointer; font-size: 13px;
+}
+
+/* ---------- github feed ---------- */
+
+.github-feed { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.github-controls { display: flex; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--ho-border); }
+.github-filter {
+  flex: 1; background: var(--ho-bg); color: var(--ho-text);
+  border: 1px solid var(--ho-border); border-radius: 6px; padding: 4px 6px; font-size: 12px;
+}
+.github-list { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; }
+.github-empty { color: var(--ho-muted); font-size: 12px; font-style: italic; }
+.github-item { border: 1px solid var(--ho-border); border-radius: 8px; padding: 8px 10px; font-size: 12px; }
+.github-item-head { display: flex; align-items: center; gap: 6px; }
+.github-repo { font-weight: 600; color: var(--ho-accent); }
+.github-lock { font-size: 11px; }
+.github-time { margin-left: auto; color: var(--ho-muted); font-size: 10px; }
+.github-msg { margin-top: 4px; color: var(--ho-muted); }
+.github-author { color: var(--ho-text); }
+
+/* ---------- guest mode ---------- */
+
+body.guest-mode .chat-input-wrap { display: none; }
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-typing-dots span, .chat-cursor { animation: none; }
+  .hermes-shell * { transition: none !important; }
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 767px) {
+  .hermes-body { flex-direction: column-reverse; }
+  .hermes-side {
+    width: 100%; min-width: 0;
+    max-height: 45vh;
+    border-left: none;
+    border-top: 1px solid var(--ho-border);
+  }
+  .hermes-office-col { padding: 4px; }
+}
