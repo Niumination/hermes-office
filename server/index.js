@@ -9,7 +9,7 @@ import { existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import { config, assertConfig } from "./config.js";
-import { authenticate, requireBridge, requireOwner, requireAny, requireAuth } from "./auth.js";
+import { authenticate, getBearer, createSession, sessionCookieHeader, requireAuth, requireAny, requireOwner } from "./auth.js";
 import { OfficeEventBus } from "./eventbus.js";
 import { createChatRouter } from "./chat.js";
 import { createGithubPoller } from "./github.js";
@@ -98,6 +98,17 @@ app.get("/roster", requireAny, (_req, res) => {
   });
 });
 
+// Session bootstrap for browsers (WS can't send headers): POST /auth/session
+// with Bearer token → HttpOnly office_session cookie used for WS + /chat.
+app.post("/auth/session", (req, res) => {
+  const identity = authenticate(req);
+  if (!identity) return res.status(401).json({ error: "Unauthorized" });
+  const sid = createSession(getBearer(req));
+  if (!sid) return res.status(429).json({ error: "Too many sessions" });
+  res.setHeader("Set-Cookie", sessionCookieHeader(sid));
+  res.json({ ok: true, role: identity.role });
+});
+
 // POST /event — bridges only (cloud/mac). Owner intentionally excluded (SECURITY.md §2).
 app.post("/event", requireAuth(["bridge"]), (req, res) => {
   if (!req.is("application/json")) {
@@ -155,12 +166,13 @@ const wss = new WebSocketServer({
   server: httpServer,
   path: "/ws",
   verifyClient: (info, done) => {
+    const headers = { ...info.req.headers };
     const origin = info.req.headers.origin;
     if (origin && !config.allowedOrigins.has(origin)) {
       done(false, 403, "Forbidden origin");
       return;
     }
-    if (!authenticate({ headers: info.req.headers })) {
+    if (!authenticate({ headers })) {
       done(false, 401, "Unauthorized");
       return;
     }

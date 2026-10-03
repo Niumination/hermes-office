@@ -210,3 +210,48 @@ test("/roster: guest ok, unauthenticated 401", async () => {
   const r = await fetch(BASE + "/roster", { headers: { Authorization: `Bearer ${TOKENS.guest}` } });
   assert.equal(r.status, 200);
 });
+
+test("browser session flow: /auth/session → cookie works for /chat and WS", async () => {
+  const s = await fetch(BASE + "/auth/session", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${TOKENS.owner}` },
+  });
+  assert.equal(s.status, 200);
+  const cookie = (s.headers.get("set-cookie") || "").split(";")[0];
+  assert.ok(cookie.startsWith("office_session="));
+
+  // /chat via cookie
+  const c = await fetch(BASE + "/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Cookie: cookie },
+    body: JSON.stringify({ sender: "owner", text: "cookie chat" }),
+  });
+  assert.equal(c.status, 200);
+
+  // WS via cookie, allowed origin
+  const ws = await new Promise((resolve) => {
+    const sock = new WebSocket(`ws://127.0.0.1:${PORT}/ws`, {
+      headers: { Cookie: cookie, Origin: "http://localhost:5173" },
+    });
+    sock.on("message", (m) => {
+      const f = JSON.parse(m.toString());
+      if (f.channel === "hello") resolve({ ok: true, frames: [f] });
+    });
+    sock.on("error", () => resolve({ ok: false, frames: [] }));
+    setTimeout(() => resolve({ ok: false, frames: [] }), 2000);
+  });
+  assert.ok(ws.ok, "cookie WS connect");
+  assert.equal(ws.frames[0]?.channel, "hello");
+  sock_close(ws);
+  // bad session cookie → 401
+  const bad = await new Promise((resolve) => {
+    const sock = new WebSocket(`ws://127.0.0.1:${PORT}/ws`, {
+      headers: { Cookie: "office_session=bogus.1", Origin: "http://localhost:5173" },
+    });
+    sock.on("error", (e) => resolve(/401/.test(e.message) ? 401 : 0));
+    sock.on("open", () => resolve("opened"));
+  });
+  assert.equal(bad, 401);
+});
+
+function sock_close(ws) { try { ws && ws.terminate && ws.terminate(); } catch {} }

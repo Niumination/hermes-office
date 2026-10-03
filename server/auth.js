@@ -3,7 +3,7 @@
  * Roles: cloud-bridge, mac-bridge (POST /event, GET /roster),
  *        owner (everything except /event), guest (read-only, filtered).
  */
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { config } from "./config.js";
 
 function hashToken(t) {
@@ -24,10 +24,16 @@ export function getBearer(req) {
 
 /**
  * Resolve request identity. Returns null when unauthorized.
+ * Accepts Bearer header (bridges/tools) or office_session cookie (browser,
+ * obtained via POST /auth/session — keeps tokens out of URLs and logs).
  * @returns {{ source: "cloud"|"mac"|"owner"|"guest", role: "bridge"|"owner"|"guest" } | null}
  */
 export function authenticate(req) {
-  const token = getBearer(req);
+  let token = getBearer(req);
+  if (!token && req.headers?.cookie) {
+    const m = /(?:^|;\s*)office_session=([A-Za-z0-9._-]+)/.exec(req.headers.cookie);
+    if (m && sessionTokens.has(m[1])) token = sessionTokens.get(m[1]);
+  }
   if (!token) return null;
   const h = hashToken(token);
   for (const entry of TOKEN_SOURCES) {
@@ -45,6 +51,27 @@ export function authenticate(req) {
   }
   return null;
 }
+
+// Session cookies: map random session id -> raw token (bounded, TTL 12h)
+const sessionTokens = new Map();
+const SESSION_TTL_MS = 12 * 3600 * 1000;
+
+export function createSession(token, now = Date.now()) {
+  // purge expired
+  for (const [sid, t] of sessionTokens) {
+    const issued = parseInt(sid.split(".")[1]) || 0;
+    if (now - issued > SESSION_TTL_MS) sessionTokens.delete(sid);
+  }
+  if (sessionTokens.size > 1000) return null;
+  const sid = crypto.randomUUID() + "." + now;
+  sessionTokens.set(sid, token);
+  return sid;
+}
+
+export function sessionCookieHeader(sid) {
+  return `office_session=${sid}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_MS / 1000}`;
+}
+
 
 /** Middleware factory. `roles` undefined = any authenticated identity. */
 export function requireAuth(roles) {
