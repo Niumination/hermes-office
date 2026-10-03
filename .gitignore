@@ -1,0 +1,30 @@
+# secrets & env
+.env
+.env.office
+*.token
+
+# deps & builds
+node_modules/
+dist/
+frontend/dist/
+frontend/node_modules/
+
+# runtime data
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# claude-office upstream leftovers (we port, not vendor)
+upstream/
