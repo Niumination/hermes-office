@@ -47,3 +47,16 @@ bash mac-relay.sh
 echo '{"peer":"cloud","task_id":"test-1"}' >> ~/.hermes/a2a_audit.jsonl
 # → lihat event muncul di office
 ```
+
+
+## Octo watcher (git_push → 🐙)
+
+`octo-watcher.py` memindai repo git lokal (default: `~/Desktop/Niumination` di Mac, `~/niumination` di cloud) setiap 60 detik dan mengirim event `git_push` ke office server saat ada commit baru — karakter **Octo 🐙** muncul di meja GitHub.
+
+Jalankan manual / launchd (Mac):
+```bash
+python3 octo-watcher.py            # foreground
+python3 octo-watcher.py --once     # single scan (cron/launchd)
+```
+
+Di server cloud sudah berjalan sebagai systemd user unit `office-octo.service` (enabled). Token dibaca dari `OFFICE_MAC_TOKEN` / `OFFICE_CLOUD_TOKEN` (env atau `~/.hermes/.env`). Nama repo yang mengandung `brain/private/secret/vault` dilaporkan sebagai `[private]`.
