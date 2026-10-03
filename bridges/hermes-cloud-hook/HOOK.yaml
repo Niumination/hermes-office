@@ -1,0 +1,9 @@
+name: office-bridge
+description: "Forward Hermes Cloud lifecycle events to Hermes Office (pixel office) event server."
+events:
+  - gateway:startup
+  - session:start
+  - session:end
+  - agent:start
+  - agent:step
+  - agent:end

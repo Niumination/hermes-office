@@ -1,0 +1,4 @@
+name: office-bridge
+description: "Bridge Hermes Cloud agent activity to Hermes Office event server. Emits lifecycle events via HTTP POST."
+version: 0.1.0
+kind: general

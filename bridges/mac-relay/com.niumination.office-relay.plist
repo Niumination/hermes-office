@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.niumination.office-relay</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/CHANGEUSER/.hermes/office-relay/mac-relay.sh</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/CHANGEUSER/Library/Logs/office-relay.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/CHANGEUSER/Library/Logs/office-relay.err.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- Set OFFICE_MAC_TOKEN here, or rely on ~/.hermes/.env lookup in the script -->
+        <!-- <key>OFFICE_MAC_TOKEN</key> <string>xxxxx</string> -->
+        <key>OFFICE_URL</key>
+        <string>http://100.65.20.34:7333/event</string>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin</string>
+    </dict>
+</dict>
+</plist>
