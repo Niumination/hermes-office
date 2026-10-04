@@ -190,7 +190,8 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
         // Presence: heartbeat updates / away timeout carries lastSeenTs.
         if (env.type === 'agent_status') {
           const d = env as any
-          const name = String(d.agent ?? '')
+          const rawAgent = (d.agent as unknown)
+          const name = typeof rawAgent === 'string' ? rawAgent : String((rawAgent as { id?: string; name?: string })?.id ?? (rawAgent as { name?: string })?.name ?? '')
           next = next.map(a => {
             if (a.id !== name) return a
             if (d.state === 'away') return { ...a, offline: true, lastSeenTs: d.lastSeenTs ?? a.lastSeenTs }
