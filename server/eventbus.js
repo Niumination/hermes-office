@@ -21,6 +21,7 @@ export const KNOWN_EVENT_TYPES = [
   "git_push",
   "channel_msg",
   "agent_status",
+  "service_status",
 ];
 
 const KNOWN_SET = new Set(KNOWN_EVENT_TYPES);
@@ -50,6 +51,17 @@ export function clampEvent(body) {
   for (const [k, v] of Object.entries(body)) {
     if (typeof v === "string") {
       out[k] = v.slice(0, k === "text" ? MAX_TEXT_LEN : MAX_STRING_LEN);
+    } else if (k === "metrics" && v && typeof v === "object" && !Array.isArray(v)) {
+      // agent_status.metrics: numeric-only, clamp values (DUAL-SPACE-DESIGN §2.2)
+      const m = {};
+      for (const [k2, v2] of Object.entries(v)) {
+        if (typeof v2 === "number" && Number.isFinite(v2)) {
+          m[k2] = Math.max(-1e12, Math.min(1e12, v2));
+        } else if (typeof v2 === "string") {
+          m[k2] = v2.slice(0, MAX_STRING_LEN);
+        }
+      }
+      out[k] = m;
     } else if (v && typeof v === "object" && !Array.isArray(v)) {
       const nested = {};
       for (const [k2, v2] of Object.entries(v)) {
@@ -119,7 +131,16 @@ const SCHEMAS = {
   git_push: (b) => (b.repo ? null : "repo required"),
   channel_msg: (b) => (b.platform ? null : "platform required"),
   agent_status: (b) => (b.agent ? null : "agent required"),
+  service_status: (b) => {
+    if (!b.host || !b.unit || !b.state) return "host + unit + state required";
+    if (!SERVICE_HOSTS.has(b.host)) return `Invalid service_status.host: ${b.host}`;
+    if (!SERVICE_STATES.has(b.state)) return `Invalid service_status.state: ${b.state}`;
+    return null;
+  },
 };
+
+const SERVICE_STATES = new Set(["active", "failed", "inactive"]);
+const SERVICE_HOSTS = new Set(["cloud", "mac"]);
 
 const A2A_STATES = new Set(["sent", "working", "completed", "failed"]);
 const STATUS_STATES = new Set(["idle", "working", "away"]);
@@ -234,6 +255,12 @@ export function sanitizeForGuest(ev) {
   }
   if (ev.type === "office_chat") {
     return { type: "office_chat", activity: true, source: ev.source, ts: ev.ts };
+  }
+  if (ev.type === "service_status") {
+    // Guest: unit name + state visible, detail sanitized (no internal paths/URLs)
+    const okDetail = typeof ev.detail === "string" && !INTERNAL_IP.test(ev.detail);
+    const detail = okDetail ? ev.detail.replace(/\/[^\s]+/g, "[path]") : undefined;
+    return { type: "service_status", host: ev.host, unit: ev.unit, kind: ev.kind, state: ev.state, detail, source: ev.source, ts: ev.ts };
   }
   // Strip internal URLs / Tailscale IPs from any event
   const out = { ...ev };

@@ -28,6 +28,7 @@ test("validates every known event type with golden payload", () => {
     git_push: { repo: "brain", privat: true, author: "zaryu", commits: 2, message: "m", url: "https://github.com/x/y" },
     channel_msg: { platform: "telegram", channelType: "group", direction: "in", agent: "cloud" },
     agent_status: { agent: "mac", state: "idle", uptimeH: 26.4 },
+    service_status: { host: "cloud", unit: "hermes-office", kind: "systemd", state: "active", detail: "uptime 3d" },
   };
   for (const type of KNOWN_EVENT_TYPES) {
     assert.equal(validateEvent({ type, ...golden[type] }), null, type);
@@ -41,6 +42,10 @@ test("unknown type rejected; office_chat internal-only; missing fields rejected"
   assert.match(validateEvent({ type: "channel_msg", platform: "t", text: "secret" }), /must not contain text/);
   assert.match(validateEvent({ type: "a2a_task_out", origin: "mac", state: "bogus" }), /Invalid/);
   assert.match(validateEvent({ type: "agent_status", agent: "mac", state: "bogus" }), /Invalid/);
+  assert.match(validateEvent({ type: "service_status", host: "cloud" }), /host \+ unit \+ state required/);
+  assert.match(validateEvent({ type: "service_status", host: "cloud", unit: "u", state: "bogus" }), /Invalid/);
+  assert.match(validateEvent({ type: "service_status", host: "mars", unit: "u", state: "active" }), /Invalid/);
+  assert.equal(validateEvent({ type: "service_status", host: "mac", unit: "com.niumination.office-relay", state: "active" }), null);
   assert.equal(validateEvent(null), "Missing body");
 });
 
@@ -52,6 +57,17 @@ test("clamps strings to 500, text to 4000", () => {
   assert.equal(ev.text.length, 4000);
   assert.equal(ev.agent.task.length, 500);
   assert.equal(clampString(42), undefined);
+});
+
+test("clamps agent_status.metrics: numeric-only, rejects non-numeric fields", () => {
+  const ev = clampEvent({
+    type: "agent_status", agent: "mac",
+    metrics: { disk_free_gb: 87.5, load_1m: 2.4, uptime_s: 912400, sneaky: { a: 1 } },
+  });
+  assert.equal(ev.metrics.disk_free_gb, 87.5);
+  assert.equal(ev.metrics.sneaky, undefined);
+  const big = clampEvent({ metrics: { x: 1e15 } });
+  assert.equal(big.metrics.x, 1e12);
 });
 
 // --- redaction ------------------------------------------------------------
@@ -121,6 +137,11 @@ test("sanitizeForGuest: private git_push, a2a summary, office_chat, internal url
   assert.equal(oc.activity, true);
   const url = sanitizeForGuest({ type: "cron_fired", job: "j", url: "http://100.120.57.37:9900/x" });
   assert.equal(url.url, undefined);
+  const svc = sanitizeForGuest({ type: "service_status", host: "cloud", unit: "hermes-office", state: "active", detail: "uptime 3d, log /var/log/office.log" });
+  assert.equal(svc.unit, "hermes-office");
+  assert.equal(svc.detail, "uptime 3d, log [path]");
+  const svcBad = sanitizeForGuest({ type: "service_status", host: "cloud", unit: "u", state: "active", detail: "see http://127.0.0.1:7333" });
+  assert.equal(svcBad.detail, undefined);
 });
 
 // --- OfficeEventBus.ingest -------------------------------------------------
