@@ -125,6 +125,20 @@ app.get("/debug/events", requireOwner, (req, res) => {
   res.json({ events: bus.buffer.recent(limit) });
 });
 
+// Presence snapshot — GET /presence (any authenticated identity).
+// MUST be registered before the static SPA catch-all below.
+// Exposes lastSeenTs so the UI can render "terakhir aktif HH:MM" for away agents.
+app.get("/presence", requireAny, (_req, res) => {
+  const agents = {};
+  for (const [agent, ts] of lastSeenTs) {
+    agents[agent] = {
+      lastSeenTs: ts,
+      online: (lastHeartbeat.get(agent) ?? 0) >= Date.now() - 90_000,
+    };
+  }
+  res.json({ agents, watchdogMs: 90_000 });
+});
+
 // Chat routes
 app.use("/chat", createChatRouter(broadcast, emitInternal));
 
@@ -235,23 +249,7 @@ setInterval(() => {
 }, 30_000).unref?.();
 
 // ---------------------------------------------------------------------------
-// Presence snapshot — GET /presence (any authenticated identity)
-// Exposes lastSeenTs so the UI can render "terakhir aktif HH:MM" for away agents.
-// ---------------------------------------------------------------------------
-
-app.get("/presence", requireAny, (_req, res) => {
-  const agents = {};
-  for (const [agent, ts] of lastSeenTs) {
-    agents[agent] = {
-      lastSeenTs: ts,
-      online: (lastHeartbeat.get(agent) ?? 0) >= Date.now() - 90_000,
-    };
-  }
-  res.json({ agents, watchdogMs: 90_000 });
-});
-
-// ---------------------------------------------------------------------------
-// GitHub poller
+// Chat routes
 // ---------------------------------------------------------------------------
 
 const githubPoller = createGithubPoller((ev) => {
