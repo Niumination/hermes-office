@@ -202,6 +202,28 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
     })
   }, [pendingTick, drainPending])
 
+  // Seed presence from the server snapshot on mount (WS has no history replay):
+  // agents already offline show grayscale + "terakhir aktif HH:MM" immediately.
+  useEffect(() => {
+    let stop = false
+    const load = async () => {
+      try {
+        const r = await fetch('/presence')
+        if (!r.ok || stop) return
+        const data = await r.json()
+        const agentsMap = data?.agents ?? {}
+        setAgents(prev => prev.map(a => {
+          const p = agentsMap[a.id]
+          if (!p) return a
+          return { ...a, offline: !p.online, lastSeenTs: p.lastSeenTs ?? a.lastSeenTs }
+        }))
+      } catch { /* offline server — ignore */ }
+    }
+    load()
+    const id = setInterval(load, 30_000)
+    return () => { stop = true; clearInterval(id) }
+  }, [])
+
   // Client-side presence watchdog: no heartbeat ≥ 90s → offline (mirrors server).
   useEffect(() => {
     const id = setInterval(() => {
