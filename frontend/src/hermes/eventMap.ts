@@ -12,15 +12,63 @@
  */
 import type { OfficeEvent } from '../types'
 import type { HermesEnvelope } from './types'
+import type { RoomId } from '../rooms'
 
 export function isKnownEventType(type: string): boolean {
   return KNOWN_TYPES.has(type)
 }
 
+/** Default room per event source/agent (DUAL-SPACE-DESIGN M-A §5.2). */
+export function targetRoomFor(env: HermesEnvelope): RoomId {
+  const d = env as any
+  switch (env.type) {
+    case 'service_status':
+      return d.host === 'mac' ? 'mac-studio' : 'server-room'
+    case 'cron_fired':
+      return 'server-room'
+    case 'agent_status':
+      return d.agent === 'mac' ? 'mac-studio' : d.agent === 'cloud' ? 'server-room' : 'main-office'
+    case 'a2a_task_in':
+      // a task delivered TO an instance lands in that instance's room
+      return d.dest === 'mac' ? 'mac-studio' : d.dest === 'cloud' ? 'server-room' : 'main-office'
+    case 'a2a_task_out':
+      return d.origin === 'mac' ? 'mac-studio' : d.origin === 'cloud' ? 'server-room' : 'main-office'
+    default:
+      return env.source === 'mac' ? 'mac-studio'
+        : env.source === 'cloud' ? 'server-room'
+        : 'main-office'
+  }
+}
+
+/** Which cast member an event concerns (null = no specific character). */
+export function agentForEnvelope(env: HermesEnvelope): string | null {
+  const d = env as any
+  switch (env.type) {
+    case 'agent_status':
+    case 'agent_spawned':
+      return String(d.agent ?? d.agent?.name ?? '') || null
+    case 'agent_finished':
+    case 'tool_call':
+    case 'tool_done':
+    case 'mcp_call':
+      return d.agentId ? String(d.agentId) : null
+    case 'a2a_task_in':
+      return d.dest ? String(d.dest) : null
+    case 'a2a_task_out':
+      return d.origin ? String(d.origin) : null
+    case 'cron_fired':
+      return 'cron-runner'
+    case 'git_push':
+      return 'octo'
+    default:
+      return null
+  }
+}
+
 export const KNOWN_TYPES = new Set([
   'agent_spawned', 'agent_finished', 'tool_call', 'tool_done', 'mcp_call',
   'a2a_task_in', 'a2a_task_out', 'cron_fired', 'git_push', 'channel_msg',
-  'agent_status',
+  'agent_status', 'service_status',
 ])
 
 /**
@@ -106,6 +154,10 @@ export function mapHermesEvent(env: HermesEnvelope): OfficeEvent[] {
       return []
 
     case 'agent_status':
+      return []
+
+    case 'service_status':
+      // Consumed by the per-room mini feed + service lamp; no character walk.
       return []
 
     default:

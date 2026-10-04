@@ -35,6 +35,8 @@ export interface Agent {
   emoji: string
   hiredAt: number
   pathQueue?: { x: number; y: number }[]  // waypoints to walk through
+  offline?: boolean          // presence: no heartbeat ≥ 90s (watchdog)
+  lastSeenTs?: number        // last heartbeat ts → "terakhir aktif HH:MM"
 }
 
 export interface OfficeEvent {

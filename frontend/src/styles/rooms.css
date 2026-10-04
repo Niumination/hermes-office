@@ -398,3 +398,76 @@
   transform: scale(1.02);
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
+
+/* ---------- DUAL-SPACE M-A: room mini feed + service lamp ---------- */
+
+.room-mini-feed {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 26;
+  max-width: 46%;
+  background: rgba(10, 12, 8, 0.82);
+  border: 1px solid rgba(60, 200, 80, 0.25);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #3fb950;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+}
+.room-mini-feed-title {
+  font-size: 7px;
+  letter-spacing: 2px;
+  color: #2a5a30;
+  margin-bottom: 2px;
+}
+.room-mini-feed-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  color: #3fb950;
+  text-shadow: 0 0 6px rgba(60,200,80,0.3);
+}
+.room-mini-feed-line.fresh { color: #7ee787; }
+
+.service-lamp {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 26;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(10, 10, 14, 0.82);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: #cfd0d1;
+  pointer-events: none;
+}
+.service-lamp-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #2bac76; box-shadow: 0 0 6px #2bac76;
+  animation: ho-blink 2s ease-in-out infinite;
+}
+.service-lamp.service-failed .service-lamp-dot {
+  background: #e5534b; box-shadow: 0 0 8px #e5534b;
+  animation: ho-blink 0.6s steps(1) infinite;
+}
+.service-lamp.service-inactive .service-lamp-dot {
+  background: #e8c34a; box-shadow: 0 0 6px #e8c34a;
+}
+.service-smoke { font-size: 11px; }
+
+/* Offline presence bubble shouldn't overlap the sprite too much */
+.character-wrapper .speech-bubble { font-size: 8px; }
+
+@media (max-width: 767px) {
+  .room-mini-feed { max-width: 62%; font-size: 8px; }
+  .service-lamp { font-size: 8px; }
+}

@@ -177,6 +177,7 @@ export function eventLine(e: HermesEnvelope): string {
     case 'git_push':        return `🔄 ${d.repo ?? 'repo'} — ${d.commits ?? 1} commit(s) by ${d.author ?? '?'}`
     case 'channel_msg':     return `💬 ${d.platform ?? ''} ${d.direction ?? ''} via ${d.agent ?? ''}`
     case 'agent_status':    return `❤️ ${d.agent ?? ''} ${d.state ?? ''}`
+    case 'service_status':  return `🖥 ${d.host ?? ''}/${d.unit ?? ''} ${d.state ?? ''}${d.detail ? ` — ${d.detail}` : ''}`
     default:                return `• ${e.type}`
   }
 }

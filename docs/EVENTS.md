@@ -108,6 +108,30 @@ Heartbeat 30s dari tiap instance (di-set oleh bridge).
 ```
 `state`: `idle | working | away`. Server menandai `away` otomatis bila tidak ada heartbeat 90s.
 
+Field opsional (DUAL-SPACE-DESIGN §2.2, backward-compatible):
+- `lastSeenTs` — di-set server saat emit `away` (watchdog), agar UI bisa menampilkan "terakhir aktif HH:MM" tanpa query ulang. Server juga menyimpan snapshot di `GET /presence`.
+- `metrics` — objek angka bebas (mis. `disk_free_gb`, `load_1m`, `uptime_s`). Validasi longgar: hanya angka/string yang dipertahankan, nilai angka di-clamp ±1e12, field non-skalar dibuang.
+
+### `service_status`
+Status layanan per host (M-B: dikirim poller systemd cloud & mac-relay v2; saat M-A boleh dikirim manual/dummy via `/event`).
+```json
+{
+  "type": "service_status",
+  "host": "cloud",
+  "unit": "hermes-office",
+  "kind": "systemd",
+  "state": "active",
+  "detail": "uptime 3d, last run 02:00 UTC"
+}
+```
+| Field | Req | Catatan |
+|---|---|---|
+| host | ✓ | `cloud` \| `mac` (whitelist) |
+| unit | ✓ | nama systemd unit / launchd label / cron job |
+| kind | | `systemd` \| `cron` \| `launchd` |
+| state | ✓ | `active` \| `failed` \| `inactive` (whitelist) |
+| detail | | opsional, clamp 500; **guest**: path/URL internal di-sanitize (`[path]`), detail ber-IP internal dibuang |
+
 ## 4. Server → Client (WS)
 
 WS frame:
@@ -139,3 +163,14 @@ Pola yang dibuang/diganti `[REDACTED]`:
 
 Handshake WS mengirim `{"channel":"hello","data":{"server":"1.0","events":[...supported types...]}}`.
 Client wajib toleran terhadap type tak dikenal (abaikan). Penambahan type = minor bump; perubahan field = major bump + migrasi bridge.
+
+## 8. Presence endpoint (DUAL-SPACE-DESIGN §3)
+
+`GET /presence` (butuh auth) → snapshot kondisi heartbeat per agent:
+
+```json
+{ "agents": { "mac": { "lastSeenTs": 1791124000000, "online": false } }, "watchdogMs": 90000 }
+```
+
+- `online` = heartbeat diterima < 90s lalu (watchdog yang sama dengan emit `away`).
+- `lastSeenTs` tetap tersimpan setelah agent `away` (tidak dihapus) untuk tampilan "terakhir aktif HH:MM".

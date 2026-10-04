@@ -41,7 +41,15 @@ export type KnownEvent =
       ts?: number
     }
   | { type: 'channel_msg'; platform: string; channelType?: string; direction?: string; agent?: string }
-  | { type: 'agent_status'; agent: string; state: 'idle' | 'working' | 'away'; uptimeH?: number }
+  | { type: 'agent_status'; agent: string; state: 'idle' | 'working' | 'away'; uptimeH?: number; lastSeenTs?: number; metrics?: Record<string, number> }
+  | {
+      type: 'service_status'
+      host: 'cloud' | 'mac'
+      unit: string
+      kind?: 'systemd' | 'cron' | 'launchd'
+      state: 'active' | 'failed' | 'inactive'
+      detail?: string
+    }
 
 export interface GithubFeedItem {
   id: string

@@ -57,6 +57,15 @@ function shouldShowBubble(state: AgentState): boolean {
   return state === 'talking-to-manager'
 }
 
+/** "terakhir aktif HH:MM" for offline agents (watchdog timeout). */
+export function formatLastSeen(ts?: number): string {
+  if (!ts) return 'Tidak diketahui'
+  const d = new Date(ts)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
+}
+
 // Opposite direction for random "looking around"
 const OPPOSITE: Record<SpriteDirection, SpriteDirection> = {
   'front-left': 'rear-right',
@@ -144,6 +153,10 @@ const Character: React.FC<CharacterProps> = ({ agent, idleDurationMs = 0, zIndex
         <SpeechBubble key={agent.statusText} text={agent.statusText} />
       )}
 
+      {agent.offline && (
+        <SpeechBubble key="offline" text={`terakhir aktif: ${formatLastSeen(agent.lastSeenTs)}`} />
+      )}
+
       <div className="char-body-group">
         <div className="char-shadow" />
         <img
@@ -153,7 +166,7 @@ const Character: React.FC<CharacterProps> = ({ agent, idleDurationMs = 0, zIndex
           style={{
             height: agent.id.startsWith('boss-') ? 85 : 78,
             width: 'auto',
-            filter: `drop-shadow(0 0 1px ${agent.color}) drop-shadow(0 0 0.5px #000)`,
+            filter: `${agent.offline ? 'grayscale(1) opacity(0.55) ' : ''}drop-shadow(0 0 1px ${agent.color}) drop-shadow(0 0 0.5px #000)`,
             animationDelay: `${(agent.id.charCodeAt(0) * 0.37) % 3}s`,
           }}
           draggable={false}
