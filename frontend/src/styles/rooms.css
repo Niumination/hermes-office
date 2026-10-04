@@ -467,6 +467,24 @@
 /* Offline presence bubble shouldn't overlap the sprite too much */
 .character-wrapper .speech-bubble { font-size: 8px; }
 
+/* Permanent "terakhir aktif" badge (offline presence, DUAL-SPACE §3) */
+.offline-badge {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 26, 0.9);
+  border: 1px solid #55565c;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #9aa0a8;
+  white-space: nowrap;
+  z-index: 30;
+  pointer-events: none;
+}
+
 @media (max-width: 767px) {
   .room-mini-feed { max-width: 62%; font-size: 8px; }
   .service-lamp { font-size: 8px; }
