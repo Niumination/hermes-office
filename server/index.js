@@ -235,9 +235,13 @@ bus.on("event", (ev) => {
     // Watchdog-emitted 'away' events must not count as heartbeats
     // (otherwise offline agents self-revive every 30s sweep).
     if (ev.state === "away") return;
+    // ev.agent may be a string name (legacy) or an object {name,role,id} (office contract).
+    // Keying the Map by the raw object would collapse every agent to "[object Object]".
+    const agentKey =
+      typeof ev.agent === "string" ? ev.agent : ev.agent.id || ev.agent.name || "unknown";
     const ts = ev.ts || Date.now();
-    lastHeartbeat.set(ev.agent, ts);
-    lastSeenTs.set(ev.agent, ts);
+    lastHeartbeat.set(agentKey, ts);
+    lastSeenTs.set(agentKey, ts);
   }
 });
 
