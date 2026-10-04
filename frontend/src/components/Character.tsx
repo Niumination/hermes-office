@@ -66,6 +66,17 @@ export function formatLastSeen(ts?: number): string {
   return `${hh}:${mm}`
 }
 
+/**
+ * Permanent "terakhir aktif HH:MM" badge for offline agents.
+ * (SpeechBubble auto-hides after 3s — offline presence must persist,
+ * DUAL-SPACE-DESIGN §3: "bubble permanen".)
+ */
+const OfflineBadge: React.FC<{ lastSeenTs?: number }> = ({ lastSeenTs }) => (
+  <div className="offline-badge" data-testid="offline-badge">
+    ⏻ terakhir aktif: {formatLastSeen(lastSeenTs)}
+  </div>
+)
+
 // Opposite direction for random "looking around"
 const OPPOSITE: Record<SpriteDirection, SpriteDirection> = {
   'front-left': 'rear-right',
@@ -154,7 +165,7 @@ const Character: React.FC<CharacterProps> = ({ agent, idleDurationMs = 0, zIndex
       )}
 
       {agent.offline && (
-        <SpeechBubble key="offline" text={`terakhir aktif: ${formatLastSeen(agent.lastSeenTs)}`} />
+        <OfflineBadge lastSeenTs={agent.lastSeenTs} />
       )}
 
       <div className="char-body-group">
