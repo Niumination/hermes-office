@@ -9,6 +9,7 @@ export type RoomId =
   | 'meeting-room'
   | 'kitchen'
   | 'server-room'
+  | 'mac-studio'
   | 'lobby'
   | 'nap-room'
   | 'rooftop'
@@ -122,6 +123,9 @@ export const ROOMS: Record<RoomId, Room> = {
     ],
     connections: [
       { toRoom: 'manager-office', position: { x: 67.5, y: 48.9 }, label: "Manager's Office", exitFacing: 'rear-right', entryFacing: 'front-right' },
+      // DUAL-SPACE-DESIGN M-A: corridor doors to the two thematic rooms.
+      { toRoom: 'server-room', position: { x: 67.5, y: 48.9 }, label: 'Server Room ☁️', exitFacing: 'rear-right', entryFacing: 'front-right' },
+      { toRoom: 'mac-studio', position: { x: 67.5, y: 48.9 }, label: 'Mac Studio 💻', exitFacing: 'rear-right', entryFacing: 'front-right' },
     ],
     agentSpots: [
       // Desk spots
@@ -334,16 +338,15 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'server-room': {
     id: 'server-room',
-    name: 'Server Room',
+    name: 'Server Room ☁️',
     description: 'Cold. Loud. Blinking lights. Where deployments happen.',
     background: {
-      day: '/rooms/server-room.png',
-      night: '/rooms/server-room.png',
+      day: '/rooms/server-room-day.png',
+      night: '/rooms/server-room-night.png',
     },
-    width: 500,
-    height: 400,
-    furniture: [
-    ],
+    width: 800,
+    height: 600,
+    furniture: [],
     connections: [
       { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
     ],
@@ -353,6 +356,28 @@ export const ROOMS: Record<RoomId, Room> = {
     ],
     entryPoint: { x: 50, y: 90 },
     ambience: 'server-hum',
+  },
+
+  // DUAL-SPACE-DESIGN M-A: Mac Studio — live condition of the MacBook Pro.
+  'mac-studio': {
+    id: 'mac-studio',
+    name: 'Mac Studio 💻',
+    description: 'Studio kreator: meja agent mac, rak repo lokal, dan indikator heartbeat relay.',
+    background: {
+      day: '/rooms/mac-studio-day.png',
+      night: '/rooms/mac-studio-night.png',
+    },
+    width: 800,
+    height: 600,
+    furniture: [],
+    connections: [
+      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
+    ],
+    agentSpots: [
+      { id: 'mac-spot-1', type: 'desk', x: 35, y: 70, facing: 'down' },
+      { id: 'mac-spot-2', type: 'standing', x: 65, y: 60, facing: 'up' },
+    ],
+    entryPoint: { x: 50, y: 90 },
   },
 
   'lobby': {

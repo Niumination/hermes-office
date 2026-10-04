@@ -1,34 +1,53 @@
 /**
- * OfficeStage — the isometric office rendering, adapted from Claude-Office
+ * OfficeStage — the pixel-art office rendering, adapted from Claude-Office
  * App.tsx. Consumes Hermes envelopes (drained from HermesOfficeApp), maps
  * them via eventMap, and drives the same agent animation pipeline.
+ *
+ * DUAL-SPACE-DESIGN M-A: adds the Server Room ☁️ and Mac Studio 💻 with
+ * character room-switching (cloud → server-room, mac → mac-studio), a per-room
+ * mini feed, offline presence ("terakhir aktif HH:MM") and a service-status
+ * lamp. One canvas; doors switch the active room.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { Agent, OfficeEvent } from '../types'
 import { AGENT_CONFIGS } from '../types'
 import Character from '../components/Character'
 import FurnitureRenderer from '../components/FurnitureRenderer'
-import { ROOMS } from '../rooms'
+import { ROOMS, type RoomId } from '../rooms'
 import {
   assignSpot, createAgent, stepToward, findWaypointPath, WALK_SPEED,
   workMessage, doneMessage,
 } from '../agentManager'
 import { BOSS_NAME, BOSS_ROLE } from '../config'
-import { mapHermesEvent } from '../hermes/eventMap'
+import { mapHermesEvent, targetRoomFor, agentForEnvelope } from '../hermes/eventMap'
 import type { HermesEnvelope } from '../hermes/types'
+import RoomMiniFeed from '../components/RoomMiniFeed'
 
-const MAIN_ROOM = ROOMS['main-office']
-const ENTRY = MAIN_ROOM.entryPoint
+const ENTRY = ROOMS['main-office'].entryPoint
 const DOOR_TARGET = { x: ENTRY.x, y: ENTRY.y }
 const ARRIVAL_THRESHOLD = 0.3
-const MAIN_WAYPOINTS = MAIN_ROOM.waypoints ?? []
+const MAIN_WAYPOINTS = ROOMS['main-office'].waypoints ?? []
+
+// Home room for each cast member (DUAL-SPACE-DESIGN M-A §5.2):
+// cloud lives in the Server Room, mac in the Mac Studio, the rest in the office.
+const HOME_ROOM: Record<string, RoomId> = {
+  cloud: 'server-room',
+  mac: 'mac-studio',
+  'cron-runner': 'main-office',
+  octo: 'main-office',
+  boss: 'main-office',
+}
+
+const WATCHDOG_MS = 90_000
 
 function computePath(
+  room: RoomId,
   from: { x: number; y: number },
   to: { x: number; y: number },
 ): { x: number; y: number }[] {
-  if (MAIN_WAYPOINTS.length === 0) return []
-  return findWaypointPath(from.x, from.y, to.x, to.y, MAIN_WAYPOINTS)
+  const waypoints = ROOMS[room].waypoints ?? []
+  if (waypoints.length === 0) return []
+  return findWaypointPath(from.x, from.y, to.x, to.y, waypoints)
 }
 
 // Reduced motion: honour prefers-reduced-motion — agents teleport instead of
@@ -47,8 +66,9 @@ const BOSS_CONFIG: BossCfg = {
 }
 
 function createBoss(): Agent {
-  const spot = MAIN_ROOM.agentSpots.find(s => s.id === 'spot-1')
-    ?? MAIN_ROOM.agentSpots.find(s => s.type === 'desk')!
+  const room = ROOMS['main-office']
+  const spot = room.agentSpots.find(s => s.id === 'spot-1')
+    ?? room.agentSpots.find(s => s.type === 'desk')!
   const target = { x: spot.x, y: spot.y }
   return {
     id: 'boss',
@@ -68,28 +88,31 @@ function createBoss(): Agent {
     color: BOSS_CONFIG.color,
     emoji: BOSS_CONFIG.emoji,
     hiredAt: Date.now(),
-    pathQueue: computePath(ENTRY, target),
+    pathQueue: computePath('main-office', ENTRY, target),
   }
 }
 
-// Permanent cast — always visible in the office (UI-SPEC.md §2).
+// Permanent cast — always present, each in its home room (UI-SPEC.md §2).
 const CAST_IDS = ['cloud', 'mac', 'cron-runner']
 
 function createCastMember(id: string): Agent {
-  const spot = MAIN_ROOM.agentSpots.find(s => s.type === 'desk' && !['spot-1'].includes(s.id))!
+  const home = HOME_ROOM[id] ?? 'main-office'
+  const room = ROOMS[home]
+  const spot = room.agentSpots.find(s => s.type === 'desk') ?? room.agentSpots[0]
   const target = { x: spot.x, y: spot.y }
   const cfg = AGENT_CONFIGS[id] ?? AGENT_CONFIGS['default']
+  const entry = room.entryPoint
   return {
     id,
     name: id,
     type: 'subagent',
     role: id,
     state: 'new-hire',
-    position: { x: ENTRY.x, y: ENTRY.y },
+    position: { x: entry.x, y: entry.y },
     targetPosition: target,
     deskPosition: target,
-    room: 'main-office',
-    assignedRoom: 'main-office',
+    room: home,
+    assignedRoom: home,
     assignedSpotId: spot.id,
     spriteFacing: spot.spriteFacing,
     task: undefined,
@@ -97,8 +120,17 @@ function createCastMember(id: string): Agent {
     color: cfg.color,
     emoji: cfg.emoji,
     hiredAt: Date.now(),
-    pathQueue: computePath(ENTRY, target),
+    pathQueue: computePath(home, entry, target),
   }
+}
+
+/** Pick a spot for an agent inside a room (desk preferred, else first). */
+function spotForRoom(room: RoomId, agentId: string) {
+  const r = ROOMS[room]
+  if (agentId === 'mac') {
+    return r.agentSpots.find(s => s.type === 'desk') ?? r.agentSpots[0]
+  }
+  return r.agentSpots.find(s => s.id.includes(agentId)) ?? r.agentSpots[0]
 }
 
 interface Props {
@@ -117,23 +149,74 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
   agentsRef.current = agents
   const occupiedSpotsRef = useRef<Set<string>>(new Set())
 
+  // Active room shown on the single canvas (doors switch it).
+  const [activeRoom, setActiveRoom] = useState<RoomId>('main-office')
+  // Latest service_status per host → lamp colour in the thematic rooms.
+  const [serviceState, setServiceState] = useState<Record<string, 'active' | 'failed' | 'inactive'>>({})
+
   const reducedMotion = useRef(prefersReducedMotion()).current
 
-  // Handle incoming Hermes envelopes → office events → state updates.
+  // Handle incoming Hermes envelopes → room switching + office events.
   const envelopesRef = useRef<HermesEnvelope[]>([])
   useEffect(() => {
     envelopesRef.current = drainPending()
     if (envelopesRef.current.length === 0) return
+
+    const buf = envelopesRef.current
+    // Room routing + presence + service lamps (host-level state).
     setAgents(prev => {
       let next = prev
-      for (const env of envelopesRef.current) {
+      for (const env of buf) {
+        const room = targetRoomFor(env)
+        const who = agentForEnvelope(env)
+
+        if (env.type === 'service_status') {
+          const d = env as any
+          setServiceState(s => ({ ...s, [d.host]: d.state }))
+        }
+
+        // Cast member walks to the room its event came from.
+        if (who && HOME_ROOM[who] !== undefined && next.some(a => a.id === who)) {
+          next = relocateAgent(next, who, room)
+        }
+
         for (const ev of mapHermesEvent(env)) {
           next = applyOfficeEvent(next, ev, occupiedSpotsRef.current)
+        }
+
+        // Presence: heartbeat updates / away timeout carries lastSeenTs.
+        if (env.type === 'agent_status') {
+          const d = env as any
+          const name = String(d.agent ?? '')
+          next = next.map(a => {
+            if (a.id !== name) return a
+            if (d.state === 'away') return { ...a, offline: true, lastSeenTs: d.lastSeenTs ?? a.lastSeenTs ?? a.lastSeenTs }
+            return { ...a, offline: false, lastSeenTs: Number(env.ts ?? Date.now()), state: d.state === 'working' ? 'working' : a.state }
+          })
         }
       }
       return next
     })
   }, [pendingTick, drainPending])
+
+  // Client-side presence watchdog: no heartbeat ≥ 90s → offline (mirrors server).
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = Date.now()
+      setAgents(prev => {
+        let changed = false
+        const next = prev.map(a => {
+          if (HOME_ROOM[a.id] === undefined) return a
+          const last = a.lastSeenTs ?? a.hiredAt
+          const shouldOffline = (a.id === 'cloud' || a.id === 'mac') && now - last > WATCHDOG_MS
+          if (shouldOffline && !a.offline) { changed = true; return { ...a, offline: true } }
+          return a
+        })
+        return changed ? next : prev
+      })
+    }, 15_000)
+    return () => clearInterval(id)
+  }, [])
 
   // Animation loop (skipped in reduced-motion mode — agents teleport).
   useEffect(() => {
@@ -161,17 +244,12 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
         } else if (arrived) {
           const atDesk = Math.abs(agent.targetPosition.x - agent.deskPosition.x) < ARRIVAL_THRESHOLD
             && Math.abs(agent.targetPosition.y - agent.deskPosition.y) < ARRIVAL_THRESHOLD
-          const atDoor = Math.abs(agent.targetPosition.x - DOOR_TARGET.x) < ARRIVAL_THRESHOLD
-            && Math.abs(agent.targetPosition.y - DOOR_TARGET.y) < ARRIVAL_THRESHOLD
           if (agent.state === 'new-hire' || agent.state === 'walking-to-desk') {
             if (atDesk || agent.state === 'new-hire') {
               updated = { ...agent, position, state: 'working', statusText: workMessage() }
               changed = true
             }
-          } else if (agent.state === 'completed' && atDoor) {
-            updated = { ...agent, position }
-            changed = true
-          } else if (agent.state === 'coffee-break') {
+          } else if (agent.state === 'completed' || agent.state === 'coffee-break') {
             updated = { ...agent, position }
             changed = true
           }
@@ -182,12 +260,13 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
         return updated
       })
 
-      // Prune completed agents at the door (keep permanent cast + boss).
+      // Prune completed agents at their exit (keep permanent cast + boss).
       const pruned = next.filter(a => {
         if (a.id === 'boss' || CAST_IDS.includes(a.id)) return true
         if (a.state === 'completed') {
-          const atDoor = Math.abs(a.position.x - DOOR_TARGET.x) < ARRIVAL_THRESHOLD * 2
-            && Math.abs(a.position.y - DOOR_TARGET.y) < ARRIVAL_THRESHOLD * 2
+          const exit = ROOMS[a.room].entryPoint
+          const atDoor = Math.abs(a.position.x - exit.x) < ARRIVAL_THRESHOLD * 2
+            && Math.abs(a.position.y - exit.y) < ARRIVAL_THRESHOLD * 2
           if (atDoor) {
             if (a.assignedSpotId) occupiedSpotsRef.current.delete(a.assignedSpotId)
             return false
@@ -216,51 +295,103 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
     })))
   }, [agents, reducedMotion])
 
-  const roomImage = phase === 'night'
-    ? '/rooms/office-night.png'
-    : '/rooms/office-day.png'
+  const room = ROOMS[activeRoom]
+  const roomImage = phase === 'night' ? room.background.night : room.background.day
+  const aspect = room.width / room.height
+  const roomAgents = agents.filter(a => a.room === activeRoom)
+  const doorCounts = room.connections.map(c => ({
+    conn: c,
+    count: agents.filter(a => a.room === c.toRoom).length,
+  }))
 
   return (
     <div className="office-view" data-testid="office-stage">
       <div
         className={`room-container${reducedMotion ? ' reduced-motion' : ''}`}
         style={{
-          aspectRatio: '4800/3584',
+          aspectRatio: `${aspect}`,
           width: '100%',
           maxHeight: '100%',
           position: 'relative',
         }}
       >
-        <div
-          className="room-background"
-          style={{ backgroundImage: `url(${roomImage})` }}
-        />
-        <div
-          className="room-background room-background-night"
-          style={{
-            backgroundImage: 'url(/rooms/office-night.png)',
-            opacity: phase === 'night' ? nightOpacity : 0,
-          }}
-        />
+        <div className="room-background" style={{ backgroundImage: `url(${roomImage})` }} />
 
-        <FurnitureRenderer
-          items={MAIN_ROOM.furniture}
-          onItemClick={() => {}}
-        />
+        {room.furniture.length > 0 && (
+          <FurnitureRenderer items={room.furniture} onItemClick={() => {}} />
+        )}
 
-        {agents.map(agent => (
+        {roomAgents.map(agent => (
           <Character
             key={agent.id}
             agent={agent}
             zIndex={
-              MAIN_ROOM.agentSpots.find(s => s.id === agent.assignedSpotId)?.zIndex
+              room.agentSpots.find(s => s.id === agent.assignedSpotId)?.zIndex
               ?? Math.round(agent.position.y)
             }
           />
         ))}
+
+        <div className="room-label" data-testid="room-label">{room.name}</div>
+
+        {/* Doors to adjacent rooms — click to switch the viewed room. */}
+        {doorCounts.map(({ conn, count }) => (
+          <button
+            key={conn.toRoom}
+            className="room-door-hotspot"
+            style={{ left: `${conn.position.x}%`, top: `${conn.position.y}%` }}
+            onClick={() => setActiveRoom(conn.toRoom)}
+            title={`Buka ${ROOMS[conn.toRoom].name}`}
+          >
+            <span className="door-arrow">↔</span>
+            <span className="door-label">{conn.label ?? ROOMS[conn.toRoom].name}{count > 0 ? ` · ${count}` : ''}</span>
+          </button>
+        ))}
+
+        {/* Service lamp (server-room/mac-studio) — red on failed units. */}
+        {(activeRoom === 'server-room' || activeRoom === 'mac-studio') && (
+          <ServiceLamp host={activeRoom === 'server-room' ? 'cloud' : 'mac'} state={serviceState[activeRoom === 'server-room' ? 'cloud' : 'mac']} />
+        )}
+
+        <RoomMiniFeed room={activeRoom} events={envelopesRef.current} />
       </div>
     </div>
   )
+}
+
+/** Small rack lamp reflecting the latest service_status for a host. */
+const ServiceLamp: React.FC<{ host: string; state?: 'active' | 'failed' | 'inactive' }> = ({ host, state }) => {
+  if (!state) return null
+  return (
+    <div className={`service-lamp service-${state}`} data-testid={`service-lamp-${host}`}>
+      <span className="service-lamp-dot" />
+      <span className="service-lamp-label">{host}: {state}</span>
+      {state === 'failed' && <span className="service-smoke">💨</span>}
+    </div>
+  )
+}
+
+/** Move a cast member to `room`, walking from that room's entry point. */
+function relocateAgent(prev: Agent[], id: string, room: RoomId): Agent[] {
+  return prev.map(a => {
+    if (a.id !== id) return a
+    if (a.room === room) return a
+    const spot = spotForRoom(room, id)
+    const entry = ROOMS[room].entryPoint
+    const target = { x: spot.x, y: spot.y }
+    return {
+      ...a,
+      room,
+      assignedRoom: room,
+      assignedSpotId: spot.id,
+      spriteFacing: spot.spriteFacing,
+      position: { x: entry.x, y: entry.y },
+      targetPosition: target,
+      deskPosition: target,
+      pathQueue: computePath(room, entry, target),
+      state: 'walking-to-desk',
+    }
+  })
 }
 
 /** Apply one internal office event to the agent list. */
@@ -278,12 +409,18 @@ function applyOfficeEvent(
       const task = raw.task ? String(raw.task) : undefined
       if (prev.some(a => a.id === id)) return prev
 
-      const spot = assignSpot(prev, MAIN_ROOM.agentSpots)
+      const room: RoomId = 'main-office'
+      const spot = assignSpot(prev.filter(a => a.room === room), ROOMS[room].agentSpots)
       if (!spot) return prev
       occupied.add(spot.id)
 
       const agent = createAgent({ id, name, role, task, spot })
-      return [...prev, { ...agent, pathQueue: computePath(agent.position, agent.targetPosition) }]
+      return [...prev, {
+        ...agent,
+        room,
+        assignedRoom: room,
+        pathQueue: computePath(room, agent.position, agent.targetPosition),
+      }]
     }
 
     case 'agent_working': {
@@ -302,12 +439,13 @@ function applyOfficeEvent(
       return prev.map(a => {
         if (a.id !== id) return a
         occupied.delete(a.assignedSpotId ?? '')
+        const exit = ROOMS[a.room].entryPoint
         return {
           ...a,
           state: 'completed' as const,
           statusText: status,
-          targetPosition: { ...DOOR_TARGET },
-          pathQueue: computePath(a.position, DOOR_TARGET),
+          targetPosition: { ...exit },
+          pathQueue: computePath(a.room, a.position, exit),
         }
       })
     }
@@ -315,18 +453,24 @@ function applyOfficeEvent(
     case 'mcp_call': {
       const id = ev.agentId
       if (!id) return prev
-      // Octo appears at the GitHub desk on git_push (mapped to mcp_call).
+      // Octo appears in the Mac Studio on git_push (mapped to mcp_call).
       const known = ['octo', 'cron-runner']
       if (known.includes(id) && !prev.some(a => a.id === id)) {
-        const spot = assignSpot(prev, MAIN_ROOM.agentSpots)
+        const room: RoomId = id === 'octo' ? 'mac-studio' : 'server-room'
+        const spot = assignSpot(prev.filter(a => a.room === room), ROOMS[room].agentSpots)
+          ?? ROOMS[room].agentSpots[0]
         if (!spot) return prev
         occupied.add(spot.id)
-        const agent = createAgent({
-          id, name: id, role: id,
-          task: ev.status,
-          spot,
-        })
-        return [...prev, { ...agent, pathQueue: computePath(agent.position, agent.targetPosition) }]
+        const agent = createAgent({ id, name: id, role: id, task: ev.status, spot })
+        return [...prev, {
+          ...agent,
+          room,
+          assignedRoom: room,
+          position: { ...ROOMS[room].entryPoint },
+          targetPosition: { x: spot.x, y: spot.y },
+          deskPosition: { x: spot.x, y: spot.y },
+          pathQueue: computePath(room, ROOMS[room].entryPoint, { x: spot.x, y: spot.y }),
+        }]
       }
       return prev.map(a => a.id === id
         ? { ...a, statusText: ev.status ?? 'mcp' }
