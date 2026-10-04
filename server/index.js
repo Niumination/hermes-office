@@ -232,6 +232,9 @@ const lastSeenTs = new Map(); // agent -> ts (kept after away, for "terakhir akt
 
 bus.on("event", (ev) => {
   if (ev.type === "agent_status" && ev.agent) {
+    // Watchdog-emitted 'away' events must not count as heartbeats
+    // (otherwise offline agents self-revive every 30s sweep).
+    if (ev.state === "away") return;
     const ts = ev.ts || Date.now();
     lastHeartbeat.set(ev.agent, ts);
     lastSeenTs.set(ev.agent, ts);
