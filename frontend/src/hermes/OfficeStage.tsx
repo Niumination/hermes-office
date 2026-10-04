@@ -151,6 +151,8 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
 
   // Active room shown on the single canvas (doors switch it).
   const [activeRoom, setActiveRoom] = useState<RoomId>('main-office')
+  // Recent envelopes for the per-room mini feed (kept in state so it re-renders).
+  const [recentEnvelopes, setRecentEnvelopes] = useState<HermesEnvelope[]>([])
   // Latest service_status per host → lamp colour in the thematic rooms.
   const [serviceState, setServiceState] = useState<Record<string, 'active' | 'failed' | 'inactive'>>({})
 
@@ -163,6 +165,7 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
     if (envelopesRef.current.length === 0) return
 
     const buf = envelopesRef.current
+    setRecentEnvelopes(prev => [...prev.slice(-29), ...buf])
     // Room routing + presence + service lamps (host-level state).
     setAgents(prev => {
       let next = prev
@@ -353,7 +356,7 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
           <ServiceLamp host={activeRoom === 'server-room' ? 'cloud' : 'mac'} state={serviceState[activeRoom === 'server-room' ? 'cloud' : 'mac']} />
         )}
 
-        <RoomMiniFeed room={activeRoom} events={envelopesRef.current} />
+        <RoomMiniFeed room={activeRoom} events={recentEnvelopes} />
       </div>
     </div>
   )
