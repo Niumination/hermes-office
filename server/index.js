@@ -214,10 +214,13 @@ wss.on("connection", (ws, req) => {
 // ---------------------------------------------------------------------------
 
 const lastHeartbeat = new Map(); // agent -> ts
+const lastSeenTs = new Map(); // agent -> ts (kept after away, for "terakhir aktif HH:MM")
 
 bus.on("event", (ev) => {
   if (ev.type === "agent_status" && ev.agent) {
-    lastHeartbeat.set(ev.agent, ev.ts || Date.now());
+    const ts = ev.ts || Date.now();
+    lastHeartbeat.set(ev.agent, ts);
+    lastSeenTs.set(ev.agent, ts);
   }
 });
 
@@ -226,10 +229,26 @@ setInterval(() => {
   for (const [agent, ts] of lastHeartbeat) {
     if (ts < cutoff) {
       lastHeartbeat.delete(agent);
-      emitInternal({ type: "agent_status", agent, state: "away" });
+      emitInternal({ type: "agent_status", agent, state: "away", lastSeenTs: lastSeenTs.get(agent) });
     }
   }
 }, 30_000).unref?.();
+
+// ---------------------------------------------------------------------------
+// Presence snapshot — GET /presence (any authenticated identity)
+// Exposes lastSeenTs so the UI can render "terakhir aktif HH:MM" for away agents.
+// ---------------------------------------------------------------------------
+
+app.get("/presence", requireAny, (_req, res) => {
+  const agents = {};
+  for (const [agent, ts] of lastSeenTs) {
+    agents[agent] = {
+      lastSeenTs: ts,
+      online: (lastHeartbeat.get(agent) ?? 0) >= Date.now() - 90_000,
+    };
+  }
+  res.json({ agents, watchdogMs: 90_000 });
+});
 
 // ---------------------------------------------------------------------------
 // GitHub poller
