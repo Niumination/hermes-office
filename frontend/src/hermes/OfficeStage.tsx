@@ -193,7 +193,7 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
           const name = String(d.agent ?? '')
           next = next.map(a => {
             if (a.id !== name) return a
-            if (d.state === 'away') return { ...a, offline: true, lastSeenTs: d.lastSeenTs ?? a.lastSeenTs ?? a.lastSeenTs }
+            if (d.state === 'away') return { ...a, offline: true, lastSeenTs: d.lastSeenTs ?? a.lastSeenTs }
             return { ...a, offline: false, lastSeenTs: Number(env.ts ?? Date.now()), state: d.state === 'working' ? 'working' : a.state }
           })
         }
