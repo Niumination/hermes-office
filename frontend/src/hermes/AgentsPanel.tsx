@@ -4,7 +4,7 @@
  * with status dots and current task. Click a row → detail popup with the
  * agent's last 5 events.
  */
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import type { HermesEnvelope } from './types'
 import { agentRoleForName } from './types'
 
@@ -71,7 +71,8 @@ export function buildRoster(events: HermesEnvelope[]): AgentRow[] {
         break
       }
       case 'agent_status': {
-        const name = String((e as any).agent ?? '')
+        const rawA = (e as any).agent
+        const name = typeof rawA === 'string' ? rawA : String(rawA?.id ?? rawA?.name ?? '')
         const stateRaw = String((e as any).state ?? 'idle')
         const row = byId.get(name) ?? { id: name, name, role: agentRoleForName(name), state: 'idle' as const }
         row.state = stateRaw === 'working' ? 'working' : stateRaw === 'away' ? 'away' : 'idle'
@@ -112,6 +113,29 @@ interface Props {
 export const AgentsPanel: React.FC<Props> = ({ events }) => {
   const [selected, setSelected] = useState<string | null>(null)
   const roster = buildRoster(events)
+
+  // Seed live presence from the server snapshot (WS has no history replay —
+  // without this, an agent that has been heartbeating since before page load
+  // shows the 'away' cast default until its next 30s heartbeat arrives).
+  const [presence, setPresence] = useState<Record<string, { online: boolean; lastSeenTs?: number }>>({})
+  useEffect(() => {
+    let stop = false
+    const load = async () => {
+      try {
+        const r = await fetch('/presence')
+        if (!r.ok || stop) return
+        const data = await r.json()
+        setPresence(data?.agents ?? {})
+      } catch { /* server unreachable — keep defaults */ }
+    }
+    load()
+    const id = setInterval(load, 30_000)
+    return () => { stop = true; clearInterval(id) }
+  }, [])
+  for (const row of roster) {
+    const p = presence[row.id]
+    if (p) row.state = p.online ? (row.state === 'away' ? 'idle' : row.state) : 'away'
+  }
 
   const selectedEvents = selected
     ? events.filter(e => {
