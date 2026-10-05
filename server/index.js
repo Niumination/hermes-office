@@ -98,6 +98,19 @@ app.get("/roster", requireAny, (_req, res) => {
   });
 });
 
+// Auto-guest: browsers without a session get a read-only guest session cookie
+// on first page load, so the live site shows real presence/chat without the
+// owner pasting tokens. Authenticated routes still honor stronger tokens.
+app.get("/", (req, res, next) => {
+  try {
+    if (!authenticate(req) && config.tokens.guest) {
+      const sid = createSession(config.tokens.guest);
+      if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid));
+    }
+  } catch {}
+  next();
+});
+
 // Session bootstrap for browsers (WS can't send headers): POST /auth/session
 // with Bearer token → HttpOnly office_session cookie used for WS + /chat.
 app.post("/auth/session", (req, res) => {
