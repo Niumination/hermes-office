@@ -106,16 +106,23 @@ cp -r bridges/hermes-cloud-hook ~/.hermes/hooks/office-bridge
 # aktif → perlu restart gateway dari DASHBOARD LightVela
 ```
 
-### 6.2 Mac relay (di Mac)
+### 6.2 Mac relay (di Mac) — TERPASANG ✓ (Okt 2026)
 
+Relay launchd `com.niumination.office-relay` aktif di Mac: men-tail `~/.hermes/a2a_audit.jsonl` + heartbeat **30s** → mac `online: true` di `/presence`. Log: `~/Library/Logs/office-relay.log`.
+
+Hardening A2A yang menyertai instalasi (detail tahapan: `bridges/mac-relay/MAC-PLAYBOOK-TONIGHT.md`):
+- `A2A_BEARER_TOKEN` dipindah ke `~/.hermes/.env` di Mac — terbukti survive cold boot (runs=1 setelah restart).
+- Token dihapus dari launchd plist; plist mode `600` tanpa token, `.bak` dihapus, `chmod 600 a2a-token.txt`.
+- `scripts/reload-gateway.sh` untuk reload aman (8/8 test pass).
+- Server side: `OFFICE_MAC_TOKEN` di `.env.office` adalah token relay yang sama dengan token A2A Mac (satu token dua arah). **Jangan pernah menulis nilai token di repo/docs.**
+
+Instal ulang dari nol (referensi):
 ```bash
 # salin bridges/mac-relay/ ke Mac, lalu:
 export OFFICE_URL=http://100.65.20.34:7333/event
 export OFFICE_TOKEN=<OFFICE_MAC_TOKEN>
 bash mac-relay.sh install   # → menaruh launchd plist + load
 ```
-
-Relay membaca `~/.hermes/a2a_audit.jsonl` + heartbeat file. Log: `~/Library/Logs/office-relay.log`.
 
 ## 7. Update / Rollback
 
@@ -170,6 +177,14 @@ Thread ID topik juga dipakai relay laporan warga agroclimate (`POST /api/reports
 | Chat tidak menjawab | Hermes API down / token | cek `HERMES_API` reachable dari office-server |
 | OOM / memory naik | ring buffer bocor | cek retention job; restart |
 
+### 10.1 Gotcha presence & auth (dual-space era)
+
+- **Karakter mac selalu tampil `away` di browser** — dua akar masalah yang sudah diperbaiki, keduanya perlu diingat saat debugging:
+  1. *AgentsPanel default away*: WS tidak me-replay history, jadi presence hanya diketahui setelah heartbeat berikutnya. Frontend kini **seed live presence dari `GET /presence` saat mount** (`GET /presence` tanpa token auth owner pun jalan dengan session guest/auto-guest).
+  2. *`agent_status.agent` bisa objek atau string*: kalau bridge mengirim objek `{name, id}`, Map presence pakai `[object Object]` sebagai key → presence tidak pernah match. Fix: key Map pakai `id`/`name` (commit `ccd592b`), dan AgentsPanel parse + seed `/presence` (`bef4b6f`). Kalau mac tampak away padahal relay hidup, cek dulu bentuk payload `agent` dan `curl /presence`.
+- **WS 401 / offline di browser (publik funnel)** — event `agent_status` & endpoint auth-sensitive ditolak kalau browser tidak punya session. Sejak auto-guest (commit `c8570bd`), `GET /` otomatis membuat **session guest read-only** via cookie dari `OFFICE_GUEST_TOKEN` (wajib terisi di `.env.office`), sehingga halaman publik menampilkan presence nyata tanpa owner token. Kalau presence kosong di browser publik: pastikan `OFFICE_GUEST_TOKEN` terisi di `.env.office`, cookie session terkirim (same-origin funnel), dan origin funnel ada di `ALLOWED_ORIGINS`.
+- **Auto-guest behavior**: guest = read-only — presence + feed tampil, chat ke agent dan detail event owner-only tidak. Jangan berikan `OFFICE_OWNER_TOKEN` ke browser publik untuk "memperbaiki" ini; auto-guest memang desainnya begitu.
+
 ## 11. Status Deployment Aktual (Okt 2026)
 
 | Komponen | Status |
@@ -179,7 +194,9 @@ Thread ID topik juga dipakai relay laporan warga agroclimate (`POST /api/reports
 | Unit funnel | `~/.config/systemd/user/tailscale-funnel.service` (enabled, linger=yes) |
 | `ALLOWED_ORIGINS` | funnel origin + office.lightvela.ai + 127.0.0.1:7333 |
 | Cloud hook | `~/.hermes/hooks/office-bridge` AKTIF — token `OFFICE_CLOUD_TOKEN` di `~/.hermes/.env` |
-| Mac relay | siap, belum ter-install (menunggu Mac online) |
+| Mac relay | **TERPASANG di Mac** — launchd `com.niumination.office-relay`, heartbeat 30s, mac online di `/presence`; A2A token di `~/.hermes/.env` Mac (bukan di plist) |
+| Auto-guest | `GET /` membuat session guest read-only (cookie, `OFFICE_GUEST_TOKEN` di `.env.office`) — live site tampil presence nyata tanpa owner token |
+| Dual-space | M-A selesai: ruang server-room ☁️ + mac-studio 💻, RoomMiniFeed, presence offline + badge "terakhir aktif" |
 | Health | `curl -s http://127.0.0.1:7333/health` |
 
 Catatan gotcha yang pernah terjadi:
