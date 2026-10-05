@@ -22,3 +22,24 @@
   whitelist) + field opsional `agent_status.metrics` (numeric clamp) dan
   `agent_status.lastSeenTs` — lihat `docs/EVENTS.md` §3, §8. Guest sanitization
   untuk `service_status.detail`.
+
+### Fix presence & auth (ccd592b, bef4b6f, c8570bd)
+
+- **`agent_status.agent` bisa objek atau string** — Map presence dulu pakai
+  `[object Object]` sebagai key; kini key = `agent.id ?? agent.name ?? agent`
+  (server + frontend OfficeStage parse sama).
+- **AgentsPanel seed live presence dari `GET /presence` saat mount** — WS tidak
+  me-replay history, jadi mac tidak lagi tampil `away` default setelah load.
+- **Auto-guest session**: `GET /` otomatis membuat session guest read-only
+  (cookie dari `OFFICE_GUEST_TOKEN`, kini wajib terisi di `.env.office`) —
+  live site publik menampilkan presence nyata tanpa owner token.
+
+### Mac: mac-relay terpasang + hardening A2A (Okt 2026)
+
+- launchd `com.niumination.office-relay` aktif di Mac — tail audit log A2A +
+  heartbeat 30s → mac `online: true` di `/presence`.
+- Hardening A2A: `A2A_BEARER_TOKEN` dipindah ke `~/.hermes/.env` di Mac
+  (terbukti survive cold boot), dihapus dari plist (plist 600 tanpa token,
+  `.bak` dihapus), `chmod 600 a2a-token.txt`, `scripts/reload-gateway.sh` 8/8 test.
+- Token relay server = token A2A Mac (`OFFICE_MAC_TOKEN` di `.env.office`) —
+  satu token dua arah. Panduan: `bridges/mac-relay/MAC-PLAYBOOK-TONIGHT.md`.

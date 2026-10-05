@@ -107,6 +107,7 @@ Heartbeat 30s dari tiap instance (di-set oleh bridge).
 { "type": "agent_status", "agent": "mac", "state": "idle", "uptimeH": 26.4 }
 ```
 `state`: `idle | working | away`. Server menandai `away` otomatis bila tidak ada heartbeat 90s.
+Field `agent` boleh berupa **string** (`"mac"`) atau **objek** (`{name, id, role}`) — server & frontend mengambil key presence dari `agent.id ?? agent.name ?? agent` (jangan pernah mem-objek langsung sebagai Map key).
 
 Field opsional (DUAL-SPACE-DESIGN §2.2, backward-compatible):
 - `lastSeenTs` — di-set server saat emit `away` (watchdog), agar UI bisa menampilkan "terakhir aktif HH:MM" tanpa query ulang. Server juga menyimpan snapshot di `GET /presence`.
