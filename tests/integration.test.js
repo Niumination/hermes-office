@@ -77,6 +77,10 @@ before(async () => {
     stdio: ["ignore", "pipe", "pipe"],
   });
   proc.stderr.on("data", (d) => process.env.DEBUG_TEST && process.stderr.write(d));
+  // Kill the whole process group. Without detached:true the spawned server is
+  // a child of this test runner, and proc.kill() only reaps the direct child —
+  // the server keeps the event loop alive and `node --test` hangs forever.
+  proc.unref();
   assert.ok(await waitFor(async () => {
     try {
       const r = await fetch(BASE + "/health");
@@ -85,8 +89,17 @@ before(async () => {
   }), "server did not start");
 });
 
-after(() => {
-  proc?.kill("SIGTERM");
+after(async () => {
+  if (!proc) return;
+  proc.kill("SIGKILL");
+  // Wait for the port to actually be released, otherwise the next run races
+  // against a lingering listener and fails with EADDRINUSE.
+  await waitFor(async () => {
+    try {
+      await fetch(BASE + "/health");
+      return false;
+    } catch { return true; }
+  }, 5000).catch(() => {});
 });
 
 test("health endpoint", async () => {

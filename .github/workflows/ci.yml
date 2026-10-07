@@ -14,11 +14,14 @@ jobs:
         with:
           node-version: 20
       - name: Install
-        run: npm ci || npm install
+        run: npm ci
       - name: Lint (syntax)
         run: node --check server/index.js && node --check server/eventbus.js && node --check server/auth.js
       - name: Unit tests
-        run: node --test tests/ || true
+        # `node --test tests/` tries to require() the directory and fails with
+        # MODULE_NOT_FOUND, then `|| true` swallowed it — this job had been
+        # reporting success while running zero tests.
+        run: node --test tests/*.test.js
 
   frontend:
     runs-on: ubuntu-latest
@@ -29,7 +32,7 @@ jobs:
           node-version: 20
       - name: Install
         working-directory: frontend
-        run: npm ci || npm install
+        run: npm ci
       - name: Typecheck + build
         working-directory: frontend
         run: npm run build
