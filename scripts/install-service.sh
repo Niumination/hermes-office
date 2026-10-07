@@ -25,6 +25,14 @@ EnvironmentFile=$REPO_DIR/.env.office
 ExecStart=/usr/bin/env node $REPO_DIR/server/index.js
 Restart=always
 RestartSec=5
+
+# The server drains WebSockets and exits within ~5s (see scripts/check-shutdown.sh).
+# Default TimeoutStopSec is 90s; cap it so a wedged process is killed fast
+# instead of stalling every deploy.
+TimeoutStopSec=10
+KillSignal=SIGTERM
+# Only signal the main process — let it close its own children cleanly.
+KillMode=mixed
 NoNewPrivileges=true
 PrivateTmp=true
 

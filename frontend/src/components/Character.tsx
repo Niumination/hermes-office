@@ -3,7 +3,7 @@ import { Agent, AgentState } from '../types'
 import SpeechBubble from './SpeechBubble'
 import EffectBubble from './EffectBubble'
 import { getEffect } from '../agentManager'
-import { ROLE_TO_CHAR } from '../config'
+import { ROLE_TO_CHAR, archetypeFor } from '../config'
 
 export { ROLE_TO_CHAR }
 
@@ -38,6 +38,12 @@ function getDirectionFromDelta(dx: number, dy: number): SpriteDirection {
 
 function getCharBase(role: string): string {
   return ROLE_TO_CHAR[role] ?? 'employee-3'
+}
+
+// The donghua cast lives in its own directory so the upstream sprites stay on
+// disk untouched and the swap is one path, reversible in a line.
+function getDonghuaBase(role: string): string {
+  return archetypeFor(role)
 }
 
 function getAnimState(state: AgentState): string {
@@ -141,11 +147,11 @@ const Character: React.FC<CharacterProps> = ({ agent, idleDurationMs = 0, zIndex
   }, [agent.state])
 
   const animState = getAnimState(agent.state)
-  const charBase = getCharBase(agent.role)
-  const spriteSrc = `/sprites/characters/${charBase}-${directionRef.current}.png`
+  const charBase = getDonghuaBase(agent.role)
+  const spriteSrc = `/sprites/donghua/${charBase}-${directionRef.current}.webp`
 
   const effectSrc = isTyping
-    ? '/sprites/effects/typing.png'
+    ? '/sprites/effects/typing.webp'
     : getEffect(agent.state, idleDurationMs, agent.statusText, agent.id, agent.task, agent.role)
 
   return (
@@ -175,7 +181,7 @@ const Character: React.FC<CharacterProps> = ({ agent, idleDurationMs = 0, zIndex
           alt={agent.name}
           className="char-sprite"
           style={{
-            height: agent.id.startsWith('boss-') ? 85 : 78,
+            height: agent.id.startsWith('boss-') ? 104 : 96,
             width: 'auto',
             filter: `${agent.offline ? 'grayscale(1) opacity(0.55) ' : ''}drop-shadow(0 0 1px ${agent.color}) drop-shadow(0 0 0.5px #000)`,
             animationDelay: `${(agent.id.charCodeAt(0) * 0.37) % 3}s`,

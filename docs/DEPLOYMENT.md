@@ -92,8 +92,8 @@ sudo tailscale funnel --bg 7333
 - Rewrite `/office/(.*) → /$1` (frontend harus di-build dengan `base: '/office/'`)
 
 **Opsi C: Tailscale-only** (tanpa expose publik)
-- Akses `http://100.65.20.34:7333` dari device tailnet
-- Set `ALLOWED_ORIGINS=http://100.65.20.34:7333`
+- Akses `http://<office-host>:7333` dari device tailnet
+- Set `ALLOWED_ORIGINS=http://<office-host>:7333`
 
 ## 6. Bridges Setup
 
@@ -106,23 +106,16 @@ cp -r bridges/hermes-cloud-hook ~/.hermes/hooks/office-bridge
 # aktif → perlu restart gateway dari DASHBOARD LightVela
 ```
 
-### 6.2 Mac relay (di Mac) — TERPASANG ✓ (Okt 2026)
+### 6.2 Mac relay (di Mac)
 
-Relay launchd `com.niumination.office-relay` aktif di Mac: men-tail `~/.hermes/a2a_audit.jsonl` + heartbeat **30s** → mac `online: true` di `/presence`. Log: `~/Library/Logs/office-relay.log`.
-
-Hardening A2A yang menyertai instalasi (detail tahapan: `bridges/mac-relay/MAC-PLAYBOOK-TONIGHT.md`):
-- `A2A_BEARER_TOKEN` dipindah ke `~/.hermes/.env` di Mac — terbukti survive cold boot (runs=1 setelah restart).
-- Token dihapus dari launchd plist; plist mode `600` tanpa token, `.bak` dihapus, `chmod 600 a2a-token.txt`.
-- `scripts/reload-gateway.sh` untuk reload aman (8/8 test pass).
-- Server side: `OFFICE_MAC_TOKEN` di `.env.office` adalah token relay yang sama dengan token A2A Mac (satu token dua arah). **Jangan pernah menulis nilai token di repo/docs.**
-
-Instal ulang dari nol (referensi):
 ```bash
 # salin bridges/mac-relay/ ke Mac, lalu:
-export OFFICE_URL=http://100.65.20.34:7333/event
+export OFFICE_URL=http://<office-host>:7333/event
 export OFFICE_TOKEN=<OFFICE_MAC_TOKEN>
 bash mac-relay.sh install   # → menaruh launchd plist + load
 ```
+
+Relay membaca `~/.hermes/a2a_audit.jsonl` + heartbeat file. Log: `~/Library/Logs/office-relay.log`.
 
 ## 7. Update / Rollback
 
@@ -177,13 +170,25 @@ Thread ID topik juga dipakai relay laporan warga agroclimate (`POST /api/reports
 | Chat tidak menjawab | Hermes API down / token | cek `HERMES_API` reachable dari office-server |
 | OOM / memory naik | ring buffer bocor | cek retention job; restart |
 
-### 10.1 Gotcha presence & auth (dual-space era)
+### 10.1 Gotcha presence & auth (era dual-space)
 
-- **Karakter mac selalu tampil `away` di browser** — dua akar masalah yang sudah diperbaiki, keduanya perlu diingat saat debugging:
-  1. *AgentsPanel default away*: WS tidak me-replay history, jadi presence hanya diketahui setelah heartbeat berikutnya. Frontend kini **seed live presence dari `GET /presence` saat mount** (`GET /presence` tanpa token auth owner pun jalan dengan session guest/auto-guest).
-  2. *`agent_status.agent` bisa objek atau string*: kalau bridge mengirim objek `{name, id}`, Map presence pakai `[object Object]` sebagai key → presence tidak pernah match. Fix: key Map pakai `id`/`name` (commit `ccd592b`), dan AgentsPanel parse + seed `/presence` (`bef4b6f`). Kalau mac tampak away padahal relay hidup, cek dulu bentuk payload `agent` dan `curl /presence`.
-- **WS 401 / offline di browser (publik funnel)** — event `agent_status` & endpoint auth-sensitive ditolak kalau browser tidak punya session. Sejak auto-guest (commit `c8570bd`), `GET /` otomatis membuat **session guest read-only** via cookie dari `OFFICE_GUEST_TOKEN` (wajib terisi di `.env.office`), sehingga halaman publik menampilkan presence nyata tanpa owner token. Kalau presence kosong di browser publik: pastikan `OFFICE_GUEST_TOKEN` terisi di `.env.office`, cookie session terkirim (same-origin funnel), dan origin funnel ada di `ALLOWED_ORIGINS`.
-- **Auto-guest behavior**: guest = read-only — presence + feed tampil, chat ke agent dan detail event owner-only tidak. Jangan berikan `OFFICE_OWNER_TOKEN` ke browser publik untuk "memperbaiki" ini; auto-guest memang desainnya begitu.
+- **Karakter mac selalu tampil `away` di browser** — dua akar masalah:
+  1. *AgentsPanel default away*: WS tidak me-replay history, jadi presence baru
+     diketahui setelah heartbeat berikutnya. Frontend kini **seed presence dari
+     `GET /presence` saat mount**.
+  2. *`agent_status.agent` bisa objek atau string*: bila bridge mengirim objek
+     `{name, id}`, Map presence memakai `[object Object]` sebagai key → tidak
+     pernah match. Fork ini sempat punya bug kebalikannya — ia **mensyaratkan**
+     string sehingga membuang heartbeat bentuk-objek diam-diam, termasuk setiap
+     `agent_spawned` yang `agent`-nya objek menurut skema. Keduanya diperbaiki
+     dengan menormalkan ke `id ?? name`.
+- **Auto-guest**: `GET /` menerbitkan session guest read-only dari
+  `OFFICE_GUEST_TOKEN` (wajib terisi). Guest = read-only: presence + feed
+  tampil; chat ke agent, detail event, **dan seluruh permukaan audit** tidak.
+  Jangan memberikan `OFFICE_OWNER_TOKEN` ke browser publik untuk
+  "memperbaiki" ini — auto-guest memang desainnya begitu.
+- **Konsekuensi keamanan auto-guest**: karena funnel bersifat publik, redaksi
+  guest adalah satu-satunya batas. Lihat docs/SECURITY.md §3 dan §9a.
 
 ## 11. Status Deployment Aktual (Okt 2026)
 
@@ -194,11 +199,44 @@ Thread ID topik juga dipakai relay laporan warga agroclimate (`POST /api/reports
 | Unit funnel | `~/.config/systemd/user/tailscale-funnel.service` (enabled, linger=yes) |
 | `ALLOWED_ORIGINS` | funnel origin + office.lightvela.ai + 127.0.0.1:7333 |
 | Cloud hook | `~/.hermes/hooks/office-bridge` AKTIF — token `OFFICE_CLOUD_TOKEN` di `~/.hermes/.env` |
-| Mac relay | **TERPASANG di Mac** — launchd `com.niumination.office-relay`, heartbeat 30s, mac online di `/presence`; A2A token di `~/.hermes/.env` Mac (bukan di plist) |
-| Auto-guest | `GET /` membuat session guest read-only (cookie, `OFFICE_GUEST_TOKEN` di `.env.office`) — live site tampil presence nyata tanpa owner token |
-| Dual-space | M-A selesai: ruang server-room ☁️ + mac-studio 💻, RoomMiniFeed, presence offline + badge "terakhir aktif" |
+| Mac relay | siap, belum ter-install (menunggu Mac online) |
 | Health | `curl -s http://127.0.0.1:7333/health` |
 
 Catatan gotcha yang pernah terjadi:
 - Blank page saat funnel baru aktif → penyebab: origin `*.tailec8707.ts.net` belum di `ALLOWED_ORIGINS` → 403 pada asset JS.
 - Hook diam (tidak kirim event) → penyebab: `OFFICE_CLOUD_TOKEN` belum ada di `~/.hermes/.env`.
+
+
+---
+
+## Penambatan ledger (Fase 11)
+
+Aktif secara default dengan berkas lokal saja. Itu **lemah** — berkasnya ada
+di disk yang sama dengan ledger. Untuk deployment yang akan diaudit, pasang
+minimal satu webhook independen:
+
+```bash
+OFFICE_ANCHOR_WEBHOOKS=https://audit.contoh.com/v1/anchor,https://hooks.slack.com/services/XXX
+OFFICE_ANCHOR_INTERVAL_MS=900000     # 15 menit
+```
+
+Setiap sink menerima `POST` berisi `{seq, hash, records, ts, note}`. Hanya
+balasan **2xx** yang dihitung sebagai tertambat; 404 dicatat sebagai gagal.
+URL diredaksi (kredensial dan query string dibuang) sebelum muncul di
+`GET /ledger/anchors` atau di log — token webhook hidup di query string.
+
+**Tambatkan secara manual sebelum mengekspor dosier:**
+
+```bash
+curl -X POST -H "Authorization: Bearer $OWNER" \
+     -H 'content-type: application/json' \
+     -d '{"note":"pra-ekspor Q4"}' \
+     https://office.example.com/ledger/anchor
+```
+
+Balasan **207** berarti sebagian sink gagal — Anda tertambat, tapi tidak di
+semua tempat yang Anda minta. Jangan perlakukan 207 sebagai sukses.
+
+`GET /ledger/verify` kini memuat `anchors` dan satu bidang ringkas
+`trustworthy` = konsisten-internal **dan** konsisten-tambatan. Pantau bidang
+itu, bukan `ok` — `ok` tetap `true` pada rantai yang dipotong.

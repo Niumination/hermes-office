@@ -1,3 +1,10 @@
+/* eslint-disable require-atomic-updates --
+ * `running`, `orgEtag` and `ownerPath` are module-scoped poller state mutated
+ * across awaits. The `if (running) return` guard at the top of poll() is the
+ * reentrancy lock, and Node's single-threaded event loop makes the
+ * check-then-set atomic. The rule cannot see that invariant.
+ */
+
 /**
  * github.js — poller for GITHUB_ORG repos (ETag caching, ARCHITECTURE.md §3.3).
  * Emits git_push events when pushed_at changes on a watched repo.
@@ -26,12 +33,32 @@ export function createGithubPoller(ingest) {
     return { data: await resp.json(), etag: resp.headers.get("etag") };
   }
 
+  // The repo-list endpoint differs for a User vs an Organization. Hardcoding
+  // /orgs/ made this poller 404 forever against a personal account (the error
+  // was swallowed and retried every 60s). Resolve the account type once and
+  // cache it; GITHUB_OWNER_TYPE can override if the probe is ever rate-limited.
+  let ownerPath = null;
+
+  async function resolveOwnerPath() {
+    if (ownerPath) return ownerPath;
+    const forced = (config.githubOwnerType || "").toLowerCase();
+    if (forced === "user" || forced === "org" || forced === "organization") {
+      ownerPath = forced === "user" ? "users" : "orgs";
+      return ownerPath;
+    }
+    const { data } = await gh(`/users/${config.githubOrg}`);
+    ownerPath = data?.type === "Organization" ? "orgs" : "users";
+    console.log(`[github] ${config.githubOrg} resolved as ${data?.type || "User"} → /${ownerPath}/`);
+    return ownerPath;
+  }
+
   async function poll() {
     if (running) return;
     running = true;
     try {
+      const base = await resolveOwnerPath();
       const org = await gh(
-        `/orgs/${config.githubOrg}/repos?sort=pushed&per_page=100`,
+        `/${base}/${config.githubOrg}/repos?sort=pushed&per_page=100`,
         orgEtag
       );
       if (org.notModified) return;

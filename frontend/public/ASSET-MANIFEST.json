@@ -1,0 +1,1308 @@
+{
+  "source": "hermes-office-main-2.zip (upstream ZIP2)",
+  "note": "Daftar lengkap aset upstream. Dipakai scripts/check-assets.sh untuk membuktikan tidak ada aset yang jatuh saat pipeline konversi WebP, tanpa perlu menyimpan 90 MB ZIP di workspace.",
+  "count": 258,
+  "assets": [
+    {
+      "path": "sprites/debugger-walk-0.png",
+      "bytes": 296962,
+      "sha256_16": "6ed4b719f2048929"
+    },
+    {
+      "path": "sprites/debugger-walk-1.png",
+      "bytes": 257110,
+      "sha256_16": "9748fb88d95eb0dd"
+    },
+    {
+      "path": "sprites/debugger-walk-2.png",
+      "bytes": 257265,
+      "sha256_16": "a01cc1236a8259f5"
+    },
+    {
+      "path": "sprites/debugger-walk-3.png",
+      "bytes": 297630,
+      "sha256_16": "dda5f20c83536eb7"
+    },
+    {
+      "path": "sprites/debugger.png",
+      "bytes": 297630,
+      "sha256_16": "dda5f20c83536eb7"
+    },
+    {
+      "path": "sprites/devops-walk-0.png",
+      "bytes": 315452,
+      "sha256_16": "40b1c07721ab36a6"
+    },
+    {
+      "path": "sprites/devops-walk-1.png",
+      "bytes": 272152,
+      "sha256_16": "ed28f05e6d5f766c"
+    },
+    {
+      "path": "sprites/devops-walk-2.png",
+      "bytes": 271629,
+      "sha256_16": "a0adabd279f86fed"
+    },
+    {
+      "path": "sprites/devops-walk-3.png",
+      "bytes": 316676,
+      "sha256_16": "1bcafffd7d345c39"
+    },
+    {
+      "path": "sprites/devops.png",
+      "bytes": 316676,
+      "sha256_16": "1bcafffd7d345c39"
+    },
+    {
+      "path": "sprites/frontend-walk-0.png",
+      "bytes": 328441,
+      "sha256_16": "742aac868dc6abba"
+    },
+    {
+      "path": "sprites/frontend-walk-1.png",
+      "bytes": 282652,
+      "sha256_16": "f86ee32514d70bdb"
+    },
+    {
+      "path": "sprites/frontend-walk-2.png",
+      "bytes": 283195,
+      "sha256_16": "44fa6b482b5d65df"
+    },
+    {
+      "path": "sprites/frontend-walk-3.png",
+      "bytes": 328482,
+      "sha256_16": "d68560bf5597842e"
+    },
+    {
+      "path": "sprites/frontend.png",
+      "bytes": 328482,
+      "sha256_16": "d68560bf5597842e"
+    },
+    {
+      "path": "sprites/fullstack-walk-0.png",
+      "bytes": 377734,
+      "sha256_16": "1684c7226e470d35"
+    },
+    {
+      "path": "sprites/fullstack-walk-1.png",
+      "bytes": 354679,
+      "sha256_16": "700f098c15d40974"
+    },
+    {
+      "path": "sprites/fullstack-walk-2.png",
+      "bytes": 354769,
+      "sha256_16": "caca14e292dd0b7a"
+    },
+    {
+      "path": "sprites/fullstack-walk-3.png",
+      "bytes": 377386,
+      "sha256_16": "8afa320185adc413"
+    },
+    {
+      "path": "sprites/fullstack.png",
+      "bytes": 377386,
+      "sha256_16": "8afa320185adc413"
+    },
+    {
+      "path": "sprites/manager.png",
+      "bytes": 377426,
+      "sha256_16": "9ee5519af08927dd"
+    },
+    {
+      "path": "sprites/reviewer-walk-0.png",
+      "bytes": 297168,
+      "sha256_16": "8a9645b140e23103"
+    },
+    {
+      "path": "sprites/reviewer-walk-1.png",
+      "bytes": 282862,
+      "sha256_16": "395c4d00eab54674"
+    },
+    {
+      "path": "sprites/reviewer-walk-2.png",
+      "bytes": 282925,
+      "sha256_16": "2ad0c4b88c63250c"
+    },
+    {
+      "path": "sprites/reviewer-walk-3.png",
+      "bytes": 297056,
+      "sha256_16": "11115a18c68b7cc0"
+    },
+    {
+      "path": "sprites/reviewer.png",
+      "bytes": 297056,
+      "sha256_16": "11115a18c68b7cc0"
+    },
+    {
+      "path": "sprites/security-walk-0.png",
+      "bytes": 358561,
+      "sha256_16": "d202c5ce29843651"
+    },
+    {
+      "path": "sprites/security-walk-1.png",
+      "bytes": 317891,
+      "sha256_16": "cfab74328b745ecb"
+    },
+    {
+      "path": "sprites/security-walk-2.png",
+      "bytes": 317717,
+      "sha256_16": "b5bf4013474d1790"
+    },
+    {
+      "path": "sprites/security-walk-3.png",
+      "bytes": 359107,
+      "sha256_16": "1ce7142ca3ef96c7"
+    },
+    {
+      "path": "sprites/security.png",
+      "bytes": 359107,
+      "sha256_16": "1ce7142ca3ef96c7"
+    },
+    {
+      "path": "sprites/tester-walk-0.png",
+      "bytes": 293940,
+      "sha256_16": "89dc066b0e615638"
+    },
+    {
+      "path": "sprites/tester-walk-1.png",
+      "bytes": 257495,
+      "sha256_16": "77ccba426876dd75"
+    },
+    {
+      "path": "sprites/tester-walk-2.png",
+      "bytes": 257498,
+      "sha256_16": "ae83afb707b03385"
+    },
+    {
+      "path": "sprites/tester-walk-3.png",
+      "bytes": 293503,
+      "sha256_16": "5a965b563d2bd8cf"
+    },
+    {
+      "path": "sprites/tester.png",
+      "bytes": 293503,
+      "sha256_16": "5a965b563d2bd8cf"
+    },
+    {
+      "path": "sprites/office/props/cpr-dummy-mask.png",
+      "bytes": 39499,
+      "sha256_16": "09fc39bc9b119e93"
+    },
+    {
+      "path": "sprites/office/props/dunder-mifflin-logo.png",
+      "bytes": 52894,
+      "sha256_16": "c297eca9d1814dbb"
+    },
+    {
+      "path": "sprites/office/props/dunder-mifflin-paper-box.png",
+      "bytes": 263838,
+      "sha256_16": "7aa3f08b2ffd6c6a"
+    },
+    {
+      "path": "sprites/office/props/dundie-award.png",
+      "bytes": 41116,
+      "sha256_16": "f9a19dc187c95e93"
+    },
+    {
+      "path": "sprites/office/props/finer-things-club.png",
+      "bytes": 57446,
+      "sha256_16": "1cab3a1739fc0751"
+    },
+    {
+      "path": "sprites/office/props/fire-alarm.png",
+      "bytes": 95292,
+      "sha256_16": "97cbeed9b0306b54"
+    },
+    {
+      "path": "sprites/office/props/golden-ticket-box.png",
+      "bytes": 66621,
+      "sha256_16": "33b46be8d006dfa8"
+    },
+    {
+      "path": "sprites/office/props/jello-stapler.png",
+      "bytes": 33756,
+      "sha256_16": "f5bfd34c15d19f4d"
+    },
+    {
+      "path": "sprites/office/props/lumpy.png",
+      "bytes": 43442,
+      "sha256_16": "07ce26fd614d1745"
+    },
+    {
+      "path": "sprites/office/props/no-god-please-no.png",
+      "bytes": 20244,
+      "sha256_16": "19d9d8c8ab794b30"
+    },
+    {
+      "path": "sprites/office/props/pretzel-day.png",
+      "bytes": 66013,
+      "sha256_16": "9b00f58055a709e0"
+    },
+    {
+      "path": "sprites/office/props/prison-mike.png",
+      "bytes": 11165,
+      "sha256_16": "c3f66917532af96b"
+    },
+    {
+      "path": "sprites/office/props/schrute-buck.png",
+      "bytes": 49536,
+      "sha256_16": "a4d480f8d86c7e4c"
+    },
+    {
+      "path": "sprites/office/props/serenity-by-jan-candle.png",
+      "bytes": 60163,
+      "sha256_16": "c7a8de28a6ab808a"
+    },
+    {
+      "path": "sprites/office/props/worlds-best-boss-mug.png",
+      "bytes": 54133,
+      "sha256_16": "25f4e294c4e84b5e"
+    },
+    {
+      "path": "sprites/office/characters/andy-bernard-front-left.png",
+      "bytes": 129293,
+      "sha256_16": "06fa4e4968e93041"
+    },
+    {
+      "path": "sprites/office/characters/andy-bernard-front-right.png",
+      "bytes": 127233,
+      "sha256_16": "bd24a07529526f82"
+    },
+    {
+      "path": "sprites/office/characters/andy-bernard-rear-left.png",
+      "bytes": 113155,
+      "sha256_16": "c3343e27e6baf7df"
+    },
+    {
+      "path": "sprites/office/characters/andy-bernard-rear-right.png",
+      "bytes": 112622,
+      "sha256_16": "b298cb9f028e80a0"
+    },
+    {
+      "path": "sprites/office/characters/angela-martin-front-left.png",
+      "bytes": 123090,
+      "sha256_16": "502f918a0b9c9e8e"
+    },
+    {
+      "path": "sprites/office/characters/angela-martin-front-right.png",
+      "bytes": 122363,
+      "sha256_16": "deec485ae1472672"
+    },
+    {
+      "path": "sprites/office/characters/angela-martin-rear-left.png",
+      "bytes": 112389,
+      "sha256_16": "c4d2b55b2f579de8"
+    },
+    {
+      "path": "sprites/office/characters/angela-martin-rear-right.png",
+      "bytes": 113501,
+      "sha256_16": "066aa428c751f21d"
+    },
+    {
+      "path": "sprites/office/characters/bob-vance-front-left.png",
+      "bytes": 178536,
+      "sha256_16": "661cb0bb7bb7e272"
+    },
+    {
+      "path": "sprites/office/characters/bob-vance-front-right.png",
+      "bytes": 178412,
+      "sha256_16": "3e0f19e3a649dff1"
+    },
+    {
+      "path": "sprites/office/characters/bob-vance-rear-left.png",
+      "bytes": 178928,
+      "sha256_16": "05f5877a25629601"
+    },
+    {
+      "path": "sprites/office/characters/bob-vance-rear-right.png",
+      "bytes": 179346,
+      "sha256_16": "db4a46d37cdb17bf"
+    },
+    {
+      "path": "sprites/office/characters/carol-stills-front-left.png",
+      "bytes": 195866,
+      "sha256_16": "cae2086823905053"
+    },
+    {
+      "path": "sprites/office/characters/carol-stills-front-right.png",
+      "bytes": 195481,
+      "sha256_16": "10f816745a6b37bf"
+    },
+    {
+      "path": "sprites/office/characters/carol-stills-rear-left.png",
+      "bytes": 190434,
+      "sha256_16": "02f5f641eebedc0f"
+    },
+    {
+      "path": "sprites/office/characters/carol-stills-rear-right.png",
+      "bytes": 190898,
+      "sha256_16": "161c93e46433d228"
+    },
+    {
+      "path": "sprites/office/characters/creed-bratton-front-left.png",
+      "bytes": 125622,
+      "sha256_16": "082140c9a28efd01"
+    },
+    {
+      "path": "sprites/office/characters/creed-bratton-front-right.png",
+      "bytes": 123397,
+      "sha256_16": "b3dab8c125fe4959"
+    },
+    {
+      "path": "sprites/office/characters/creed-bratton-rear-left.png",
+      "bytes": 109673,
+      "sha256_16": "c2f90d9490575667"
+    },
+    {
+      "path": "sprites/office/characters/creed-bratton-rear-right.png",
+      "bytes": 109368,
+      "sha256_16": "3185914e1ffde8eb"
+    },
+    {
+      "path": "sprites/office/characters/darryl-philbin-front-left.png",
+      "bytes": 130244,
+      "sha256_16": "b24e4ae03ec08f24"
+    },
+    {
+      "path": "sprites/office/characters/darryl-philbin-front-right.png",
+      "bytes": 129051,
+      "sha256_16": "4c4ec93d639d466a"
+    },
+    {
+      "path": "sprites/office/characters/darryl-philbin-rear-left.png",
+      "bytes": 112308,
+      "sha256_16": "498d0b693c90e63d"
+    },
+    {
+      "path": "sprites/office/characters/darryl-philbin-rear-right.png",
+      "bytes": 111759,
+      "sha256_16": "5a09c3c9893e428b"
+    },
+    {
+      "path": "sprites/office/characters/david-wallace-front-left.png",
+      "bytes": 180371,
+      "sha256_16": "5fcd5ba21fd56d7d"
+    },
+    {
+      "path": "sprites/office/characters/david-wallace-front-right.png",
+      "bytes": 180129,
+      "sha256_16": "836d8e0a3bc39b2a"
+    },
+    {
+      "path": "sprites/office/characters/david-wallace-rear-left.png",
+      "bytes": 177183,
+      "sha256_16": "c91eee71d315de86"
+    },
+    {
+      "path": "sprites/office/characters/david-wallace-rear-right.png",
+      "bytes": 177370,
+      "sha256_16": "c4de74ae0ab9b8cd"
+    },
+    {
+      "path": "sprites/office/characters/dwight-schrute-front-left.png",
+      "bytes": 121336,
+      "sha256_16": "d800f7677e3cd0be"
+    },
+    {
+      "path": "sprites/office/characters/dwight-schrute-front-right.png",
+      "bytes": 122523,
+      "sha256_16": "9cbe0eca9d2833fe"
+    },
+    {
+      "path": "sprites/office/characters/dwight-schrute-rear-left.png",
+      "bytes": 93260,
+      "sha256_16": "2b0c8fa7749a9b06"
+    },
+    {
+      "path": "sprites/office/characters/dwight-schrute-rear-right.png",
+      "bytes": 91422,
+      "sha256_16": "7d7a4d7ed02c3766"
+    },
+    {
+      "path": "sprites/office/characters/erin-hannon-front-left.png",
+      "bytes": 130353,
+      "sha256_16": "be9871c0aed336cd"
+    },
+    {
+      "path": "sprites/office/characters/erin-hannon-front-right.png",
+      "bytes": 128579,
+      "sha256_16": "ca39cadd8aaef4d5"
+    },
+    {
+      "path": "sprites/office/characters/erin-hannon-rear-left.png",
+      "bytes": 116578,
+      "sha256_16": "62710f409e953e11"
+    },
+    {
+      "path": "sprites/office/characters/erin-hannon-rear-right.png",
+      "bytes": 116722,
+      "sha256_16": "e16d1b188241360d"
+    },
+    {
+      "path": "sprites/office/characters/gabe-lewis-front-left.png",
+      "bytes": 188312,
+      "sha256_16": "fcec46333d01a462"
+    },
+    {
+      "path": "sprites/office/characters/gabe-lewis-front-right.png",
+      "bytes": 188142,
+      "sha256_16": "6e503f44f3245a97"
+    },
+    {
+      "path": "sprites/office/characters/gabe-lewis-rear-left.png",
+      "bytes": 182078,
+      "sha256_16": "247cbe17a03b5b41"
+    },
+    {
+      "path": "sprites/office/characters/gabe-lewis-rear-right.png",
+      "bytes": 182677,
+      "sha256_16": "2e39860ea8f2b257"
+    },
+    {
+      "path": "sprites/office/characters/holly-flax-front-left.png",
+      "bytes": 152937,
+      "sha256_16": "f69ce7c5cd7fe04b"
+    },
+    {
+      "path": "sprites/office/characters/holly-flax-front-right.png",
+      "bytes": 155878,
+      "sha256_16": "07c4cf11ec01f49c"
+    },
+    {
+      "path": "sprites/office/characters/holly-flax-rear-left.png",
+      "bytes": 146278,
+      "sha256_16": "200a7662e36e7f45"
+    },
+    {
+      "path": "sprites/office/characters/holly-flax-rear-right.png",
+      "bytes": 146779,
+      "sha256_16": "8bc0e5fc1e923ce5"
+    },
+    {
+      "path": "sprites/office/characters/jan-levinson-front-left.png",
+      "bytes": 128453,
+      "sha256_16": "e23d7484995842a7"
+    },
+    {
+      "path": "sprites/office/characters/jan-levinson-front-right.png",
+      "bytes": 126955,
+      "sha256_16": "0730b10487099954"
+    },
+    {
+      "path": "sprites/office/characters/jan-levinson-rear-left.png",
+      "bytes": 108081,
+      "sha256_16": "c1d9a844914578b7"
+    },
+    {
+      "path": "sprites/office/characters/jan-levinson-rear-right.png",
+      "bytes": 110672,
+      "sha256_16": "9a0c8129bf5a4082"
+    },
+    {
+      "path": "sprites/office/characters/jim-halpert-front-left.png",
+      "bytes": 121186,
+      "sha256_16": "912a9b9283a2d2b2"
+    },
+    {
+      "path": "sprites/office/characters/jim-halpert-front-right.png",
+      "bytes": 121253,
+      "sha256_16": "53f251dddb538298"
+    },
+    {
+      "path": "sprites/office/characters/jim-halpert-rear-left.png",
+      "bytes": 105883,
+      "sha256_16": "de9f3cd507285a78"
+    },
+    {
+      "path": "sprites/office/characters/jim-halpert-rear-right.png",
+      "bytes": 105666,
+      "sha256_16": "78c8af53408c117a"
+    },
+    {
+      "path": "sprites/office/characters/karen-filippelli-front-left.png",
+      "bytes": 152637,
+      "sha256_16": "9cc2ed45be64f0ab"
+    },
+    {
+      "path": "sprites/office/characters/karen-filippelli-front-right.png",
+      "bytes": 151862,
+      "sha256_16": "c2b253f4832acf47"
+    },
+    {
+      "path": "sprites/office/characters/karen-filippelli-rear-left.png",
+      "bytes": 142861,
+      "sha256_16": "b6b49d24c4a5cd70"
+    },
+    {
+      "path": "sprites/office/characters/karen-filippelli-rear-right.png",
+      "bytes": 140197,
+      "sha256_16": "9eeda5da1eb8e923"
+    },
+    {
+      "path": "sprites/office/characters/kelly-kapoor-front-left.png",
+      "bytes": 195732,
+      "sha256_16": "b39c45f10ab9d2fe"
+    },
+    {
+      "path": "sprites/office/characters/kelly-kapoor-front-right.png",
+      "bytes": 195687,
+      "sha256_16": "fafdfb8565102a90"
+    },
+    {
+      "path": "sprites/office/characters/kelly-kapoor-rear-left.png",
+      "bytes": 183681,
+      "sha256_16": "663af9fc67542e12"
+    },
+    {
+      "path": "sprites/office/characters/kelly-kapoor-rear-right.png",
+      "bytes": 183869,
+      "sha256_16": "7be454f29e56a03c"
+    },
+    {
+      "path": "sprites/office/characters/kevin-malone-front-left.png",
+      "bytes": 121314,
+      "sha256_16": "c1a5ea4210b93b89"
+    },
+    {
+      "path": "sprites/office/characters/kevin-malone-front-right.png",
+      "bytes": 121843,
+      "sha256_16": "9444b601b1e0d7e3"
+    },
+    {
+      "path": "sprites/office/characters/kevin-malone-rear-left.png",
+      "bytes": 100405,
+      "sha256_16": "5fe41d9510c47ab8"
+    },
+    {
+      "path": "sprites/office/characters/kevin-malone-rear-right.png",
+      "bytes": 100058,
+      "sha256_16": "019201460435cc26"
+    },
+    {
+      "path": "sprites/office/characters/meredith-palmer-front-left.png",
+      "bytes": 122601,
+      "sha256_16": "1d8bfc22c03ce20b"
+    },
+    {
+      "path": "sprites/office/characters/meredith-palmer-front-right.png",
+      "bytes": 121709,
+      "sha256_16": "b9d477992ca55462"
+    },
+    {
+      "path": "sprites/office/characters/meredith-palmer-rear-left.png",
+      "bytes": 106203,
+      "sha256_16": "8bdfe1bce3e658c8"
+    },
+    {
+      "path": "sprites/office/characters/meredith-palmer-rear-right.png",
+      "bytes": 108296,
+      "sha256_16": "41c93da4364f3822"
+    },
+    {
+      "path": "sprites/office/characters/michael-scott-front-left.png",
+      "bytes": 118153,
+      "sha256_16": "c82c4101bbaa2735"
+    },
+    {
+      "path": "sprites/office/characters/michael-scott-front-right.png",
+      "bytes": 123985,
+      "sha256_16": "9a3d37ea641b4aa0"
+    },
+    {
+      "path": "sprites/office/characters/michael-scott-rear-left.png",
+      "bytes": 106213,
+      "sha256_16": "a054b75f1288c415"
+    },
+    {
+      "path": "sprites/office/characters/michael-scott-rear-right.png",
+      "bytes": 106323,
+      "sha256_16": "d18d922afbd3ff6e"
+    },
+    {
+      "path": "sprites/office/characters/nellie-bertram-front-left.png",
+      "bytes": 161547,
+      "sha256_16": "226165c48f25b1f9"
+    },
+    {
+      "path": "sprites/office/characters/nellie-bertram-front-right.png",
+      "bytes": 166102,
+      "sha256_16": "9bdf351dc555d761"
+    },
+    {
+      "path": "sprites/office/characters/nellie-bertram-rear-left.png",
+      "bytes": 159430,
+      "sha256_16": "1b36e62f207c5bac"
+    },
+    {
+      "path": "sprites/office/characters/nellie-bertram-rear-right.png",
+      "bytes": 150460,
+      "sha256_16": "ab00378c4d26e182"
+    },
+    {
+      "path": "sprites/office/characters/oscar-martinez-front-left.png",
+      "bytes": 131872,
+      "sha256_16": "1a474cd3ebd991fa"
+    },
+    {
+      "path": "sprites/office/characters/oscar-martinez-front-right.png",
+      "bytes": 129428,
+      "sha256_16": "0dba12951b73d16b"
+    },
+    {
+      "path": "sprites/office/characters/oscar-martinez-rear-left.png",
+      "bytes": 114745,
+      "sha256_16": "fc879632472d4631"
+    },
+    {
+      "path": "sprites/office/characters/oscar-martinez-rear-right.png",
+      "bytes": 112083,
+      "sha256_16": "3f2765399beebdeb"
+    },
+    {
+      "path": "sprites/office/characters/pam-beesly-front-left.png",
+      "bytes": 131254,
+      "sha256_16": "ffd46bc19d3bd499"
+    },
+    {
+      "path": "sprites/office/characters/pam-beesly-front-right.png",
+      "bytes": 129747,
+      "sha256_16": "a97d92f332fc7adf"
+    },
+    {
+      "path": "sprites/office/characters/pam-beesly-rear-left.png",
+      "bytes": 114999,
+      "sha256_16": "15386c30b77b5473"
+    },
+    {
+      "path": "sprites/office/characters/pam-beesly-rear-right.png",
+      "bytes": 115180,
+      "sha256_16": "e57a2fd6034b5dc5"
+    },
+    {
+      "path": "sprites/office/characters/phyllis-vance-front-left.png",
+      "bytes": 130188,
+      "sha256_16": "054f13e90f195b2f"
+    },
+    {
+      "path": "sprites/office/characters/phyllis-vance-front-right.png",
+      "bytes": 128016,
+      "sha256_16": "45b9992b2cb5f90f"
+    },
+    {
+      "path": "sprites/office/characters/phyllis-vance-rear-left.png",
+      "bytes": 108476,
+      "sha256_16": "ed91433982f876ae"
+    },
+    {
+      "path": "sprites/office/characters/phyllis-vance-rear-right.png",
+      "bytes": 109824,
+      "sha256_16": "224d4146d33a2d05"
+    },
+    {
+      "path": "sprites/office/characters/robert-california-front-left.png",
+      "bytes": 183896,
+      "sha256_16": "c9936538fa97125a"
+    },
+    {
+      "path": "sprites/office/characters/robert-california-front-right.png",
+      "bytes": 183472,
+      "sha256_16": "363a76823a6ebf06"
+    },
+    {
+      "path": "sprites/office/characters/robert-california-rear-left.png",
+      "bytes": 182909,
+      "sha256_16": "7c98f34e97630bc1"
+    },
+    {
+      "path": "sprites/office/characters/robert-california-rear-right.png",
+      "bytes": 183239,
+      "sha256_16": "8a10c8bd713ccbfa"
+    },
+    {
+      "path": "sprites/office/characters/roy-anderson-front-left.png",
+      "bytes": 144297,
+      "sha256_16": "03918ca741eac182"
+    },
+    {
+      "path": "sprites/office/characters/roy-anderson-front-right.png",
+      "bytes": 145968,
+      "sha256_16": "d6172c298560ec77"
+    },
+    {
+      "path": "sprites/office/characters/roy-anderson-rear-left.png",
+      "bytes": 128404,
+      "sha256_16": "f5d0e607db51ffc9"
+    },
+    {
+      "path": "sprites/office/characters/roy-anderson-rear-right.png",
+      "bytes": 128548,
+      "sha256_16": "d9dbc72f876b63b4"
+    },
+    {
+      "path": "sprites/office/characters/ryan-howard-front-left.png",
+      "bytes": 118690,
+      "sha256_16": "c79622142cfd02a3"
+    },
+    {
+      "path": "sprites/office/characters/ryan-howard-front-right.png",
+      "bytes": 117950,
+      "sha256_16": "c4c2d3ff0063517b"
+    },
+    {
+      "path": "sprites/office/characters/ryan-howard-rear-left.png",
+      "bytes": 102859,
+      "sha256_16": "e895e78a093e52c6"
+    },
+    {
+      "path": "sprites/office/characters/ryan-howard-rear-right.png",
+      "bytes": 104939,
+      "sha256_16": "dbf1e09e1fc4f43d"
+    },
+    {
+      "path": "sprites/office/characters/stanley-hudson-front-left.png",
+      "bytes": 121243,
+      "sha256_16": "e50915c35df59079"
+    },
+    {
+      "path": "sprites/office/characters/stanley-hudson-front-right.png",
+      "bytes": 122895,
+      "sha256_16": "066025dbdbcdd392"
+    },
+    {
+      "path": "sprites/office/characters/stanley-hudson-rear-left.png",
+      "bytes": 102034,
+      "sha256_16": "9b5e4f0e84f77326"
+    },
+    {
+      "path": "sprites/office/characters/stanley-hudson-rear-right.png",
+      "bytes": 103307,
+      "sha256_16": "255261fdae7ce64a"
+    },
+    {
+      "path": "sprites/office/characters/toby-flenderson-front-left.png",
+      "bytes": 147901,
+      "sha256_16": "6b4e89c9b3625777"
+    },
+    {
+      "path": "sprites/office/characters/toby-flenderson-front-right.png",
+      "bytes": 147333,
+      "sha256_16": "0e72e1771d537bb7"
+    },
+    {
+      "path": "sprites/office/characters/toby-flenderson-rear-left.png",
+      "bytes": 133624,
+      "sha256_16": "bb9ca388f8205447"
+    },
+    {
+      "path": "sprites/office/characters/toby-flenderson-rear-right.png",
+      "bytes": 133980,
+      "sha256_16": "1de03a4602f3a9c6"
+    },
+    {
+      "path": "sprites/office/cats/cat-bandit.png",
+      "bytes": 62713,
+      "sha256_16": "c3454108e04065fd"
+    },
+    {
+      "path": "sprites/office/cats/cat-bandits-kittens.png",
+      "bytes": 40096,
+      "sha256_16": "09eb9089010d6f89"
+    },
+    {
+      "path": "sprites/office/cats/cat-comstock-alt.png",
+      "bytes": 38916,
+      "sha256_16": "badc566a74af1c74"
+    },
+    {
+      "path": "sprites/office/cats/cat-comstock.png",
+      "bytes": 33797,
+      "sha256_16": "05ee51e20d75d5c0"
+    },
+    {
+      "path": "sprites/office/cats/cat-ember.png",
+      "bytes": 39706,
+      "sha256_16": "101eb279daefbddf"
+    },
+    {
+      "path": "sprites/office/cats/cat-garbage.png",
+      "bytes": 54998,
+      "sha256_16": "f8d5e7996a33a869"
+    },
+    {
+      "path": "sprites/office/cats/cat-mr-ash-alt.png",
+      "bytes": 40457,
+      "sha256_16": "7e2308202241b49e"
+    },
+    {
+      "path": "sprites/office/cats/cat-mr-ash.png",
+      "bytes": 33044,
+      "sha256_16": "a9feaf357bdb2c20"
+    },
+    {
+      "path": "sprites/office/cats/cat-phillip.png",
+      "bytes": 39473,
+      "sha256_16": "d96760ba418cd313"
+    },
+    {
+      "path": "sprites/office/cats/cat-princess-lady-alt.png",
+      "bytes": 42257,
+      "sha256_16": "33c72b530f51df40"
+    },
+    {
+      "path": "sprites/office/cats/cat-princess-lady.png",
+      "bytes": 44761,
+      "sha256_16": "98612efe3769d448"
+    },
+    {
+      "path": "sprites/office/cats/cat-sprinkles.png",
+      "bytes": 39118,
+      "sha256_16": "550e25babf13715f"
+    },
+    {
+      "path": "sprites/furniture/filling-closed.png",
+      "bytes": 126897,
+      "sha256_16": "27baee56f2ae130e"
+    },
+    {
+      "path": "sprites/furniture/filling-open.png",
+      "bytes": 157319,
+      "sha256_16": "d442e46a86511143"
+    },
+    {
+      "path": "sprites/furniture/standing-desk-left-front.png",
+      "bytes": 422501,
+      "sha256_16": "4b7a5f991141654e"
+    },
+    {
+      "path": "sprites/furniture/standing-desk-left-rear.png",
+      "bytes": 379173,
+      "sha256_16": "dd5d7914157d02c2"
+    },
+    {
+      "path": "sprites/furniture/standing-desk-right-front.png",
+      "bytes": 426436,
+      "sha256_16": "89a7c1d80decf3b1"
+    },
+    {
+      "path": "sprites/furniture/standing-desk-right-rear.png",
+      "bytes": 370984,
+      "sha256_16": "0769750b61249fba"
+    },
+    {
+      "path": "sprites/effects/build-failed.png",
+      "bytes": 60216,
+      "sha256_16": "5465da6486da28d9"
+    },
+    {
+      "path": "sprites/effects/cake.png",
+      "bytes": 35526,
+      "sha256_16": "274a028862d970e4"
+    },
+    {
+      "path": "sprites/effects/fire.png",
+      "bytes": 28962,
+      "sha256_16": "9dc19ed70c619366"
+    },
+    {
+      "path": "sprites/effects/github-pr-merge.png",
+      "bytes": 76419,
+      "sha256_16": "981be925af3df339"
+    },
+    {
+      "path": "sprites/effects/glass-water.png",
+      "bytes": 31026,
+      "sha256_16": "d25addb033250315"
+    },
+    {
+      "path": "sprites/effects/monster-energy.png",
+      "bytes": 3868,
+      "sha256_16": "50ee90371636b484"
+    },
+    {
+      "path": "sprites/effects/need-coffee.png",
+      "bytes": 27452,
+      "sha256_16": "741dc23fd08cad6c"
+    },
+    {
+      "path": "sprites/effects/party.png",
+      "bytes": 42709,
+      "sha256_16": "51245294f5513341"
+    },
+    {
+      "path": "sprites/effects/pizza.png",
+      "bytes": 33814,
+      "sha256_16": "a8c62a6f385f8c00"
+    },
+    {
+      "path": "sprites/effects/post-it.png",
+      "bytes": 30116,
+      "sha256_16": "9ae24cf58ff008e3"
+    },
+    {
+      "path": "sprites/effects/redbull-energy.png",
+      "bytes": 4258,
+      "sha256_16": "9e926a66a80fbc77"
+    },
+    {
+      "path": "sprites/effects/rocket.png",
+      "bytes": 36278,
+      "sha256_16": "d85c2080451bc010"
+    },
+    {
+      "path": "sprites/effects/sleeping.png",
+      "bytes": 22682,
+      "sha256_16": "c8658876c5d9580e"
+    },
+    {
+      "path": "sprites/effects/star.png",
+      "bytes": 28826,
+      "sha256_16": "9401813c729adc32"
+    },
+    {
+      "path": "sprites/effects/thumb-up.png",
+      "bytes": 27916,
+      "sha256_16": "6a2ff44bed79652f"
+    },
+    {
+      "path": "sprites/effects/typing.png",
+      "bytes": 19190,
+      "sha256_16": "4dd2a379add5ccc8"
+    },
+    {
+      "path": "sprites/effects/watering-can.png",
+      "bytes": 26278,
+      "sha256_16": "117a5116cf691fd3"
+    },
+    {
+      "path": "sprites/decoration/ac-wall-unit.png",
+      "bytes": 207697,
+      "sha256_16": "0c5c8df326d99459"
+    },
+    {
+      "path": "sprites/decoration/money-tree.png",
+      "bytes": 202202,
+      "sha256_16": "e9fa1f8daae1f18a"
+    },
+    {
+      "path": "sprites/decoration/monstera-plant.png",
+      "bytes": 287348,
+      "sha256_16": "d68f3aab1798a236"
+    },
+    {
+      "path": "sprites/decoration/printer-broken.png",
+      "bytes": 240948,
+      "sha256_16": "5bcdd4e5b756a682"
+    },
+    {
+      "path": "sprites/decoration/printer-working.png",
+      "bytes": 232766,
+      "sha256_16": "ced3130fc22bbcbb"
+    },
+    {
+      "path": "sprites/decoration/printer.png",
+      "bytes": 184259,
+      "sha256_16": "25fa141aea8fbe55"
+    },
+    {
+      "path": "sprites/decoration/snake-plant.png",
+      "bytes": 182647,
+      "sha256_16": "fea8884f07f55ec6"
+    },
+    {
+      "path": "sprites/decoration/white-board.png",
+      "bytes": 594670,
+      "sha256_16": "10ce330b6658c66b"
+    },
+    {
+      "path": "sprites/culture/bell.png",
+      "bytes": 68209,
+      "sha256_16": "6c1e2b66c74c372c"
+    },
+    {
+      "path": "sprites/culture/days-last-incident.png",
+      "bytes": 948732,
+      "sha256_16": "92889f2c04364fec"
+    },
+    {
+      "path": "sprites/culture/deploying-screen.png",
+      "bytes": 637557,
+      "sha256_16": "9b06837a12ef4193"
+    },
+    {
+      "path": "sprites/culture/todo-board.png",
+      "bytes": 459093,
+      "sha256_16": "efb516f5ba8e12de"
+    },
+    {
+      "path": "sprites/characters/Claude-1-front-left.png",
+      "bytes": 332457,
+      "sha256_16": "baea9616cc1522fd"
+    },
+    {
+      "path": "sprites/characters/Claude-1-front-right.png",
+      "bytes": 345550,
+      "sha256_16": "9afe0a7cf17d0752"
+    },
+    {
+      "path": "sprites/characters/Claude-1-rear-left.png",
+      "bytes": 334097,
+      "sha256_16": "25fd50abd33ab568"
+    },
+    {
+      "path": "sprites/characters/Claude-1-rear-right.png",
+      "bytes": 333167,
+      "sha256_16": "a175f25dca4ad0ce"
+    },
+    {
+      "path": "sprites/characters/Frontend-dev-1-front-left.png",
+      "bytes": 328441,
+      "sha256_16": "742aac868dc6abba"
+    },
+    {
+      "path": "sprites/characters/Frontend-dev-1-front-right.png",
+      "bytes": 328482,
+      "sha256_16": "d68560bf5597842e"
+    },
+    {
+      "path": "sprites/characters/Frontend-dev-1-rear-left.png",
+      "bytes": 283195,
+      "sha256_16": "44fa6b482b5d65df"
+    },
+    {
+      "path": "sprites/characters/Frontend-dev-1-rear-right.png",
+      "bytes": 282652,
+      "sha256_16": "f86ee32514d70bdb"
+    },
+    {
+      "path": "sprites/characters/Helper.png",
+      "bytes": 992017,
+      "sha256_16": "2424ecb63cc95692"
+    },
+    {
+      "path": "sprites/characters/Me-1-front-left.png",
+      "bytes": 299933,
+      "sha256_16": "923153b83bab0531"
+    },
+    {
+      "path": "sprites/characters/Me-1-front-right.png",
+      "bytes": 301130,
+      "sha256_16": "e49662250264bc15"
+    },
+    {
+      "path": "sprites/characters/Me-1-rear-left.png",
+      "bytes": 274788,
+      "sha256_16": "290a004cb924d6d2"
+    },
+    {
+      "path": "sprites/characters/Me-1-rear-right.png",
+      "bytes": 273882,
+      "sha256_16": "a8726e80da014599"
+    },
+    {
+      "path": "sprites/characters/TEMPLATE.png",
+      "bytes": 1105449,
+      "sha256_16": "1abc8298cf7138f2"
+    },
+    {
+      "path": "sprites/characters/dev-1-front-left.png",
+      "bytes": 296962,
+      "sha256_16": "6ed4b719f2048929"
+    },
+    {
+      "path": "sprites/characters/dev-1-front-right.png",
+      "bytes": 297630,
+      "sha256_16": "dda5f20c83536eb7"
+    },
+    {
+      "path": "sprites/characters/dev-1-rear-left.png",
+      "bytes": 257265,
+      "sha256_16": "a01cc1236a8259f5"
+    },
+    {
+      "path": "sprites/characters/dev-1-rear-right.png",
+      "bytes": 257110,
+      "sha256_16": "9748fb88d95eb0dd"
+    },
+    {
+      "path": "sprites/characters/dev-2-front-left.png",
+      "bytes": 377734,
+      "sha256_16": "1684c7226e470d35"
+    },
+    {
+      "path": "sprites/characters/dev-2-front-right.png",
+      "bytes": 377386,
+      "sha256_16": "8afa320185adc413"
+    },
+    {
+      "path": "sprites/characters/dev-2-rear-left.png",
+      "bytes": 354769,
+      "sha256_16": "caca14e292dd0b7a"
+    },
+    {
+      "path": "sprites/characters/dev-2-rear-right.png",
+      "bytes": 354679,
+      "sha256_16": "700f098c15d40974"
+    },
+    {
+      "path": "sprites/characters/employee-1-front-left.png",
+      "bytes": 297168,
+      "sha256_16": "8a9645b140e23103"
+    },
+    {
+      "path": "sprites/characters/employee-1-front-right.png",
+      "bytes": 297056,
+      "sha256_16": "11115a18c68b7cc0"
+    },
+    {
+      "path": "sprites/characters/employee-1-rear-left.png",
+      "bytes": 282925,
+      "sha256_16": "2ad0c4b88c63250c"
+    },
+    {
+      "path": "sprites/characters/employee-1-rear-right.png",
+      "bytes": 282862,
+      "sha256_16": "395c4d00eab54674"
+    },
+    {
+      "path": "sprites/characters/employee-2-front-left.png",
+      "bytes": 293940,
+      "sha256_16": "89dc066b0e615638"
+    },
+    {
+      "path": "sprites/characters/employee-2-front-right.png",
+      "bytes": 293503,
+      "sha256_16": "5a965b563d2bd8cf"
+    },
+    {
+      "path": "sprites/characters/employee-2-rear-left.png",
+      "bytes": 257498,
+      "sha256_16": "ae83afb707b03385"
+    },
+    {
+      "path": "sprites/characters/employee-2-rear-right.png",
+      "bytes": 257495,
+      "sha256_16": "77ccba426876dd75"
+    },
+    {
+      "path": "sprites/characters/employee-3-front-left.png",
+      "bytes": 315452,
+      "sha256_16": "40b1c07721ab36a6"
+    },
+    {
+      "path": "sprites/characters/employee-3-front-right.png",
+      "bytes": 316676,
+      "sha256_16": "1bcafffd7d345c39"
+    },
+    {
+      "path": "sprites/characters/employee-3-rear-left.png",
+      "bytes": 271629,
+      "sha256_16": "a0adabd279f86fed"
+    },
+    {
+      "path": "sprites/characters/employee-3-rear-right.png",
+      "bytes": 272152,
+      "sha256_16": "ed28f05e6d5f766c"
+    },
+    {
+      "path": "sprites/characters/explore-1-front-left.png",
+      "bytes": 377381,
+      "sha256_16": "230fdb2fe2287456"
+    },
+    {
+      "path": "sprites/characters/explore-1-front-right.png",
+      "bytes": 377426,
+      "sha256_16": "9ee5519af08927dd"
+    },
+    {
+      "path": "sprites/characters/explore-1-rear-left.png",
+      "bytes": 353340,
+      "sha256_16": "f7193a125260e996"
+    },
+    {
+      "path": "sprites/characters/explore-1-rear-right.png",
+      "bytes": 353463,
+      "sha256_16": "463f4a5929a63b5f"
+    },
+    {
+      "path": "sprites/characters/security-audit-1-front-left.png",
+      "bytes": 358561,
+      "sha256_16": "d202c5ce29843651"
+    },
+    {
+      "path": "sprites/characters/security-audit-1-front-right.png",
+      "bytes": 359107,
+      "sha256_16": "1ce7142ca3ef96c7"
+    },
+    {
+      "path": "sprites/characters/security-audit-1-rear-left.png",
+      "bytes": 317717,
+      "sha256_16": "b5bf4013474d1790"
+    },
+    {
+      "path": "sprites/characters/security-audit-1-rear-right.png",
+      "bytes": 317891,
+      "sha256_16": "cfab74328b745ecb"
+    },
+    {
+      "path": "sprites/appliances/coffee-off.png",
+      "bytes": 162516,
+      "sha256_16": "2bcd16dd305963d8"
+    },
+    {
+      "path": "sprites/appliances/coffee-on.png",
+      "bytes": 170559,
+      "sha256_16": "d51fa712ca77bd28"
+    },
+    {
+      "path": "rooms/mac-studio-day.png",
+      "bytes": 10878,
+      "sha256_16": "632d903ea96caf33"
+    },
+    {
+      "path": "rooms/mac-studio-night.png",
+      "bytes": 10497,
+      "sha256_16": "ec430f1792ce5b53"
+    },
+    {
+      "path": "rooms/office-day-dm.png",
+      "bytes": 1585896,
+      "sha256_16": "3f44abfe08cc3be7"
+    },
+    {
+      "path": "rooms/office-day.png",
+      "bytes": 19052252,
+      "sha256_16": "7c95875db8a2163a"
+    },
+    {
+      "path": "rooms/office-night-dm.png",
+      "bytes": 1557290,
+      "sha256_16": "fd7f51371e53cba9"
+    },
+    {
+      "path": "rooms/office-night.png",
+      "bytes": 18790160,
+      "sha256_16": "db5f4eae6ae3cfc6"
+    },
+    {
+      "path": "rooms/server-room-day.png",
+      "bytes": 11263,
+      "sha256_16": "6505fd625a991ddc"
+    },
+    {
+      "path": "rooms/server-room-night.png",
+      "bytes": 10810,
+      "sha256_16": "d582a023932344b3"
+    }
+  ],
+  "corrections": [
+    {
+      "file": "rooms/mac-studio-day.webp",
+      "phase": 15,
+      "tool": "scripts/recolor-wash.py",
+      "args": "--from 322 --to 155 --band 34 --sat-full 0.80 --sat-none 1.01",
+      "why": "Restyle pass left a magenta bounce light on the right third (wall hue 185deg left vs 327deg right). The source plate in art-backup is flat slate grey, so the colour was an artifact, not art. Magenta is in no part of this product's palette.",
+      "known_effect": "The right-hand monitor's on-screen data-viz glow moved magenta -> green. That is content, not lighting, and was accepted: every other screen in the office is cyan.",
+      "not_applied_to": "nap-wellness-room.webp and office-night-dm.webp also scan high for magenta (9.7% / 16.0%) but were inspected and left alone: the first is a deliberate violet night mood, the second a dusk sky through the windows. The scan is a shortlist, not a verdict."
+    }
+  ]
+}

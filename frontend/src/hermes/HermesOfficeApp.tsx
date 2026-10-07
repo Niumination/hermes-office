@@ -6,6 +6,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import '../styles/office.css'
 import '../styles/rooms.css'
 import '../styles/hermes.css'
+// Loaded last: donghua tokens and chrome override the legacy look without
+// replacing the layout rules the other three files own.
+import '../styles/donghua.css'
 import type { HermesEnvelope } from './types'
 import { useOfficeSocket } from './useOfficeSocket'
 import { startMockFeeder } from './mockFeeder'

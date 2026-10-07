@@ -6,13 +6,21 @@
 # server over Tailscale. Run via launchd (see plist) or manually.
 #
 # Env:
-#   OFFICE_URL    default http://100.65.20.34:7333/event  (server's Tailscale IP)
+#   OFFICE_URL    REQUIRED  full URL of the office /event endpoint,
+#                 e.g. http://<office-host>:7333/event
 #   OFFICE_MAC_TOKEN   bearer token (required; also read from ~/.hermes/.env)
 #   AUDIT_LOG     default ~/.hermes/a2a_audit.jsonl
 # =============================================================================
 set -uo pipefail
 
-OFFICE_URL="${OFFICE_URL:-http://100.65.20.34:7333/event}"
+# No default. This used to point at one particular machine's Tailscale
+# address, so an operator who forgot to set it would ship their agent
+# telemetry to a host they do not control instead of seeing an error.
+if [ -z "${OFFICE_URL:-}" ]; then
+  echo "mac-relay: OFFICE_URL is not set." >&2
+  echo "  export OFFICE_URL=http://<office-host>:7333/event" >&2
+  exit 2
+fi
 AUDIT_LOG="${AUDIT_LOG:-$HOME/.hermes/a2a_audit.jsonl}"
 LOGFILE="${LOGFILE:-$HOME/Library/Logs/office-relay.log}"
 HEARTBEAT_EVERY=30

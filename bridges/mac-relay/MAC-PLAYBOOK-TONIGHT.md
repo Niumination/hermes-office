@@ -46,7 +46,7 @@ lsof -iTCP:9900 -sTCP:LISTEN   # tetap LISTEN di IP Tailscale = SUKSES
 # Mac → Cloud (token peer-mu, dari vault; hash sha256[:12] = 4832aae4452c)
 TOK=$(awk '{print $6}' ~/Desktop/Niumination/vault/a2a-token.txt 2>/dev/null || cat ~/Desktop/Niumination/vault/a2a-token.txt)
 curl -s -o /dev/null -w 'cloud card: %{http_code}\n' --max-time 10 \
-  http://100.65.20.34:9900/.well-known/agent.json
+  http://<office-host>:9900/.well-known/agent.json
 ```
 
 Lalu bilang ke cloud (Hermes cloud) untuk verifikasi arah sebaliknya — atau tunggu cloud mengirim ping test.

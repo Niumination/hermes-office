@@ -209,8 +209,8 @@ export function findWaypointPath(
 // ---------------------------------------------------------------------------
 
 const ENERGY_DRINKS = [
-  '/sprites/effects/redbull-energy.png',
-  '/sprites/effects/monster-energy.png',
+  '/sprites/effects/redbull-energy.webp',
+  '/sprites/effects/monster-energy.webp',
 ]
 
 // Pick a consistent energy drink per agent (based on a simple hash)
@@ -241,7 +241,7 @@ export function getEffect(
 
   // Boss gets Red Bull instead of coffee
   if (agentId?.startsWith('boss-') && state === 'coffee-break') {
-    return '/sprites/effects/redbull-energy.png'
+    return '/sprites/effects/redbull-energy.webp'
   }
 
   switch (state) {
@@ -258,26 +258,26 @@ export function getEffect(
       // Boss gets Red Bull (handled above), water breaks get water glass
       const breakText = (statusText ?? '').toLowerCase()
       if (breakText.includes('hydrat') || breakText.includes('h2o') || breakText.includes('water') || breakText.includes('refill')) {
-        return '/sprites/effects/glass-water.png'
+        return '/sprites/effects/glass-water.webp'
       }
-      return '/sprites/effects/need-coffee.png'
+      return '/sprites/effects/need-coffee.webp'
     }
     case 'walking-to-desk': {
       // Event-specific effects while walking to event spots
       const walkText = (statusText ?? '').toLowerCase()
-      if (walkText.includes('pizza')) return '/sprites/effects/pizza.png'
-      if (walkText.includes('birthday')) return '/sprites/effects/cake.png'
-      if (walkText.includes('fire')) return '/sprites/effects/fire.png'
-      if (walkText.includes('deploy') || walkText.includes('friday') || walkText.includes('success')) return '/sprites/effects/party.png'
+      if (walkText.includes('pizza')) return '/sprites/effects/pizza.webp'
+      if (walkText.includes('birthday')) return '/sprites/effects/cake.webp'
+      if (walkText.includes('fire')) return '/sprites/effects/fire.webp'
+      if (walkText.includes('deploy') || walkText.includes('friday') || walkText.includes('success')) return '/sprites/effects/party.webp'
       if (walkText.includes('standup')) return null
       return null
     }
     case 'new-hire':
-      return '/sprites/effects/star.png'
+      return '/sprites/effects/star.webp'
     case 'completed':
-      return '/sprites/effects/thumb-up.png'
+      return '/sprites/effects/thumb-up.webp'
     case 'idle':
-      return idleDurationMs > 30_000 ? '/sprites/effects/sleeping.png' : null
+      return idleDurationMs > 30_000 ? '/sprites/effects/sleeping.webp' : null
     default:
       return null
   }

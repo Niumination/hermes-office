@@ -3,7 +3,7 @@
  * Roles: cloud-bridge, mac-bridge (POST /event, GET /roster),
  *        owner (everything except /event), guest (read-only, filtered).
  */
-import { createHash, randomUUID } from "crypto";
+import { createHash } from "crypto";
 import { config } from "./config.js";
 
 function hashToken(t) {
@@ -58,7 +58,7 @@ const SESSION_TTL_MS = 12 * 3600 * 1000;
 
 export function createSession(token, now = Date.now()) {
   // purge expired
-  for (const [sid, t] of sessionTokens) {
+  for (const sid of sessionTokens.keys()) {
     const issued = parseInt(sid.split(".")[1]) || 0;
     if (now - issued > SESSION_TTL_MS) sessionTokens.delete(sid);
   }

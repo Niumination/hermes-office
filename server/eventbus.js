@@ -22,12 +22,30 @@ export const KNOWN_EVENT_TYPES = [
   "channel_msg",
   "agent_status",
   "service_status",
+  // Burn-rate governance: emitted by the server when a budget scope crosses a
+  // threshold. Internal-only — bridges must not be able to forge a budget state.
+  "budget_state",
+  // Internal-only, but it must still be a *known* type or emitInternal can
+  // never emit it. INTERNAL_ONLY is checked first, so POST /event still
+  // answers "internal-only" rather than "unknown type".
+  "office_chat",
+  // Floor-plan governance. All server-authoritative: a bridge must not be able
+  // to move itself into a privileged room or self-approve.
+  "agent_moved",
+  "approval_requested",
+  "approval_resolved",
 ];
 
 const KNOWN_SET = new Set(KNOWN_EVENT_TYPES);
 
 // office_chat is internal-only, never accepted from /event (EVENTS.md §2)
-const INTERNAL_ONLY = new Set(["office_chat"]);
+const INTERNAL_ONLY = new Set([
+  "office_chat",
+  "budget_state",
+  "agent_moved",
+  "approval_requested",
+  "approval_resolved",
+]);
 
 // ---------------------------------------------------------------------------
 // Clamping (EVENTS.md §1: strings max 500, chat text max 4000)
@@ -131,6 +149,18 @@ const SCHEMAS = {
   git_push: (b) => (b.repo ? null : "repo required"),
   channel_msg: (b) => (b.platform ? null : "platform required"),
   agent_status: (b) => (b.agent ? null : "agent required"),
+  agent_moved: (b) => (b.agent && b.room ? null : "agent + room required"),
+  approval_requested: (b) => (b.approvalId && b.agent ? null : "approvalId + agent required"),
+  approval_resolved: (b) => {
+    if (!b.approvalId || !b.state) return "approvalId + state required";
+    if (!APPROVAL_STATES.has(b.state)) return `Invalid approval_resolved.state: ${b.state}`;
+    return null;
+  },
+  budget_state: (b) => {
+    if (!b.scope || !b.subject || !b.state) return "scope + subject + state required";
+    if (!BURN_STATE_SET.has(b.state)) return `Invalid budget_state.state: ${b.state}`;
+    return null;
+  },
   service_status: (b) => {
     if (!b.host || !b.unit || !b.state) return "host + unit + state required";
     if (!SERVICE_HOSTS.has(b.host)) return `Invalid service_status.host: ${b.host}`;
@@ -139,6 +169,8 @@ const SCHEMAS = {
   },
 };
 
+const APPROVAL_STATES = new Set(["approved", "denied", "expired"]);
+const BURN_STATE_SET = new Set(["normal", "warm", "hot", "critical", "tripped"]);
 const SERVICE_STATES = new Set(["active", "failed", "inactive"]);
 const SERVICE_HOSTS = new Set(["cloud", "mac"]);
 
@@ -146,11 +178,18 @@ const A2A_STATES = new Set(["sent", "working", "completed", "failed"]);
 const STATUS_STATES = new Set(["idle", "working", "away"]);
 const DIRECTIONS = new Set(["in", "out"]);
 
-export function validateEvent(body) {
+/**
+ * @param {object} body
+ * @param {{internal?: boolean}} [opts] internal=true is set only by the server's
+ *   own emitInternal path, and relaxes nothing except the internal-only gate —
+ *   schema checks, clamping and redaction still apply.
+ */
+export function validateEvent(body, opts = {}) {
   if (!body || typeof body !== "object" || Array.isArray(body))
     return "Missing body";
   if (typeof body.type !== "string" || !body.type) return "Missing event type";
-  if (INTERNAL_ONLY.has(body.type)) return `Event type ${body.type} is internal-only`;
+  if (!opts.internal && INTERNAL_ONLY.has(body.type))
+    return `Event type ${body.type} is internal-only`;
   if (!KNOWN_SET.has(body.type)) return `Unknown event type: ${body.type}`;
   const check = SCHEMAS[body.type];
   if (check) {
@@ -185,9 +224,31 @@ export class RateLimiter {
     this.burst = burst;
     this.burstWindowMs = burstWindowMs;
     this.hits = new Map(); // key -> {minute: number[], burst: number[]}
+    this.lastSweep = 0;
+  }
+
+  /**
+   * Drop keys with no activity inside the longest window.
+   *
+   * Without this the map is an unbounded leak: every distinct agent name ever
+   * seen keeps an entry forever, and agent names are attacker-influenced on
+   * the OTLP path. Called opportunistically from check() rather than on a
+   * timer so the limiter owns no handle that would hold the process open at
+   * shutdown.
+   */
+  sweep(now = Date.now()) {
+    this.lastSweep = now;
+    for (const [key, entry] of this.hits) {
+      const newest = Math.max(
+        entry.minute[entry.minute.length - 1] ?? 0,
+        entry.burst[entry.burst.length - 1] ?? 0
+      );
+      if (now - newest >= 60_000) this.hits.delete(key);
+    }
   }
 
   check(key, now = Date.now()) {
+    if (now - this.lastSweep >= 60_000) this.sweep(now);
     let entry = this.hits.get(key);
     if (!entry) {
       entry = { minute: [], burst: [] };
@@ -256,6 +317,23 @@ export function sanitizeForGuest(ev) {
   if (ev.type === "office_chat") {
     return { type: "office_chat", activity: true, source: ev.source, ts: ev.ts };
   }
+  // Governance events: a guest may see that the office is under pressure or
+  // that a door is being knocked on, but not the amounts, the agent names, or
+  // which privileged tool is being attempted. Spend figures and the privilege
+  // map are reconnaissance.
+  if (ev.type === "budget_state") {
+    return { type: "budget_state", scope: ev.scope, state: ev.state, from: ev.from, source: ev.source, ts: ev.ts };
+  }
+  if (ev.type === "agent_moved") {
+    return { type: "agent_moved", agent: ev.agent, room: ev.room, fromRoom: ev.fromRoom, source: ev.source, ts: ev.ts };
+  }
+  if (ev.type === "approval_requested") {
+    return { type: "approval_requested", kind: ev.kind, room: ev.room, source: ev.source, ts: ev.ts };
+  }
+  if (ev.type === "approval_resolved") {
+    return { type: "approval_resolved", kind: ev.kind, room: ev.room, state: ev.state, source: ev.source, ts: ev.ts };
+  }
+
   if (ev.type === "service_status") {
     // Guest: unit name + state visible, detail sanitized (no internal paths/URLs)
     const okDetail = typeof ev.detail === "string" && !INTERNAL_IP.test(ev.detail);
@@ -297,7 +375,7 @@ export class OfficeEventBus extends EventEmitter {
       const rl = this.limiter.check(key, this.now());
       if (!rl.ok) return { ok: false, status: 429, error: rl.reason };
     }
-    const err = validateEvent(body);
+    const err = validateEvent(body, { internal: opts.internal === true });
     if (err) return { ok: false, status: 400, error: err };
 
     const event = clampEvent({ ...body });

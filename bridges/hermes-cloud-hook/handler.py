@@ -22,6 +22,11 @@ OFFICE_URL = os.environ.get("OFFICE_URL", "http://127.0.0.1:7333/event")
 TIMEOUT = 2.0
 _SENT_STARTUP = False
 
+# Match the mac relay (HEARTBEAT_EVERY=30); office watchdog cutoff is 90s.
+HEARTBEAT_EVERY = float(os.environ.get("OFFICE_HEARTBEAT_EVERY", "30"))
+_HEARTBEAT_STARTED = False
+_HEARTBEAT_LOCK = threading.Lock()
+
 
 def _read_token() -> str:
     """Bearer token from environment, else from the secrets .env (per-key parse, no exec)."""
@@ -75,9 +80,43 @@ def _event_type(event_type: str) -> str | None:
     }.get(event_type)
 
 
+def _heartbeat_loop() -> None:
+    """Re-assert liveness so the office watchdog does not mark cloud 'away'."""
+    while True:
+        time.sleep(HEARTBEAT_EVERY)
+        try:
+            _post(
+                {
+                    "type": "agent_status",
+                    "agent": {"name": "cloud", "role": "generalist", "id": "cloud"},
+                    "state": "idle",
+                    "ts": int(time.time() * 1000),
+                }
+            )
+        except Exception:
+            pass
+
+
+def _ensure_heartbeat() -> None:
+    """Start the heartbeat thread once, on first hook invocation.
+
+    The office-server marks an agent 'away' after 90s of silence. This bridge
+    previously sent agent_status exactly once (_SENT_STARTUP) and nothing
+    after, so the cloud agent appeared permanently away. The mac relay already
+    did this (HEARTBEAT_EVERY=30); cloud was the odd one out.
+    """
+    global _HEARTBEAT_STARTED
+    with _HEARTBEAT_LOCK:
+        if _HEARTBEAT_STARTED:
+            return
+        _HEARTBEAT_STARTED = True
+    threading.Thread(target=_heartbeat_loop, name="office-heartbeat", daemon=True).start()
+
+
 def handle(event_type: str, context: dict) -> None:
     """Entry point invoked by the gateway hook registry (sync; work is queued off-thread)."""
     global _SENT_STARTUP
+    _ensure_heartbeat()
     mapped = _event_type(event_type)
     if not mapped:
         return
