@@ -18,7 +18,11 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    # `dev` is where the work happens. Shipping twelve gates that only run on
+    # `main` meant the branch under development had zero CI runs while every
+    # document claimed the gates were enforced — a green badge on a branch
+    # nobody was pushing to. Found by reading the Actions tab, not the config.
+    branches: [main, master, dev]
   pull_request:
   workflow_dispatch:
 
