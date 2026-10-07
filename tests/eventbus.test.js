@@ -29,9 +29,35 @@ test("validates every known event type with golden payload", () => {
     channel_msg: { platform: "telegram", channelType: "group", direction: "in", agent: "cloud" },
     agent_status: { agent: "mac", state: "idle", uptimeH: 26.4 },
     service_status: { host: "cloud", unit: "hermes-office", kind: "systemd", state: "active", detail: "uptime 3d" },
+    budget_state: { scope: "agent", subject: "cloud", state: "hot", spentUsd: 1.2, limitUsd: 2 },
+    office_chat: { text: "hello" },
+    agent_moved: { agent: "cloud", fromRoom: "lobby", room: "main-office", grantedBy: "owner" },
+    approval_requested: { approvalId: "ap-1", agent: "cloud", room: "server-room", tool: "deploy" },
+    approval_resolved: { approvalId: "ap-1", agent: "cloud", state: "approved", resolvedBy: "owner" },
   };
+
+  // These are server-authoritative: a bridge must not be able to forge them,
+  // so they only validate on the internal path.
+  const INTERNAL_ONLY = new Set([
+    "budget_state", "office_chat",
+    "agent_moved", "approval_requested", "approval_resolved",
+  ]);
+
   for (const type of KNOWN_EVENT_TYPES) {
-    assert.equal(validateEvent({ type, ...golden[type] }), null, type);
+    assert.ok(golden[type], `no golden payload for ${type} — add one`);
+    const internal = INTERNAL_ONLY.has(type);
+    assert.equal(
+      validateEvent({ type, ...golden[type] }, { internal }),
+      null,
+      type
+    );
+    if (internal) {
+      assert.match(
+        validateEvent({ type, ...golden[type] }),
+        /internal-only/,
+        `${type} must be refused from the external path`
+      );
+    }
   }
 });
 
@@ -135,7 +161,7 @@ test("sanitizeForGuest: private git_push, a2a summary, office_chat, internal url
   const oc = sanitizeForGuest({ type: "office_chat", text: "hi", source: "system" });
   assert.equal(oc.text, undefined);
   assert.equal(oc.activity, true);
-  const url = sanitizeForGuest({ type: "cron_fired", job: "j", url: "http://100.120.57.37:9900/x" });
+  const url = sanitizeForGuest({ type: "cron_fired", job: "j", url: "http://100.64.0.1:9900/x" });
   assert.equal(url.url, undefined);
   const svc = sanitizeForGuest({ type: "service_status", host: "cloud", unit: "hermes-office", state: "active", detail: "uptime 3d, log /var/log/office.log" });
   assert.equal(svc.unit, "hermes-office");

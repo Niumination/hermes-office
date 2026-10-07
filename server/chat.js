@@ -8,7 +8,7 @@ import { clampString, redact } from "./eventbus.js";
 import { requireAny, requireOwner, requireAuth } from "./auth.js";
 import { config } from "./config.js";
 
-export function createChatRouter(broadcast, emitChatEvent) {
+export function createChatRouter(broadcast, _emitChatEvent) {
   const r = Router();
   const jsonOnly = (req, res, next) => {
     if (!req.is("application/json")) {
@@ -142,6 +142,18 @@ export function createChatRouter(broadcast, emitChatEvent) {
           },
         },
       };
+      // Refuse rather than guess. Without an explicitly configured peer there
+      // is no correct destination for this message, and inventing one is how
+      // chat content ends up on an unintended host.
+      if (!config.hermesA2aMacUrl) {
+        const msg = addMessage({
+          sender: "system",
+          text: "@mac is not configured on this server (set HERMES_A2A_MAC_URL).",
+          isSystem: true,
+        });
+        broadcast({ channel: "chat_done", data: msg });
+        return res.status(503).json({ error: "A2A mac not configured" });
+      }
       const headers = { "Content-Type": "application/json" };
       if (config.hermesA2aMacToken) headers.Authorization = `Bearer ${config.hermesA2aMacToken}`;
       const ac = new AbortController();

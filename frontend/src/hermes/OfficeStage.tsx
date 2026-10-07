@@ -12,6 +12,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { Agent, OfficeEvent } from '../types'
 import { AGENT_CONFIGS } from '../types'
 import Character from '../components/Character'
+import BurnOverlay from '../components/BurnOverlay'
+import ApprovalGate from '../components/ApprovalGate'
+import AuditBadge from '../components/AuditBadge'
+import AtmosphereLayer from '../components/AtmosphereLayer'
+import { useBurnState } from './useBurnState'
 import FurnitureRenderer from '../components/FurnitureRenderer'
 import { ROOMS, type RoomId } from '../rooms'
 import {
@@ -153,6 +158,12 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
   const [activeRoom, setActiveRoom] = useState<RoomId>('main-office')
   // Recent envelopes for the per-room mini feed (kept in state so it re-renders).
   const [recentEnvelopes, setRecentEnvelopes] = useState<HermesEnvelope[]>([])
+
+  // Burn state is seeded once and then pushed over the socket; see
+  // useBurnState for why this is not a timer. The same hook feeds the HUD, so
+  // the room lighting and the numbers can never drift apart.
+  const { state: burnState, snapshot: burnSnapshot } = useBurnState(recentEnvelopes)
+
   // Latest service_status per host → lamp colour in the thematic rooms.
   const [serviceState, setServiceState] = useState<Record<string, 'active' | 'failed' | 'inactive'>>({})
 
@@ -190,8 +201,7 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
         // Presence: heartbeat updates / away timeout carries lastSeenTs.
         if (env.type === 'agent_status') {
           const d = env as any
-          const rawAgent = (d.agent as unknown)
-          const name = typeof rawAgent === 'string' ? rawAgent : String((rawAgent as { id?: string; name?: string })?.id ?? (rawAgent as { name?: string })?.name ?? '')
+          const name = String(d.agent ?? '')
           next = next.map(a => {
             if (a.id !== name) return a
             if (d.state === 'away') return { ...a, offline: true, lastSeenTs: d.lastSeenTs ?? a.lastSeenTs }
@@ -331,7 +341,7 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
   }))
 
   return (
-    <div className="office-view" data-testid="office-stage">
+    <div className="office-view" data-testid="office-stage" data-burn={burnState}>
       <div
         className={`room-container${reducedMotion ? ' reduced-motion' : ''}`}
         style={{
@@ -342,6 +352,13 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
         }}
       >
         <div className="room-background" style={{ backgroundImage: `url(${roomImage})` }} />
+        <AtmosphereLayer
+          state={burnState}
+          phase={phase}
+          /* Windowless rooms get no shafts — rays with no source read as fog. */
+          rayStrength={room.id === 'server-room' || room.id === 'parking' ? 0.15 : 1}
+          moteDensity={room.id === 'server-room' ? 1.5 : 1}
+        />
 
         {room.furniture.length > 0 && (
           <FurnitureRenderer items={room.furniture} onItemClick={() => {}} />
@@ -357,6 +374,13 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
             }
           />
         ))}
+
+        {/* Burn-rate physics: heat, fire and sprinklers driven by GET /burn */}
+        <BurnOverlay snapshot={burnSnapshot} />
+
+        {/* Doors are policy gates: requests stop here until a human decides */}
+        <ApprovalGate />
+        <AuditBadge />
 
         <div className="room-label" data-testid="room-label">{room.name}</div>
 

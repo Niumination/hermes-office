@@ -1,359 +1,425 @@
-# PRD — Hermes Office (Niumination)
+# PRD — Hermes Office v2
 
-**Status:** Draft v1.0 · **Tanggal:** 3 Okt 2026 · **Pemilik:** Afrizal Munthe ("zaryu") · **Penyusun:** Hermes Cloud Agent (LightVela)
+**Status:** v2.0 · **Tanggal:** 6 Okt 2026 · **Pemilik:** Afrizal Munthe ("zaryu")
+
+> **Dokumen ini menggantikan PRD v1.0 (3 Okt 2026) seluruhnya.** v1
+> mendeskripsikan alat pribadi untuk melihat satu ekosistem agent. Produk yang
+> sekarang ada di repo ini bukan itu. Ringkasan apa yang berubah dan mengapa
+> ada di §13 — dibaca lebih dulu kalau Anda pernah membaca v1.
 
 ---
 
 ## 1. Ringkasan Eksekutif
 
-Hermes Office adalah aplikasi web real-time bergaya *isometric pixel-art virtual office* yang memvisualisasikan ekosistem AI agent milik Afrizal Munthe secara live. Diadaptasi dari proyek open-source [Claude-Office](https://github.com/W17ant/Claude-Office) (MIT), proyek ini mengganti sumber data dari Claude Code hooks menjadi **Hermes Agent telemetry** — mencakup dua instance Hermes (Cloud di lightvela.ai dan Mac lokal), channel messaging (Telegram, WhatsApp), tautan A2A, dan aktivitas GitHub org Niumination (128 repo).
+Hermes Office adalah **ruang kendali spasial untuk armada AI agent**: kantor
+isometrik bergaya donghua 3D di mana **denah lantai _adalah_ kebijakan**.
+Setiap ruangan membawa tingkat kepercayaan, daftar alat yang diizinkan/ditolak,
+plafon tier model, anggaran dolar per jam, dan aturan persetujuannya sendiri.
+Memindahkan agent dari satu ruangan ke ruangan lain **mengubah apa yang boleh
+ia lakukan** — bukan metafora, melainkan jalur penegakan yang sebenarnya.
 
-Aplikasi di-deploy di server LightVela milik pengguna (bukan Workbench static hosting), diakses via subdomain, dan menjadi "pusat komando visual" ekosistem.
+Di bawah permukaan itu ada tiga pilar yang bisa dijual:
 
-**Tujuan satu kalimat:** *Buka satu halaman, lihat seluruh ekosistem AI kamu hidup — siapa yang sedang bekerja, channel apa yang aktif, repo apa yang baru berubah — dalam kantor pixel art yang charming.*
+| Pilar | Apa | Status |
+|---|---|---|
+| **A** | **Ingest OTLP** — terima trace OpenTelemetry GenAI dari framework apa pun, normalisasi atribut yang berbeda-beda, hitung biaya | **Selesai** (Fase 1) |
+| **B** | **Tata Kelola Spasial** — ruangan sebagai amplop kebijakan, breaker burn-rate, gerbang persetujuan | **Selesai** (Fase 2–3) |
+| **C** | **Perekam Penerbangan + Ekspor Kepatuhan** — ledger berantai SHA-256, dossier AI Act | **Selesai** (Fase 4) |
+
+**Tujuan satu kalimat:** *Satu halaman yang memperlihatkan apa yang armada agent
+Anda lakukan, menghentikannya sebelum menghabiskan uang Anda, dan membuktikan
+kepada auditor bahwa Anda sudah melakukan keduanya.*
 
 ---
 
-## 2. Latar Belakang & Masalah
+## 2. Masalah & Bukti Pasar
 
-### 2.1 Kondisi saat ini
+### 2.1 Tiga masalah yang nyata
 
-Ekosistem Afrizal tersebar dan tidak terlihat sebagai satu kesatuan:
+**Biaya lepas kendali.** IDC (Des 2025): **96% perusahaan melampaui proyeksi
+biaya AI mereka, hanya 44% punya pengaman apa pun.** Tidak satu pun framework
+agent besar mengirimkan **batas dolar native**. OWASP menamainya **LLM10 —
+Denial of Wallet**. Yang ada di pasar adalah dashboard yang memberi tahu Anda
+berapa yang sudah terbakar, setelah terbakar.
 
-| Komponen | Lokasi | Cara pantau saat ini |
-|---|---|---|
-| Hermes Cloud | Server LightVela (lightvela.ai) | Chat Telegram DM |
-| Hermes Mac | MacBook Pro (~zaryu) | Telegram DM + desktop app |
-| A2A link | Tailscale 100.65.20.34 ↔ 100.120.57.37:9900 | Log file / tes manual |
-| Telegram/WhatsApp gateway | Kedua instance | Dashboard LightVela |
-| GitHub org Niumination | ~128 repo | github.com |
-| Cron & notifikasi | LightVela-Group topic #5 | Telegram |
+**Kepatuhan jadi wajib bulan ini.** Kewajiban sistem berisiko tinggi EU AI Act
+berlaku **2 Agustus 2026** — sudah lewat. Pasal 12(1) mewajibkan pencatatan
+otomatis; Pasal 19/26(6) menuntut retensi ≥6 bulan; Pasal 14 menuntut
+pengawasan manusia; Pasal 99(4) memasang denda **€15 juta atau 3% omzet
+global**. Standar de-facto untuk log yang tahan-rusak adalah
+**append-only + rantai SHA-256**.
 
-Tidak ada satu tempat untuk *melihat* ekosistem secara menyeluruh dan real-time.
+**Telemetri tidak seragam.** Semconv GenAI OpenTelemetry punya repo sendiri
+sejak v1.42.0 (12 Jun 2026) tapi **belum ada rilis bertag** — semuanya masih
+berstatus *Development*. Framework memancarkan **beberapa generasi atribut
+sekaligus**. Normalisasi bukan pekerjaan sepele; itu pekerjaan yang bisa
+dijual.
 
-### 2.2 Mengapa Claude-Office menarik
+### 2.2 Mengapa ada ruang untuk kami
 
-- Metafora visual yang kuat: kantor = ekosistem, karakter = agent, meja = tugas
-- Sudah terbukti berfungsi (Express + WS + React, MIT)
-- Estetika pixel art yang konsisten dan charming, day/night cycle
-- Event contract sederhana (POST /event → broadcast WS) yang mudah diadaptasi
+Sapuan kompetitor GitHub (4 Okt 2026): kategori "kantor piksel lucu" mentok di
+sekitar **200 bintang** — `W17ant/Claude-Office` 191★ (hulu kami, dorongan
+terakhir 2026-04-16, mandek), `FulAppiOS/Agent-Quest` 142★, sisanya ≤17★.
+Dashboard observability yang tidak lucu jauh lebih besar: `patoles/agent-flow`
+1.673★, Arize Phoenix 11.703★, **Langfuse 35.372★**.
 
-### 2.3 Gap yang harus diatasi
+Pelajarannya **bukan** "jadilah lucu". Keimutan tidak berskala jadi bisnis.
+Yang berskala adalah **tata kelola**; metafora spasial adalah antarmuka yang
+membuat tata kelola bisa dipahami sekilas.
 
-1. Claude-Office membaca hook Claude Code; Hermes punya arsitektur berbeda (gateway, A2A audit log, cron scheduler)
-2. Claude-Office chat AI memanggil `claude -p` CLI; Hermes punya gateway sendiri
-3. Tidak ada konsep GitHub activity di Claude-Office
-4. Claude-Office dirancang single-machine localhost; kita butuh remote access + multi-source (2 mesin)
+**Yang jangan dilawan:** Claude Code v2.1.139 (11 Mei 2026) sudah mengirimkan
+Agent View native. Vendor memiliki pertanyaan "apa yang sedang berjalan". Kami
+menjawab pertanyaan yang berbeda: *apa yang boleh berjalan, berapa biayanya,
+dan bisakah Anda membuktikannya enam bulan dari sekarang.*
+
+### 2.3 Harga yang sudah terbukti di pasar
+
+Langfuse $29 / $199 / **$2.499 Enterprise**. Braintrust gratis → $249 (Seri B
+**$80 juta @ valuasi $800 juta**, Feb 2026). LangSmith $39/kursi + $0,50–2,50
+per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
 
 ---
 
 ## 3. Goals & Non-Goals
 
-### 3.1 Goals
+### 3.1 Goals v2
 
-| # | Goal |
-|---|---|
-| G1 | Visualisasi real-time seluruh agent Hermes (Cloud + Mac) dalam satu kantor isometrik |
-| G2 | Event pipeline: aktivitas Hermes (tool calls, A2A tasks, cron, git push) → server → browser < 2 detik |
-| G3 | Panel chat yang terhubung ke Hermes Cloud (bertanya ke agent dari dalam kantor) |
-| G4 | Panel GitHub: feed aktivitas repo org Niumination (push, PR, star) |
-| G5 | Akses publik yang aman via subdomain lightvela.ai (auth token, HTTPS) |
-| G6 | Dukungan "mode tribute" seperti /the-office pada aslinya → versi kita: /niu-mode (tema Niumination) |
-| G7 | Deploy sebagai systemd service, survive reboot, auto-restart |
+| # | Goal | Status |
+|---|---|---|
+| G1 | Terima trace OTLP GenAI dari framework apa pun, normalisasi lintas-generasi atribut | ✅ Fase 1 |
+| G2 | Denah lantai sebagai amplop kebijakan yang dapat ditegakkan | ✅ Fase 3 |
+| G3 | Breaker burn-rate yang **mengarahkan sebelum menghentikan** | ✅ Fase 2 |
+| G4 | Ledger tahan-rusak + ekspor dossier AI Act | ✅ Fase 4 |
+| G5 | Bisa di-deploy siapa pun, tanpa terikat host/akun mana pun | ✅ Fase 6 |
+| G6 | Identitas visual yang membenarkan harga premium | ✅ Fase 5 |
+| G7 | Pengujian yang membuat refactor aman (154 backend + 119 frontend) | ✅ Fase 7, 9 |
+| G8 | Dokumentasi yang klaimnya dieksekusi CI | ✅ Fase 8 |
 
-### 3.2 Non-Goals (v1)
+### 3.2 Non-Goals v2
 
-- ❌ Mobile native app (responsif web cukup)
-- ❌ Multi-tenant / multi-user accounts (single owner + read-only guests)
-- ❌ Menulis ke ekosistem (read-only visualization; chat ke agent adalah satu-satunya aksi)
-- ❌ Mac agent spawning visual (Mac ditampilkan sebagai satu karakter, bukan sub-agent-nya)
-- ❌ Workbench static export (ini inherently serverful)
-
----
-
-## 4. User Personas & Stories
-
-### Persona 1: Afrizal (Owner/Admin)
-
-- US1: Sebagai owner, saya membuka hermes.lightvela.ai dan langsung melihat karakter Hermes Cloud mengetik di mejanya ketika saya memberinya tugas via Telegram.
-- US2: Sebagai owner, saat saya kirim tugas A2A ke Mac, karakter "Mac Agent" berjalan ke meja dan menampilkan speech bubble isi tugas.
-- US3: Sebagai owner, saya bisa chat dengan Hermes Cloud langsung dari panel office chat.
-- US4: Sebagai owner, saya melihat feed "commit baru ke Niumination/brain" muncul sebagai event di office.
-- US5: Sebagai owner, saya bisa toggle AI mode off agar hemat token.
-
-### Persona 2: Tamu (read-only viewer)
-
-- US6: Sebagai tamu dengan link invite, saya bisa melihat kantor & aktivitas tanpa bisa chat atau lihat detail sensitif.
-
-### Persona 3: Agent (sistem)
-
-- US7: Sebagai Hermes Cloud, saya mem-publish event (spawn selesai, cron selesai, A2A diterima) ke office secara otomatis.
-- US8: Sebagai Hermes Mac, saya melakukan hal yang sama via A2A/relay.
+- ❌ **Bersaing dengan Agent View milik vendor.** Kalah sebelum mulai.
+- ❌ **Harga per-kursi.** Pembeli kami adalah tim kecil dengan armada besar.
+  Laminar membuktikan kursi tak terbatas laku. Per-kursi menghukum tepat
+  perilaku yang kami ingin dorong.
+- ❌ **Multi-tenant SaaS.** Single-tenant yang di-self-host adalah fiturnya —
+  pembeli kepatuhan tidak mau log mereka di infrastruktur orang lain.
+- ❌ **Migrasi ke React 19 / React Three Fiber.** Lihat §11 D3.
+- ❌ **Membaca isi prompt.** Lihat §11 D5. Ini batas permanen, bukan backlog.
+- ❌ Aplikasi native mobile.
 
 ---
 
-## 5. Arsitektur
+## 4. Persona & User Story
 
-### 5.1 Gambaran umum
+### Persona 1: Engineering Lead (pembeli & pemakai harian)
+
+- **US1:** Saya membuka satu halaman dan melihat agent mana di ruangan mana,
+  karena ruangan memberi tahu saya apa yang boleh mereka sentuh.
+- **US2:** Ketika seorang agent mencoba `kubectl` dari meeting-room, ia
+  ditolak dan saya melihat alasannya — bukan menemukannya di log besok.
+- **US3:** Saat belanja mencapai 75% anggaran, kantor berubah warna sebelum
+  ada yang perlu membaca angka.
+
+### Persona 2: Petugas Kepatuhan / Auditor (pembenar anggaran)
+
+- **US4:** Saya mengunduh dossier untuk rentang tanggal dan mendapat catatan
+  tahan-rusak berisi setiap keputusan, persetujuan, dan penolakan.
+- **US5:** Saya memverifikasi rantai dan mendapat jawaban ya/tidak, bukan
+  "percayalah".
+- **US6:** Saya bisa melihat dengan tepat apa yang **tidak** dideteksi sistem
+  ini (§ FLIGHT-RECORDER) tanpa harus membaca kodenya.
+
+### Persona 3: Finance / FinOps
+
+- **US7:** Saya memasang plafon dolar per ruangan dan sistem **mengarahkan**
+  agent ke model lebih murah dulu, menghentikan hanya sebagai upaya terakhir.
+  (TokenOps Microsoft: tata kelola tingkat-run memangkas belanja per-tugas
+  **~78%** dan menaikkan penyelesaian 67%→96% justru dengan mengarahkan,
+  bukan menghentikan.)
+
+### Persona 4: Tamu / pengunjung anonim
+
+- **US8:** Saya melihat kantor hidup dan paham produknya dalam 10 detik,
+  **tanpa** melihat satu pun dolar, nama alat, atau identitas pemberi
+  persetujuan.
+
+> ⚠ Persona 4 bukan hipotetis. `GET /` mencetak sesi tamu read-only untuk
+> browser mana pun yang belum punya. Kalau instance disajikan ke internet,
+> **"pengunjung anonim" == "tamu"**, dan redaksi tamu adalah satu-satunya
+> batas yang ada. Lihat SECURITY.md §3.
+
+---
+
+## 5. Arsitektur (sebagaimana dibangun)
 
 ```
-┌─────────────────────┐     A2A/HTTP      ┌──────────────────────────┐
-│  Hermes Mac (zaryu) │ ────────────────► │                          │
-│  event-relay.sh     │                   │   Hermes Office Server   │
-└─────────────────────┘                   │   (Node/Express + WS)    │
-                                          │   lightvela.ai:7333      │
-┌─────────────────────┐     HTTP POST     │                          │
-│  Hermes Cloud       │ ────────────────► │  ┌────────────────────┐  │
-│  (gateway hooks/    │                   │  │ Event Bus          │  │
-│   plugin watcher)   │                   │  └─────────┬──────────┘  │
-└─────────────────────┘                   │            │ broadcast   │
-                                          │  ┌─────────▼──────────┐  │
-┌─────────────────────┐                   │  │ WS → Browser       │  │
-│  GitHub (Niumination│ ◄─────────────────┤  └─────────┬──────────┘  │
-│  webhooks/polling)  │   REST API        │            │             │
-└─────────────────────┘                   │  ┌─────────▼──────────┐  │
-                                          │  │ React Frontend     │  │
-                                          │  │ (pixel office)     │  │
-                                          │  └────────────────────┘  │
-                                          │  SQLite (chat + events)  │
-                                          └──────────────────────────┘
+  Sumber telemetri                 Hermes Office                    Browser
+ ┌──────────────────┐        ┌────────────────────────┐        ┌─────────────┐
+ │ Framework agent  │ OTLP   │  POST /v1/traces       │        │             │
+ │ apa pun          ├───────►│  normalisasi + biaya   │        │  React DOM  │
+ └──────────────────┘        │         │              │        │  isometrik  │
+ ┌──────────────────┐ POST   │         ▼              │        │             │
+ │ Hook/relay Anda  ├───────►│   event bus ──────────────── WS ►│ AtmosphereL │
+ └──────────────────┘ /event │     │        │         │        │ (shader)    │
+ ┌──────────────────┐ poll   │     ▼        ▼         │        │             │
+ │ GitHub (opsional)├───────►│  policy   burn-rate    │        │ BurnOverlay │
+ └──────────────────┘        │     │        │         │        │ ApprovalGate│
+                             │     └────┬───┘         │        │ AuditBadge  │
+                             │          ▼             │        └─────────────┘
+                             │   ledger (SHA-256)     │
+                             │          │             │        ┌─────────────┐
+                             │          ▼             │  GET   │  Auditor    │
+                             │   GET /dossier ────────────────►│  (dossier)  │
+                             └────────────────────────┘        └─────────────┘
 ```
 
-### 5.2 Komponen
-
-| Komponen | Teknologi | Tanggung jawab |
-|---|---|---|
-| **office-server** | Node 20 + Express 4 + ws | Terima event (HTTP POST), autentikasi, broadcast WS, serve static build |
-| **event-bridge-cloud** | Hermes plugin (`~/.hermes/plugins/office-bridge/`) | Hook ke lifecycle Hermes Cloud: `post_tool_call`, cron completion, A2A inbound; POST ke office-server |
-| **event-bridge-mac** | Shell script + launchd (di Mac) | Tail A2A audit log + hermes logs; POST ke office-server via Tailscale |
-| **github-watcher** | Bagian dari office-server | Polling GitHub API (ETA: webhooks jika org permit) setiap 60s; emit event push/PR |
-| **chat-bridge** | office-server → Hermes API server (`localhost:3000/v1/chat/completions`) | meneruskan chat panel ke Hermes Cloud; streaming balikan ke panel |
-| **frontend** | React 18 + Vite + TS (port dari Claude-Office src/) | Render isometric office, karakter, speech bubbles, panels |
-| **db** | SQLite (better-sqlite3) | chat history + event log (ring buffer 7 hari) |
-
-### 5.3 Event contract (adaptasi dari Claude-Office)
-
-Event types yang diwarisi: `agent_spawned`, `agent_finished`, `tool_call`, `tool_done`, `mcp_call`, `office_chat`.
-
-Event types baru:
-
-| Type | Sumber | Payload |
-|---|---|---|
-| `a2a_task_in` | A2A audit | `{from, task, contextId}` |
-| `a2a_task_out` | A2A audit | `{to, task, state}` |
-| `cron_fired` | cron scheduler | `{job, target}` |
-| `git_push` | GitHub watcher | `{repo, author, commits, additions}` |
-| `channel_msg` | gateway logs | `{platform, chat, direction}` |
-| `agent_status` | heartbeat | `{agent: cloud|mac, state: idle|working|away}` |
-
-### 5.4 Keamanan
-
-- Token bearer per-source (cloud-bridge, mac-bridge) — file 0600
-- HTTPS via reverse proxy (Cloudflare/LightVela platform, subdomain `office.lightvela.ai`)
-- Rate limit: 60 req/min per source
-- Origin allowlist WebSocket
-- Guest mode: token read-only, events disanitasi (repo privat tidak ditampilkan)
-- Secret redaction: pola API-key/JWT disaring dari semua event & chat
-
-### 5.5 Deployment
-
-- Server: `/opt/hermes-office/` (atau `~/hermes-office/`), systemd unit `hermes-office.service` (user unit, selaras hermes-gateway)
-- Port internal: 7333 (hindari bentrok 3000/3334/9900)
-- Build frontend: `vite build` → dist/ diserve Express
-- Log: `~/.hermes/logs/office.log` (atau journald)
+Detail per-modul, tabel rute lengkap, dan diagram aliran data ada di
+**ARCHITECTURE.md** — dokumen itu klaimnya diverifikasi CI lewat
+`scripts/check-docs.py`, jadi ia yang jadi sumber kebenaran teknis, bukan PRD
+ini.
 
 ---
 
-## 6. Spesifikasi Fitur (v1)
+## 6. Spesifikasi Fitur (sebagaimana dibangun)
 
-### F1. Kantor Isometrik (port + modifikasi dari Claude-Office)
+### F1 · Ingest OTLP (Fase 1)
 
-- Peta kantor: 6-8 meja. Meja tetap: Hermes Cloud, Hermes Mac, Boss (Afrizal)
-- Meja dinamis: muncul saat event `git_push` (karakter "GitHub Octo" duduk sebentar), `cron_fired` (karakter "Cron Runner")
-- Day/night cycle 24 jam real (sinkron WIB)
-- Random office events (pizza delivery, printer jam) — dipertahankan dari asli
-- Sound effects toggle (default off)
+`POST /v1/traces`, JSON saja, token bridge, batas 8 MB, 2.000 event per batch.
+Protobuf ditolak dengan **415** yang menyebutkan
+`OTEL_EXPORTER_OTLP_PROTOCOL=http/json` — pesan error yang mengajari, bukan
+yang menyalahkan. Penampakan pertama sebuah agent otomatis menyuntik
+`agent_spawned` bertanda `synthetic:true`. int64 ditangani **sebagai string**.
+`status.code===2` → `ok:false`. Biaya: `gen_ai.usage.cost` menang kalau ada,
+jika tidak pencocokan prefiks terpanjang atas tabel harga.
 
-### F2. Panel Agents
+### F2 · Tata Kelola Spasial (Fase 3)
 
-- Sidebar kanan: daftar agent + status real-time (idle/working/away) + task terakhir
-- Klik karakter → popup detail: agent itu siapa, jalur aksesnya (Telegram/A2A/dll), tugas terakhir, uptime
+Setiap ruangan:
+`{label, trust, tools:{allow,deny}, maxModelTier, budgetHourlyUsd, approval[], entryApproval}`.
 
-### F3. Office Chat (Hermes-powered)
+| Ruangan | Anggaran/jam | Catatan |
+|---|---|---|
+| lobby | $0,25 | zona masuk |
+| meeting-room | $1 | menolak `bash shell deploy kubectl terraform psql` |
+| main-office | $2 | kerja umum |
+| server-room | $5 | + persetujuan + persetujuan masuk |
+| ceo-office | $10 | kepercayaan tertinggi |
+| kitchen / nap-room | 0 | idle — menolak segalanya, disengaja |
 
-- Chat panel bergaya Slack, terhubung ke Hermes Cloud via API server lokal
-- Multi-agent routing sederhana: pesan mengandung "@mac" → diteruskan via A2A ke Mac (dengan batas 1 pertanyaan/reply untuk mencegah loop)
-- Slash commands: `/status`, `/agents`, `/repos`, `/niu-mode`
-- Persist di SQLite; typing indicator; reaksi emoji
+`decide()` berurutan: idle → **deny mengalahkan allow** → tier model →
+pencocokan glob persetujuan → amplop ruangan → `burn.decide()`.
+**Lingkup paling ketat yang menang.** Persetujuan `ap-<seq>-<base36>`, TTL 5
+menit, **sekali pakai, terikat ke `{agent, tool}`**, resolusi ganda → 409.
 
-### F4. GitHub Panel
+### F3 · Breaker Burn-Rate (Fase 2)
 
-- Tab di bawah chat: feed aktivitas org Niumination
-- Event: push (repo, author, +x/-y), PR open/merge, star baru
-- Polling 60s (GitHub API gratis tier cukup untuk 128 repo check `pushed_at` delta)
+`<0.5 normal` → `<0.75 warm` → `<0.9 hot` → `<1.0 critical` → `>=1.0 tripped`,
+dengan aksi `allow | advise | restrict | throttle | deny`.
 
-### F5. Niu-Mode (Easter Egg)
+Desainnya **mengarahkan sebelum menghentikan**. `budget_state` disiarkan
+**hanya saat transisi**, dan tidak pernah membawa angka dolar — jadi tamu
+melihat suhu tanpa melihat uang.
 
-- `/niu-mode` mengganti tema: palet Niumination, karakter jadi tim Niu, chatter berbahasa Indonesia, prop khas (laptop sticker, kopi Aceh)
-- State persist di localStorage
+### F4 · Perekam Penerbangan + Dossier (Fase 4)
 
-### F6. Admin & Auth
+`SHA-256( canonicalJson({seq,ts,prevHash,type,actor}) + "\n" + payloadJson )`,
+genesis `"0"×64`.
 
-- Login owner: token (disimpan localStorage)
-- Guest link: `?guest=<token>` → read-only, tanpa chat input, tanpa repo privat
-- Panel admin sederhana: regenerate token, lihat connected sources
+| Terdeteksi oleh rantai saja | Butuh tambatan (Fase 11) | Masih tidak terdeteksi |
+|---|---|---|
+| penyuntingan record | pemotongan ekor | kebohongan tentang **masa depan** |
+| perubahan timestamp | regenerasi menyeluruh | — |
+| penyusunan ulang | — | — |
+| penghapusan di tengah | — | — |
+
+Kolom tengah ditutup Fase 11 dengan **menerbitkan hash kepala ke luar
+ledger**: berkas JSONL di samping basis data (lemah, gratis) dan webhook
+operator opsional (kuat). Begitu `{seq, hash}` ada di tangan orang lain,
+server tidak bisa lagi berpura-pura rantainya berakhir lebih awal. Ia tetap
+bisa berbohong soal masa depan; ia tidak bisa menarik kembali yang sudah
+terbit. UI
+menyebut ini apa adanya: *"Tamper-evident, not tamper-proof."*
+
+Terukur: 0,020 ms/record ≈ 49.000/detik; 100.000 record → verifikasi 0,7 s,
+31,3 MB ≈ 1,1 GB/tahun. Isi prompt **tidak pernah** dicatat. Kegagalan tulis
+ledger **tidak pernah** menolak aksi yang sedang berjalan.
+
+### F5 · Lapisan Visual Donghua (Fase 5)
+
+12 ruangan, 18 pelat, 282 sprite, nol placeholder. Kesan 3D datang dari
+**cahaya**, bukan geometri: satu fragment shader WebGL2 (`AtmosphereLayer`)
+dengan god ray volumetrik, debu di tiga bidang parallax, vignette, dan
+gradasi warna yang **membaca burn state**. Biaya **+7,8 kB**.
+
+### F6 · Chat & Panel (warisan v1, dipertahankan)
+
+Chat bergaya Slack dengan reaksi, typing indicator, thread, dan tanda dibaca —
+semuanya persisten di SQLite. Feed GitHub opsional. Niu-mode masih **stub**
+(palet + string Indonesia di `niu.ts`, toggle `/niu`), bukan tema penuh seperti
+yang dijanjikan UI-SPEC v1.
 
 ---
 
-## 7. Data Model
-
-### SQLite Schema (ringkas)
+## 7. Model Data
 
 ```sql
-CREATE TABLE chat_messages (
-  id INTEGER PRIMARY KEY,
-  role TEXT CHECK(role IN ('user','agent','system')),
-  agent TEXT,               -- 'cloud' | 'mac'
-  content TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  seen INTEGER DEFAULT 0
+-- server/chat-db.js
+CREATE TABLE IF NOT EXISTS messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender     TEXT    NOT NULL,
+  role       TEXT    NOT NULL DEFAULT 'default',
+  text       TEXT    NOT NULL,
+  timestamp  INTEGER NOT NULL,
+  is_system  INTEGER NOT NULL DEFAULT 0,
+  reactions  TEXT    NOT NULL DEFAULT '[]',   -- array JSON, bukan tabel terpisah
+  thread_id  INTEGER,
+  seen       INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE reactions (
-  message_id INTEGER REFERENCES chat_messages(id),
-  emoji TEXT,
-  count INTEGER DEFAULT 1,
-  PRIMARY KEY (message_id, emoji)
-);
-
-CREATE TABLE events (
-  id INTEGER PRIMARY KEY,
-  type TEXT NOT NULL,
-  payload TEXT NOT NULL,     -- JSON
-  source TEXT NOT NULL,      -- 'cloud' | 'mac' | 'github' | 'system'
-  created_at INTEGER NOT NULL
-);
-CREATE INDEX idx_events_created ON events(created_at DESC);
--- retention: DELETE WHERE created_at < now - 7d (harian)
+-- server/ledger.js
+CREATE TABLE IF NOT EXISTS ledger ( ... );   -- append-only, berantai hash
 ```
 
----
+Event **tidak** disimpan di SQLite. Mereka hidup di ring buffer dalam memori
+(100.000 entri / 7 hari). Hanya chat dan ledger yang persisten — ledger karena
+kepatuhan menuntutnya, chat karena pengguna mengharapkannya.
 
-## 8. API Spec (office-server)
-
-| Method | Path | Auth | Fungsi |
-|---|---|---|---|
-| POST | /event | source token | Terima event dari bridge |
-| GET | /ws | origin check | WebSocket stream |
-| GET | /roster | any | Daftar agent + status |
-| POST | /chat | owner token | Kirim chat → Hermes |
-| POST | /chat/typing | owner | Broadcast typing |
-| POST | /chat/react | owner | Reaksi emoji |
-| GET | /github/feed | any (sanitized utk guest) | Feed aktivitas GitHub |
-| GET | /health | none | Health check |
-| GET | /api/agents | owner | Detail lengkap agent |
+> PRD v1 menjanjikan tabel `events` dan tabel `reactions` terpisah. Keduanya
+> tidak pernah dibangun seperti itu; dokumen ini mencerminkan skema yang nyata.
 
 ---
 
-## 9. Milestone & Roadmap
+## 8. Spesifikasi API
 
-### M0 — Spike & Validasi (2-3 hari)
+26 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
+beserta guard tiap rute, dan `scripts/check-docs.py` memverifikasi tabel itu
+dua arah** — rute di `index.js` tanpa baris tabel gagal, rute terdokumentasi
+yang tidak ada juga gagal.
 
-| Spike | Pertanyaan | Metode |
+Ringkasan per-pilar:
+
+| Pilar | Rute |
+|---|---|
+| Ingest | `POST /v1/traces`, `POST /event` |
+| Tata kelola | `GET /policy`, `POST /policy/check`, `POST /budget/check`, `GET /burn`, `POST /agents/:agent/room` |
+| Persetujuan | `GET /approvals`, `GET /approvals/:id`, `POST /approvals/:id` |
+| Kepatuhan | `GET /replay`, `GET /ledger`, `GET /ledger/head`, `GET /ledger/verify`, `GET /ledger/anchors`, `POST /ledger/anchor`, `GET /dossier` |
+| Kantor | `GET /`, `GET /roster`, `GET /presence`, `GET /github/feed`, `GET /health`, `GET /debug/events`, `POST /auth/session` |
+| Chat | `GET /chat`, `POST /chat`, `POST /chat/completions`, `POST /chat/reply`, `POST /chat/react`, `POST /chat/typing`, `POST /chat/seen` |
+
+---
+
+## 9. Kemasan & Harga
+
+| Tier | Harga | Isi |
 |---|---|---|
-| S1 | Apakah event dari Hermes plugin lifecycle bisa ditangkap? | Buat plugin minimal `office-bridge`, emit `post_tool_call`, lihat sampai server |
-| S2 | Apakah Mac bisa relay event via Tailscale dengan latensi ok? | Script tail audit log → POST → ukur latensi |
-| S3 | Apakah Claude-Office frontend bisa di-build & jalan tanpa server aslinya? | Port frontend, mock event, render |
-| S4 | Chat bridge ke Hermes API server: streaming berfungsi? | Endpoint `/v1/chat/completions` + SSE |
+| **Open core** | $0 | Kantor, event bus, chat, feed GitHub. Lisensi MIT dari hulu. |
+| **Solo Pro** | $39 | Ingest OTLP, burn-rate, kebijakan ruangan |
+| **Team** | $299 | + perekam penerbangan, gerbang persetujuan, **≤10 kursi** |
+| **Enterprise** | $2.000+ | + ekspor dossier AI Act, penambatan ledger, SSO, dukungan |
 
-**Exit criteria:** 4 spike VALIDATED, arsitektur tidak berubah signifikan.
+**Pilar C adalah yang mengubah $299 menjadi $2.000+.** Pembeli berubah dari
+engineering lead yang membelanjakan anggaran tim menjadi petugas kepatuhan
+yang membelanjakan anggaran risiko, dan angka pembandingnya bukan lagi harga
+alat melainkan **€15 juta**.
 
-### M1 — Foundation (3-4 hari)
-
-- Fork/ struktur repo `Niumination/hermes-office`
-- office-server dasar: /event, /ws, /roster, auth, SQLite
-- Frontend port: office render, karakter, day/night
-- systemd service + deploy ke server
-- **Deliverable:** kantor pixel art jalan di hermes.lightvela.ai dengan event mock
-
-### M2 — Real Integration (4-5 hari)
-
-- event-bridge-cloud (Hermes plugin)
-- event-bridge-mac (script + launchd di Mac)
-- github-watcher (polling)
-- Real events menggerakkan karakter
-- **Deliverable:** buka halaman, beri tugas via Telegram → karakter merespons
-
-### M3 — Chat & Panels (3-4 hari)
-
-- Office chat → Hermes Cloud (streaming)
-- GitHub feed panel
-- Panel agents + detail popup
-- **Deliverable:** fitur inti lengkap
-
-### M4 — Polish & Niu-Mode (2-3 hari)
-
-- Niu-mode theme
-- Guest mode + sanitasi
-- Sound toggle, mobile responsive pass
-- Dokumentasi README
-- **Deliverable:** v1.0 release, tag, deploy stabil
-
-**Total estimasi: 12-16 hari kerja agent** (bisa dipadatkan dengan delegasi paralel)
+**Jangan pernah per-kursi.** Diulang di sini karena tekanannya akan datang.
 
 ---
 
-## 10. Risiko & Mitigasi
+## 10. Roadmap yang Tersisa
 
-| # | Risiko | Prob. | Dampak | Mitigasi |
-|---|---|---|---|---|
-| R1 | Hermes plugin API berubah (v0.21 cepat bergerak) | Sedang | Sedang | Pin versi, plugin kecil & terisolasi, test di update |
-| R2 | LightVela platform proxy tidak bisa route subdomain baru | Sedang | Tinggi | Fallback: path prefix `lightvela.ai/office/` atau port langsung via Tailscale |
-| R3 | Mac offline sering → office terasa "mati" | Tinggi | Rendah | Desain: karakter Mac masuk "away mode", bukan error |
-| R4 | GitHub API rate limit (128 repo × 60s) | Rendah | Rendah | Conditional request (ETag), batch, atau webhooks |
-| R5 | Chat bridge menimbulkan loop agent-agent | Rendah | Tinggi | Hard cap 1 turn, tidak ada auto-reply antar agent dari chat |
-| R6 | Port 7333 diblok firewall LightVela | Rendah | Sedang | Route via platform proxy / Tailscale-only fallback |
-| R7 | Estetika pixel art asli tidak match selera | Rendah | Rendah | Niu-mode theme sebagai alternatif |
+Tiga pilar sudah selesai. Yang berikutnya adalah **penguat**, bukan fondasi —
+diurutkan berdasarkan nilai komersial per satuan usaha:
+
+| # | Ide | Mengapa berharga |
+|---|---|---|
+| R5 | **Multiplayer (Durable Objects)** | Beberapa penonton melihat kantor yang sama |
+| R6 | **Marketplace sprite** | Pendapatan komunitas; risiko rendah, imbalan rendah |
+
+Utang yang diketahui ada di ARCHITECTURE.md §11, bukan di sini — supaya hanya
+ada satu daftar.
 
 ---
 
-## 11. Keputusan Desain (ADR ringkas)
+## 11. Keputusan Desain (ADR)
 
 | # | Keputusan | Alternatif | Alasan |
 |---|---|---|---|
-| D1 | Server Node/Express (port dari Claude-Office) | Tulis ulang Python | Reuse 80% kode teruji; faster to ship |
-| D2 | Polling GitHub API dulu, webhooks kemudian | Webhooks langsung | Webhooks butuh org admin setup + public URL per-repo; polling cukup utk v1 |
-| D3 | Mac relay via shell script + launchd | Plugin Hermes di Mac | Lebih sedikit moving parts di Mac; Mac sering offline |
-| D4 | SQLite (sama dengan asli) | Postgres/Redis | Scale kecil, zero-ops, sudah terbukti |
-| D5 | Chat hanya ke Hermes Cloud (Mac via A2A one-shot) | Direct ke Mac | Simpler; Mac sering offline |
-| D6 | Subdomain `office.lightvela.ai` | Path prefix | Cookie/token isolation lebih bersih |
+| **D1** | Denah lantai sebagai penegakan kebijakan, bukan dekorasi | Dashboard dengan tabel aturan | Satu-satunya hal yang tidak dimiliki Langfuse/Phoenix. Metafora spasial membuat kebijakan bisa dibaca sekilas. |
+| **D2** | Mengarahkan sebelum menghentikan | Pemutus keras di 100% | Data TokenOps: mengarahkan memangkas belanja ~78% **dan** menaikkan penyelesaian 67%→96%. Pemutus keras hanya memangkas biaya. |
+| **D3** | Pelat pra-render + satu shader | React Three Fiber | R3F@9 butuh React 19 → migrasi menyentuh 15 komponen; three ~150–200 kB setelah tree-shake + ~50 kB reconciler. Yang kami kirim: **+7,8 kB**. |
+| **D4** | Disiplin token OKLCH saja | Migrasi penuh Tailwind v4 + shadcn | 2.475 baris CSS yang berfungsi membuat penulisan ulang jadi biaya murni. Ambil ide warnanya, tinggalkan migrasinya. |
+| **D5** | Tidak pernah membaca isi prompt | Ingest prompt penuh untuk fitur lebih kaya | Pembeli kepatuhan tidak akan memasang alat yang menyedot prompt. Ini pagar permanen. |
+| **D6** | Single-tenant self-hosted | SaaS multi-tenant | Sama: pembeli kepatuhan tidak mau log mereka di tempat lain. |
+| **D7** | Tahan-rusak, bukan tahan-serang — dan mengatakannya | Diam saja soal batasannya | Auditor yang menemukan sendiri batasannya tidak akan memercayai klaim lain mana pun. |
 
 ---
 
-## 12. Definition of Done (v1.0)
+## 12. Risiko
 
-- [ ] Semua spike VALIDATED
-- [ ] Repo `Niumination/hermes-office` dengan README, docs/, CI lint
-- [ ] https://office.lightvela.ai live, survive reboot
-- [ ] Event end-to-end: Telegram task → karakter animasi < 2s
-- [ ] Mac events terlihat saat Mac online
-- [ ] GitHub feed menampilkan push < 60s
-- [ ] Chat panel berfungsi dengan streaming
-- [ ] Guest mode disanitasi (verifikasi tidak ada repo privat bocor)
-- [ ] Niu-mode toggle berfungsi
-- [ ] Dokumentasi instalasi & arsitektur di docs/
-
----
-
-## 13. Dokumen Terkait
-
-- `docs/ARCHITECTURE.md` — detail teknis arsitektur
-- `docs/EVENTS.md` — spesifikasi event contract lengkap
-- `docs/DEPLOYMENT.md` — panduan deploy & operasi
-- `docs/SECURITY.md` — model ancaman & mitigasi
-- `docs/UI-SPEC.md` — wireframe & asset pixel art
-- `docs/SPIKES.md` — hasil spike M0
+| # | Risiko | Prob. | Dampak | Mitigasi |
+|---|---|---|---|---|
+| R1 | **Auto-guest** membuat instance publik tanpa disadari | Tinggi | Tinggi | Redaksi tamu diuji di dua tempat; terdokumentasi menonjol; `state`+`ratio` sengaja lolos |
+| R2 | Semconv GenAI berubah sebelum rilis bertag | Tinggi | Sedang | Normalisasi sudah menangani banyak generasi; itu justru produknya |
+| R3 | Vendor menambahkan tata kelola biaya native | Sedang | Tinggi | Pilar C (kepatuhan) paling sulit ditiru vendor; perdalam di sana |
+| R4 | Ekor ledger dipotong tanpa terdeteksi | Rendah | Tinggi | **Ditutup Fase 11** lewat penambatan. Sisa risiko: tambatan lokal-saja lemah terhadap root — pasang `OFFICE_ANCHOR_WEBHOOKS` |
+| R5 | Pembeli menuntut harga per-kursi | Sedang | Sedang | Tolak; tunjukkan preseden kursi-tak-terbatas Laminar |
+| R6 | Dokumentasi melampaui kenyataan (sudah terjadi 3×) | Tinggi | Sedang | `scripts/check-docs.py` di CI; dokumen ini masuk cakupannya |
+| R7 | Berkas/direktori hilang antar lingkungan (`.github/`, `node_modules`) | Tinggi | Rendah | Sumber kanonik + skrip pemasang + pemeriksa drift |
 
 ---
 
-*Dokumen ini disusun oleh Hermes Cloud berdasarkan inspeksi langsung source Claude-Office (MIT) dan kondisi infrastruktur LightVela per 3 Oktober 2026.*
+## 13. Apa yang Berubah dari v1
+
+| v1 menjanjikan | Kenyataan |
+|---|---|
+| "Pusat komando visual untuk ekosistem saya" | Produk tata kelola yang bisa dijual untuk armada siapa pun |
+| Terikat pada Hermes Cloud + Mac + org Niumination | **Nol** nilai default khusus-host; `GITHUB_ORG` dan `HERMES_A2A_MAC_URL` kini `""` |
+| `GITHUB_ORG` default `"Niumination"` | Default itu **tidak akan pernah berhasil** — `Niumination` adalah User, bukan Org; `/orgs/.../repos` → 404 |
+| Tabel `events` + tabel `reactions` di SQLite | Event di ring buffer memori; reaksi berupa kolom JSON |
+| `/api/agents` | Tidak pernah dibangun; `/roster` + `/presence` yang mengisi perannya |
+| Niu-mode sebagai tema penuh | Stub: palet + string + toggle `/niu` |
+| Convetti, music box, gamelan | Tidak dibangun. Dihapus dari spec, bukan ditunda. |
+| "canvas ~70% width, tile grid" | Bukan canvas sama sekali — **React DOM** dengan posisi persentase |
+| Pixel art | Donghua 3D (Fase 5) |
+| 12–16 hari untuk v1.0 | v1.0 terkirim; v2 menambah Fase 0–9 di atasnya |
+
+**Yang tidak berubah, dan tidak boleh berubah:** model token per-sumber,
+pipeline redaksi, kontrak privasi `channel_msg`, dan sanitasi tamu.
+
+---
+
+## 14. Definition of Done — v2.0
+
+- [x] Ingest OTLP menerima dan menormalkan trace GenAI lintas-generasi
+- [x] Kebijakan ruangan ditegakkan di `decide()`, bukan hanya ditampilkan
+- [x] Burn-rate mengarahkan di 4 ambang sebelum menolak
+- [x] Ledger berantai SHA-256 + `GET /ledger/verify` + ekspor dossier
+- [x] Batasan ledger dinyatakan di UI dan di dokumen
+- [x] Nol pengikatan ke host/akun mana pun (`check-deployable.sh`)
+- [x] 154 test backend + 119 test frontend hijau
+- [x] Lint bersih, build 216 kB
+- [x] 5 skrip pemeriksa lolos, semuanya di CI, tanpa `|| true`
+- [x] Klaim ARCHITECTURE.md dieksekusi CI
+- [x] Penambatan ledger — pemotongan ekor dan regenerasi kini terdeteksi (Fase 11)
+
+---
+
+## 15. Dokumen Terkait
+
+| Dokumen | Isi |
+|---|---|
+| `ARCHITECTURE.md` | **Sumber kebenaran teknis.** Diverifikasi CI. |
+| `OTLP.md` | Kontrak ingest, normalisasi atribut, model biaya |
+| `BURN-RATE.md` | Ambang, aksi, perilaku transisi |
+| `POLICY.md` | Skema ruangan, urutan `decide()`, siklus hidup persetujuan |
+| `STANDUP.md` | Bacaan pagi: ambang temuan, determinisme, apa yang rantai tak bisa klaim |
+| `KIOSK.md` | Layar dinding: penurunan hak otomatis, basi, auto-guest |
+| `REPLAY.md` | Time Machine: determinisme, pra-gulung, batas |
+| `FLIGHT-RECORDER.md` | Konstruksi rantai, apa yang tidak dideteksi, angka kinerja |
+| `SECURITY.md` | Model ancaman, auto-guest, kontrak tamu |
+| `EVENTS.md` | 12 event publik + 5 internal |
+| `DEPLOYMENT.md` | Operasi, variabel env, matikan-dengan-rapi |
+| `UI-SPEC.md` | Bahasa visual, layout, aksesibilitas |
+| `CHANGELOG-v2.md` | Catatan lengkap Fase 0–9, termasuk yang salah |

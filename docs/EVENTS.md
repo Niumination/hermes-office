@@ -107,11 +107,12 @@ Heartbeat 30s dari tiap instance (di-set oleh bridge).
 { "type": "agent_status", "agent": "mac", "state": "idle", "uptimeH": 26.4 }
 ```
 `state`: `idle | working | away`. Server menandai `away` otomatis bila tidak ada heartbeat 90s.
-Field `agent` boleh berupa **string** (`"mac"`) atau **objek** (`{name, id, role}`) — server & frontend mengambil key presence dari `agent.id ?? agent.name ?? agent` (jangan pernah mem-objek langsung sebagai Map key).
 
 Field opsional (DUAL-SPACE-DESIGN §2.2, backward-compatible):
 - `lastSeenTs` — di-set server saat emit `away` (watchdog), agar UI bisa menampilkan "terakhir aktif HH:MM" tanpa query ulang. Server juga menyimpan snapshot di `GET /presence`.
 - `metrics` — objek angka bebas (mis. `disk_free_gb`, `load_1m`, `uptime_s`). Validasi longgar: hanya angka/string yang dipertahankan, nilai angka di-clamp ±1e12, field non-skalar dibuang.
+
+Field `agent` boleh berupa **string** (`"mac"`) atau **objek** (`{name, id, role}`) — server & frontend mengambil key presence dari `agent.id ?? agent.name ?? agent` (jangan pernah mem-objek langsung sebagai Map key).
 
 ### `service_status`
 Status layanan per host (M-B: dikirim poller systemd cloud & mac-relay v2; saat M-A boleh dikirim manual/dummy via `/event`).
@@ -132,6 +133,48 @@ Status layanan per host (M-B: dikirim poller systemd cloud & mac-relay v2; saat 
 | kind | | `systemd` \| `cron` \| `launchd` |
 | state | ✓ | `active` \| `failed` \| `inactive` (whitelist) |
 | detail | | opsional, clamp 500; **guest**: path/URL internal di-sanitize (`[path]`), detail ber-IP internal dibuang |
+
+## 3b. Event Internal (Fase 2–3) — `INTERNAL_ONLY`
+
+Tipe ini **tidak boleh** masuk lewat `POST /event`; percobaan ditolak `400
+internal-only`. Hanya `emitInternal({internal:true})` dari dalam proses yang
+boleh menerbitkannya. Tipe baru wajib terdaftar di **`KNOWN_EVENT_TYPES` dan
+`INTERNAL_ONLY`** sekaligus — bila hanya satu, `validateEvent` menolak diam-diam.
+
+### `budget_state`
+Wajib: `scope`, `subject`, `state`. Hanya terbit saat **transisi** tangga
+(`normal → warm → hot → critical → tripped`), bukan tiap tick.
+```json
+{ "type":"budget_state", "scope":"global-hourly", "subject":"*",
+  "state":"hot", "from":"warm", "spentUsd":0.41, "limitUsd":0.50 }
+```
+
+### `agent_moved`
+Wajib: `agent`, `room`. `grantedBy` adalah jejak audit — siapa/apa yang
+mengizinkan perpindahan (`owner`, atau id approval).
+```json
+{ "type":"agent_moved", "agent":"deployer", "room":"server-room",
+  "fromRoom":"lobby", "grantedBy":"ap-7-k2m" }
+```
+
+### `approval_requested`
+Wajib: `approvalId`, `agent`. `kind` ∈ `entry` | `tool`.
+```json
+{ "type":"approval_requested", "approvalId":"ap-7-k2m", "agent":"deployer",
+  "kind":"tool", "tool":"kubectl", "room":"server-room", "reason":"..." }
+```
+
+### `approval_resolved`
+Wajib: `approvalId`, `state` ∈ `approved` | `denied` | `expired`.
+```json
+{ "type":"approval_resolved", "approvalId":"ap-7-k2m", "state":"approved",
+  "decidedBy":"owner", "agent":"deployer", "kind":"tool" }
+```
+
+`office_chat` juga internal-only (lihat §2).
+
+> **Guest:** keempat tipe di atas diredaksi sebelum broadcast — lihat
+> [SECURITY.md §3](./SECURITY.md) untuk tabel field persisnya.
 
 ## 4. Server → Client (WS)
 

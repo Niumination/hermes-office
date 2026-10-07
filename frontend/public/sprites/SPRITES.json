@@ -1,0 +1,1835 @@
+{
+  "note": "Shipped sprite inventory. 'derived' sprites are reproducible byte-for-byte from art/originals/sprites via scripts/stylize-donghua.py; verify with --regen. 'unsourced' sprites have no original on record and have never been through the pipeline \u2014 only these hashes protect them.",
+  "count": 282,
+  "byProvenance": {
+    "derived": 100,
+    "unsourced": 150,
+    "built": 32
+  },
+  "sprites": [
+    {
+      "file": "appliances/coffee-off.webp",
+      "sha256": "49b87d9ce4a3453b4ec2693b539319b6469eb1b4adccdbd3658bc97cffcf1b1b",
+      "bytes": 22852,
+      "provenance": "derived",
+      "originalSha256": "b0f26d9b76411e951a2018fd9e2ab2bf97642610e3db907a112d8b5d537c0fcc"
+    },
+    {
+      "file": "appliances/coffee-on.webp",
+      "sha256": "8d1ba1e8082b770f911bf149329d595ac4a589171192f386a0743aead07046b7",
+      "bytes": 25356,
+      "provenance": "derived",
+      "originalSha256": "7a5980d61c3ac46994e9bd41164761205e8f9ef0abaef99f9bc46e26f6bf92f6"
+    },
+    {
+      "file": "characters/Claude-1-front-left.webp",
+      "sha256": "78381665f4512a81c3062f4424effc2ee86d8317779e84bd05165181f4794f35",
+      "bytes": 48340,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Claude-1-front-right.webp",
+      "sha256": "fed9883670c60a224ddba8ade173087cb9d22a5cefc808bb73c3f1b93d142c56",
+      "bytes": 48564,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Claude-1-rear-left.webp",
+      "sha256": "9042983d82f0242d6a648198ef83c8d11266c521ae67ac0010e251e8eec3fecf",
+      "bytes": 41642,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Claude-1-rear-right.webp",
+      "sha256": "9f0daf8af6df2fe84f994701de611c4240999777663cac97cddfbd9db7955aab",
+      "bytes": 42732,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Frontend-dev-1-front-left.webp",
+      "sha256": "602eda76b7392a6b6718a60d57cfa30c469628e1c58aa04571c9bbf6592dd255",
+      "bytes": 36438,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Frontend-dev-1-front-right.webp",
+      "sha256": "1b644db06319610440b815287dced7a89eaea9951d08167e80bdcf019eea3c4f",
+      "bytes": 37070,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Frontend-dev-1-rear-left.webp",
+      "sha256": "79d4396148ee79e4f4b937877c756ef5999b9ea7bd7f365696c3861f4b53dd53",
+      "bytes": 29096,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Frontend-dev-1-rear-right.webp",
+      "sha256": "0b44b992d154776e6baf1d53492e66e5170abcdca4aa0546bfa1293981c19ac0",
+      "bytes": 28676,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Helper.webp",
+      "sha256": "d012b1c0428d0d3252a6b98ce622930c9d56b0bbfde1bf70a10129440d1a51e0",
+      "bytes": 729738,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Me-1-front-left.webp",
+      "sha256": "d40e4cf9c7077b447f4bfc4b70de8af4d06a89809cb6cc9489b72300847feb35",
+      "bytes": 52402,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Me-1-front-right.webp",
+      "sha256": "351e44de4fb08a4adba739e5dab8859bdbbe22cf7cf729bfc19bc120a839e645",
+      "bytes": 52384,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Me-1-rear-left.webp",
+      "sha256": "2b227ba6f091d8edec547b37abc2f56fa113c53fd66c39abecb266ee61604ff4",
+      "bytes": 45432,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/Me-1-rear-right.webp",
+      "sha256": "f567e5d4780f9423290ac4182cf6231fdc0d9ef23002fbeaf2d930f885f4e9a4",
+      "bytes": 45224,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/TEMPLATE.webp",
+      "sha256": "abfdab0d6ea4e1a15c9c314677eb870aef9c2832c77b56100ede5b04ca79dd18",
+      "bytes": 104340,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-1-front-left.webp",
+      "sha256": "46bc6066151968709ddbaded9da5bb7bd391344a7f35cae476152703c81fee41",
+      "bytes": 33158,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-1-front-right.webp",
+      "sha256": "3ea015bd9ae91b0a15ff094de10dbb24638534551c718564ddfc9ade0b33d561",
+      "bytes": 33146,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-1-rear-left.webp",
+      "sha256": "dffb801bef5b1bd23a432720e14b8a8cdadc7b661501bd2ca0fa17659e81cb40",
+      "bytes": 23526,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-1-rear-right.webp",
+      "sha256": "41cd2b0eee72f501f96fa3677b352f365979a17f837f0d49b5ef9c05a55fe4b5",
+      "bytes": 23862,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-2-front-left.webp",
+      "sha256": "a7aa25dd2442cba2d458dd2bc793459a489a93991bd8203039d5680d726b9110",
+      "bytes": 41850,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-2-front-right.webp",
+      "sha256": "e34c81d96bc44fa0c36fb89ce80f7528c6c1b6b658fc6870b0da1e3a7e687ac2",
+      "bytes": 42046,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-2-rear-left.webp",
+      "sha256": "4bd522f0f7d26a916381b19d45650360b48e40e8e60be6baa7b9ec698ed215e8",
+      "bytes": 37582,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/dev-2-rear-right.webp",
+      "sha256": "4fb95cbfe5e35084ea3426fdf1e3ff9b24182db59a4ff61e89219734dfc2efb3",
+      "bytes": 37334,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-1-front-left.webp",
+      "sha256": "a3e9a2ca7a8224e7ed06f2b594d6b27ca5f688b44eb31a3a3927af99206d8722",
+      "bytes": 28240,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-1-front-right.webp",
+      "sha256": "acf50bd796f31f3769e3b4ac031144a200578865d148b352e38db7e5e595ba0e",
+      "bytes": 30198,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-1-rear-left.webp",
+      "sha256": "77770ea5b55c995c4e9ebb4f52f4507e884047d655edbb173d447fdf7b4a2481",
+      "bytes": 25646,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-1-rear-right.webp",
+      "sha256": "d9902e3522848785336a0056a9c0952e14c3e690c6804aa45c25d9d7937fcd56",
+      "bytes": 25804,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-2-front-left.webp",
+      "sha256": "76e5045c84efed4c941120a7bea0e79ef62a26d384b5908ba8177d88d941dba4",
+      "bytes": 32982,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-2-front-right.webp",
+      "sha256": "d505d9b93f5fa57f226ef68a0f487b2bb5673b86aade62ce8c49e7726235e01b",
+      "bytes": 32480,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-2-rear-left.webp",
+      "sha256": "814284439dbbec63e4674258ac38c8bb0bbd5c20e583d25e880c8ab43bd7e651",
+      "bytes": 26386,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-2-rear-right.webp",
+      "sha256": "169dc54e6297bce0a634cf1e6e25583e39e475caed662f4d892324d205797f67",
+      "bytes": 25708,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-3-front-left.webp",
+      "sha256": "de6ac9d28d63e804eb47798e19aec2a294ade61655022c65ae65ca5ec6d64953",
+      "bytes": 34536,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-3-front-right.webp",
+      "sha256": "a2403d8dadc88b094607100e7f8912f8b0eaa230e96166ea7f1057b552ad4a50",
+      "bytes": 34896,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-3-rear-left.webp",
+      "sha256": "0492c4b98c842fab23ec393f699d157a87c35f65b128132ee2d82ccf0963609e",
+      "bytes": 24490,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/employee-3-rear-right.webp",
+      "sha256": "1c389ec515f7c237e63f5eb626dd72f78d7a4776b53e2581b9743f72bdcd7562",
+      "bytes": 24784,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/explore-1-front-left.webp",
+      "sha256": "f2325036a4cf856ca197c0be8f01258f16bd2d58a286a12de41be182a9195ab3",
+      "bytes": 41262,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/explore-1-front-right.webp",
+      "sha256": "1af3f7779989dce351ffbf85652497800c70f91d860e31b4afe0949c92854d63",
+      "bytes": 40864,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/explore-1-rear-left.webp",
+      "sha256": "f13a9d044460a1e90c69a727f58d6e2b3a0eb4a27099b667e99f745f7b4cd53e",
+      "bytes": 35222,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/explore-1-rear-right.webp",
+      "sha256": "320cc89a54e1a784e98d8588c06242f8d04afa20d9905f102ff29dab57bc43a3",
+      "bytes": 36058,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/security-audit-1-front-left.webp",
+      "sha256": "4c091ae2fa77afbfe68fdbffce6fbfefd38a904541092520976cc85f26883230",
+      "bytes": 30432,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/security-audit-1-front-right.webp",
+      "sha256": "f869a1b6b3025280470ee3ff9785b08e38eecdf99feecf1482b8c4d89d1eef87",
+      "bytes": 31232,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/security-audit-1-rear-left.webp",
+      "sha256": "c6c1f485628d88298e600984eafeedeb0fe1e00e057ae99945871c52d0452186",
+      "bytes": 21694,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "characters/security-audit-1-rear-right.webp",
+      "sha256": "bad906edfbf070caaf58dab48840a52581505c99eef38a6fdb04630936ebf51d",
+      "bytes": 22060,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "culture/bell.webp",
+      "sha256": "f9cb0667e96691e0c164797b2dc7c165e646ed820e9e4b0ab6ba8661ccbe0e24",
+      "bytes": 13086,
+      "provenance": "derived",
+      "originalSha256": "17cc77ebc60f723629e4012246474ca69f2f421a156cbf1b8c88d6a4494344e6"
+    },
+    {
+      "file": "culture/days-last-incident.webp",
+      "sha256": "94538e384603efbe51f316027c52fb72aaff36c1f4604116f8a71668e8328425",
+      "bytes": 61864,
+      "provenance": "derived",
+      "originalSha256": "449b2bdbbda9f96867d42d009c3d0f383ab377a28f016ced59fa0980ee4dd7dc"
+    },
+    {
+      "file": "culture/deploying-screen.webp",
+      "sha256": "b324d2534cf98b6a70ff43cff1c9b01bec141a140dc6d9faa7ed260b105985e1",
+      "bytes": 39374,
+      "provenance": "derived",
+      "originalSha256": "944a20f86c7b6f7b0c6743023240a1c569745e24e3dbfa25c380b8c743311676"
+    },
+    {
+      "file": "culture/todo-board.webp",
+      "sha256": "87cad4ba2ab3c557ced7aa0fa05c5b2b98cdd1abab0382933a4f9ad4f0f188ee",
+      "bytes": 45518,
+      "provenance": "derived",
+      "originalSha256": "da0b2c3dddf6636a3976bf08da49a3eb8230bda01d5e690555be8c24a13a9063"
+    },
+    {
+      "file": "debugger-walk-0.webp",
+      "sha256": "46bc6066151968709ddbaded9da5bb7bd391344a7f35cae476152703c81fee41",
+      "bytes": 33158,
+      "provenance": "derived",
+      "originalSha256": "844b7a94280d531e167113a5a1bfd494e6f3edfd8bd7b4cbfec9dbd67b8e01e9"
+    },
+    {
+      "file": "debugger-walk-1.webp",
+      "sha256": "41cd2b0eee72f501f96fa3677b352f365979a17f837f0d49b5ef9c05a55fe4b5",
+      "bytes": 23862,
+      "provenance": "derived",
+      "originalSha256": "f8bf74f94e621396be674d59c5763d400384b8e958fd4e38abcfaa364fccece4"
+    },
+    {
+      "file": "debugger-walk-2.webp",
+      "sha256": "dffb801bef5b1bd23a432720e14b8a8cdadc7b661501bd2ca0fa17659e81cb40",
+      "bytes": 23526,
+      "provenance": "derived",
+      "originalSha256": "d6b9b8572715925c0eed1c5c01ed7b76288fb4ee1163dd3e4956d08ced054140"
+    },
+    {
+      "file": "debugger-walk-3.webp",
+      "sha256": "3ea015bd9ae91b0a15ff094de10dbb24638534551c718564ddfc9ade0b33d561",
+      "bytes": 33146,
+      "provenance": "derived",
+      "originalSha256": "400bfa055328a817d503a6606726d1f83041433443fcb1531b37ae0c2a4a3631"
+    },
+    {
+      "file": "debugger.webp",
+      "sha256": "3ea015bd9ae91b0a15ff094de10dbb24638534551c718564ddfc9ade0b33d561",
+      "bytes": 33146,
+      "provenance": "derived",
+      "originalSha256": "400bfa055328a817d503a6606726d1f83041433443fcb1531b37ae0c2a4a3631"
+    },
+    {
+      "file": "decoration/ac-wall-unit.webp",
+      "sha256": "88e0f0de2eee17557f6dd867391c15867a53694965a3439379234154bef3788f",
+      "bytes": 20452,
+      "provenance": "derived",
+      "originalSha256": "43f5ef34615bdab05ae114a814efb51b3bd3a08de5f45895a56269d2ab89b411"
+    },
+    {
+      "file": "decoration/money-tree.webp",
+      "sha256": "598307bfa06416343691d968aaa6b6ea4e0c2164b57097af16e43b7b171ff230",
+      "bytes": 36908,
+      "provenance": "derived",
+      "originalSha256": "f2eb2e8ea0e8ea041d0fd33e3db92786e233905009ede0c0d6f119f0bf9e0c49"
+    },
+    {
+      "file": "decoration/monstera-plant.webp",
+      "sha256": "973df94cfce5f0093c956116184b07ab7f37aa70cb6e1119135743c0be6e33d1",
+      "bytes": 53576,
+      "provenance": "derived",
+      "originalSha256": "678267b509b3155d8c685ac3e21cc64bb7f61e764196fea2a660a421b4cba04a"
+    },
+    {
+      "file": "decoration/printer-broken.webp",
+      "sha256": "74257872c8a2d540e52e98c31abf56ef21d8964a73ad9a2e1a9f0cd4ebbb91e4",
+      "bytes": 37516,
+      "provenance": "derived",
+      "originalSha256": "5a8e9c211cface29f6ec32caef77ffec2c07d3200a805254556adfd243607e74"
+    },
+    {
+      "file": "decoration/printer-working.webp",
+      "sha256": "a38b98ed30b975bcbe916538a4611b6c3ce0f40af7e5cf791e97abca12d78381",
+      "bytes": 34692,
+      "provenance": "derived",
+      "originalSha256": "06bb3023b2a66d427bbd7d86cf8a7a74120bc332d36365abe1d138e02711ceff"
+    },
+    {
+      "file": "decoration/printer.webp",
+      "sha256": "7b1231b400070bb3fa930457bfb7367a8687fd7e28421792b394968bc3da72ff",
+      "bytes": 28418,
+      "provenance": "derived",
+      "originalSha256": "e458ca057239ba83e24211fac1d69bda8fde7117f4977b6f69295907cab387fe"
+    },
+    {
+      "file": "decoration/snake-plant.webp",
+      "sha256": "ba66422ed866d66155fdbe425aebdfca78fe62dc8657a6e50a2c0016424e948a",
+      "bytes": 33004,
+      "provenance": "derived",
+      "originalSha256": "d2614ad27fe748bc7fa9baee117372f4b27b382c63e81ec00037d82794b5064f"
+    },
+    {
+      "file": "decoration/white-board.webp",
+      "sha256": "32b85dc2d1b7065111271051f49cef9daf09ed96653e1514826a85f4b955ac37",
+      "bytes": 68472,
+      "provenance": "derived",
+      "originalSha256": "c05e18b18f9417f330339fda99ca85161c9bd396f7e7c2ee79fd8a379d235c72"
+    },
+    {
+      "file": "devops-walk-0.webp",
+      "sha256": "de6ac9d28d63e804eb47798e19aec2a294ade61655022c65ae65ca5ec6d64953",
+      "bytes": 34536,
+      "provenance": "derived",
+      "originalSha256": "ddf30826fb77e7c8bb6eadcf4b866f3754bfa99463b892f9d3da66778948c49e"
+    },
+    {
+      "file": "devops-walk-1.webp",
+      "sha256": "1c389ec515f7c237e63f5eb626dd72f78d7a4776b53e2581b9743f72bdcd7562",
+      "bytes": 24784,
+      "provenance": "derived",
+      "originalSha256": "bd000fc411176cc014089b7d19bce1a55a167b61ec3d7f1007d9962c60011def"
+    },
+    {
+      "file": "devops-walk-2.webp",
+      "sha256": "0492c4b98c842fab23ec393f699d157a87c35f65b128132ee2d82ccf0963609e",
+      "bytes": 24490,
+      "provenance": "derived",
+      "originalSha256": "04718d17d90c21dda323851dac1e226662f783310cb6cb320db73df7c63e6cfc"
+    },
+    {
+      "file": "devops-walk-3.webp",
+      "sha256": "a2403d8dadc88b094607100e7f8912f8b0eaa230e96166ea7f1057b552ad4a50",
+      "bytes": 34896,
+      "provenance": "derived",
+      "originalSha256": "108c5b531b983bf60f2bf6e104588ae6f30bb9f11fa00d05a0d9d31ef61948ce"
+    },
+    {
+      "file": "devops.webp",
+      "sha256": "a2403d8dadc88b094607100e7f8912f8b0eaa230e96166ea7f1057b552ad4a50",
+      "bytes": 34896,
+      "provenance": "derived",
+      "originalSha256": "108c5b531b983bf60f2bf6e104588ae6f30bb9f11fa00d05a0d9d31ef61948ce"
+    },
+    {
+      "file": "donghua/alchemist-front-left.webp",
+      "sha256": "82018bbe791d417e22136a6c1dcfd2b76b756a0ff79a072b1a034733e10c296a",
+      "bytes": 21314,
+      "provenance": "built",
+      "originalSha256": "88754f139be0446c0a0eca9a46d6daade98fbeff532cbda452d87360408f1dce"
+    },
+    {
+      "file": "donghua/alchemist-front-right.webp",
+      "sha256": "243f6408df748ba75815c44becde87f2b43bcb860ab852cd003fcf72523a84c1",
+      "bytes": 21110,
+      "provenance": "built",
+      "originalSha256": "88754f139be0446c0a0eca9a46d6daade98fbeff532cbda452d87360408f1dce"
+    },
+    {
+      "file": "donghua/alchemist-rear-left.webp",
+      "sha256": "8691707be6c2d63563190c5f0c792cba1a646baf105467be1f4aac995314113c",
+      "bytes": 21568,
+      "provenance": "built",
+      "originalSha256": "452403633320e621b0113cdec39dd989d822db36869d6d71e62267892f1884f6"
+    },
+    {
+      "file": "donghua/alchemist-rear-right.webp",
+      "sha256": "420bd19381c73bc439ac5e72f9cea4fb6f99e3cf3adb448b1ab6da644e2658e9",
+      "bytes": 21616,
+      "provenance": "built",
+      "originalSha256": "452403633320e621b0113cdec39dd989d822db36869d6d71e62267892f1884f6"
+    },
+    {
+      "file": "donghua/cultivator-front-left.webp",
+      "sha256": "a8a51562afdf29807eb1ec5dc5f16add6de3adc2efe97dece09a01bfbeae4ffd",
+      "bytes": 17952,
+      "provenance": "built",
+      "originalSha256": "340658b3df3bd6e57479467355b65361e96218d88034663c5a1e8801b8d55e8a"
+    },
+    {
+      "file": "donghua/cultivator-front-right.webp",
+      "sha256": "7dfbd32b9b48d8ff30463f19602ac2a96700863af5c147c33958b2e0d3bc6715",
+      "bytes": 17970,
+      "provenance": "built",
+      "originalSha256": "340658b3df3bd6e57479467355b65361e96218d88034663c5a1e8801b8d55e8a"
+    },
+    {
+      "file": "donghua/cultivator-rear-left.webp",
+      "sha256": "be2114f0d00810be4dba20f875a1cbaf6c7335d5c1a87ae1e0dbe4319f429a51",
+      "bytes": 13596,
+      "provenance": "built",
+      "originalSha256": "ca0327c145bfde397dd59af0346c77143a8c06008e7c4cafc5b8f9901199d490"
+    },
+    {
+      "file": "donghua/cultivator-rear-right.webp",
+      "sha256": "c98537c845f20a5cdfe05c9532a84321401f9d1f3f1252f15dfb633cee45cdc1",
+      "bytes": 13560,
+      "provenance": "built",
+      "originalSha256": "ca0327c145bfde397dd59af0346c77143a8c06008e7c4cafc5b8f9901199d490"
+    },
+    {
+      "file": "donghua/elder-front-left.webp",
+      "sha256": "a64a876c6acfe4648074d6066eeaeab72533992f6661c0ce392234f183936e66",
+      "bytes": 15510,
+      "provenance": "built",
+      "originalSha256": "5f9873a4b4d947ad8a68bad97dcc71ceb2e1ea537f00f8ddb0454d07c2197807"
+    },
+    {
+      "file": "donghua/elder-front-right.webp",
+      "sha256": "4eeeaebb23be8891312c92d228fdf3fbf15c0c1fa2877d5533e0221a4cc4e26b",
+      "bytes": 15646,
+      "provenance": "built",
+      "originalSha256": "5f9873a4b4d947ad8a68bad97dcc71ceb2e1ea537f00f8ddb0454d07c2197807"
+    },
+    {
+      "file": "donghua/elder-rear-left.webp",
+      "sha256": "c5f25d050361efed0ecc647bb6e48e2be5791da46952c9a0e679784dadd871b7",
+      "bytes": 15934,
+      "provenance": "built",
+      "originalSha256": "e061e88d1f5cba052a2a8a1dbb7b5ff8f5256f06f12e1c91cda484eca95c71b4"
+    },
+    {
+      "file": "donghua/elder-rear-right.webp",
+      "sha256": "2ed8a610bcd68cd4ca7125b146c4e52ee5f5090a0e4b7a6ac5e0f70a4434d5b7",
+      "bytes": 15888,
+      "provenance": "built",
+      "originalSha256": "e061e88d1f5cba052a2a8a1dbb7b5ff8f5256f06f12e1c91cda484eca95c71b4"
+    },
+    {
+      "file": "donghua/forge-front-left.webp",
+      "sha256": "3b7a623d590a358e0f9c57bc868239d9ddbdaacde7569785d311a54da9375a1f",
+      "bytes": 17426,
+      "provenance": "built",
+      "originalSha256": "fb03491a86aad47779d8f9c6bec31c0565607cee6b8856bb13ea4c13e19b49fd"
+    },
+    {
+      "file": "donghua/forge-front-right.webp",
+      "sha256": "8f5b509e3023f48b5fb42dab38332b1b2922639cae4f088a428b50ceca981cd5",
+      "bytes": 17628,
+      "provenance": "built",
+      "originalSha256": "fb03491a86aad47779d8f9c6bec31c0565607cee6b8856bb13ea4c13e19b49fd"
+    },
+    {
+      "file": "donghua/forge-rear-left.webp",
+      "sha256": "0462df0993771cb6b2eb13e7801e9892fa3064b4e0c35e1e640e961720b084f0",
+      "bytes": 18222,
+      "provenance": "built",
+      "originalSha256": "b141775c5b9b4d8691e6c34b9a15d03ff419f24f6a869f6bb770ad3cd10b8d1e"
+    },
+    {
+      "file": "donghua/forge-rear-right.webp",
+      "sha256": "2d86b921442c2b5e2a143b6f0db6104be05f82f1868321d86647c7a8ed7e6453",
+      "bytes": 18252,
+      "provenance": "built",
+      "originalSha256": "b141775c5b9b4d8691e6c34b9a15d03ff419f24f6a869f6bb770ad3cd10b8d1e"
+    },
+    {
+      "file": "donghua/guardian-front-left.webp",
+      "sha256": "1d93fed16098aad1d0003c9da41e626e23a93e7915d88a1b57aec64320045367",
+      "bytes": 16550,
+      "provenance": "built",
+      "originalSha256": "b376a4ad0df6eb07c21624b11d633e106042d3c11e3edcd78c1e95b5a41768c5"
+    },
+    {
+      "file": "donghua/guardian-front-right.webp",
+      "sha256": "f644a1fc7316ba8359d5ab0853185880f40788ad04570ea6a02083a3093d556a",
+      "bytes": 16588,
+      "provenance": "built",
+      "originalSha256": "b376a4ad0df6eb07c21624b11d633e106042d3c11e3edcd78c1e95b5a41768c5"
+    },
+    {
+      "file": "donghua/guardian-rear-left.webp",
+      "sha256": "0ff79acdc8b4df341f3c055cb20df3d2524af15c0cfc50ae05e2edf655a16abb",
+      "bytes": 15538,
+      "provenance": "built",
+      "originalSha256": "9400002b1e73e74c1b3613b19afe795afbbc1022531b0182b4684a472b7cb73d"
+    },
+    {
+      "file": "donghua/guardian-rear-right.webp",
+      "sha256": "33f1fb1f643ba4c86c16e679deef5b55aba468b88556ac0630054f55aa6bedc6",
+      "bytes": 15432,
+      "provenance": "built",
+      "originalSha256": "9400002b1e73e74c1b3613b19afe795afbbc1022531b0182b4684a472b7cb73d"
+    },
+    {
+      "file": "donghua/physician-front-left.webp",
+      "sha256": "a96938dbf0f720d2baf9ced1461fdd2c67a5ba3c6f4394659324d35cf17612a0",
+      "bytes": 15662,
+      "provenance": "built",
+      "originalSha256": "9580e28a6a283ecefc105a1cae5325f235724a73c3bbd0a67239b5901bf9c785"
+    },
+    {
+      "file": "donghua/physician-front-right.webp",
+      "sha256": "94deb983ed9be5c30599f09a02b366fe4ac3e73d450aafefa0596dbf8cadc43c",
+      "bytes": 15742,
+      "provenance": "built",
+      "originalSha256": "9580e28a6a283ecefc105a1cae5325f235724a73c3bbd0a67239b5901bf9c785"
+    },
+    {
+      "file": "donghua/physician-rear-left.webp",
+      "sha256": "949e65008b76dd8184946757a0c86ced5d79f0eb615dbde3145e246f47ed9730",
+      "bytes": 15892,
+      "provenance": "built",
+      "originalSha256": "fbc152f7d3c4d88db09e22636ca537ab229c5d5495ada30cf78a4e5d445f3e41"
+    },
+    {
+      "file": "donghua/physician-rear-right.webp",
+      "sha256": "d7e2f6da7522b50dc3b5b49c3d37f378ae9d2f484b8e4b4c6789b41888c06d8a",
+      "bytes": 16260,
+      "provenance": "built",
+      "originalSha256": "fbc152f7d3c4d88db09e22636ca537ab229c5d5495ada30cf78a4e5d445f3e41"
+    },
+    {
+      "file": "donghua/scholar-front-left.webp",
+      "sha256": "2cc77fcb52687d6b6da058760410345824c337b9f44e6567c67f54feb93836ae",
+      "bytes": 18166,
+      "provenance": "built",
+      "originalSha256": "0e61b57c24a395e58f0272eef64edc3080dea31233a9b8cadde5a1850994ad7c"
+    },
+    {
+      "file": "donghua/scholar-front-right.webp",
+      "sha256": "54d91fbfd7d510bd6dc53893bfd9557cd50d92b97d8f07479cdf7ea6921cc245",
+      "bytes": 18302,
+      "provenance": "built",
+      "originalSha256": "0e61b57c24a395e58f0272eef64edc3080dea31233a9b8cadde5a1850994ad7c"
+    },
+    {
+      "file": "donghua/scholar-rear-left.webp",
+      "sha256": "f0a8ee01d41e80e46716dedda7e07b96f907108f355788ee6c3db71676eb1bcf",
+      "bytes": 16628,
+      "provenance": "built",
+      "originalSha256": "daa485e3c32373bf4719411b812f9db303507b0f8b43bbd8acfbb0422e9be05a"
+    },
+    {
+      "file": "donghua/scholar-rear-right.webp",
+      "sha256": "1ae6153a36113aa99eb4a6d94cc89dc46b6ca05528bdccb00e3cb1846700749a",
+      "bytes": 16652,
+      "provenance": "built",
+      "originalSha256": "daa485e3c32373bf4719411b812f9db303507b0f8b43bbd8acfbb0422e9be05a"
+    },
+    {
+      "file": "donghua/weaver-front-left.webp",
+      "sha256": "3e541d346d6d5217f1b129c97760438c03a7c408e9cda754c8e7bf21b44eebfd",
+      "bytes": 21606,
+      "provenance": "built",
+      "originalSha256": "8aa0be28fdbb0a8bbc6d835dd5bdb92e4c1be3ff5bff5ec5f984bc5c09a4e717"
+    },
+    {
+      "file": "donghua/weaver-front-right.webp",
+      "sha256": "39fe62eaec70dd4fd9139d93c3d571de8784ca0585207e0b1ffb2c7ba42a0194",
+      "bytes": 21764,
+      "provenance": "built",
+      "originalSha256": "8aa0be28fdbb0a8bbc6d835dd5bdb92e4c1be3ff5bff5ec5f984bc5c09a4e717"
+    },
+    {
+      "file": "donghua/weaver-rear-left.webp",
+      "sha256": "9c8578dfdef8afa326ec491544e49a798e4d96dfd3b2b4cce438141937e6cf53",
+      "bytes": 23440,
+      "provenance": "built",
+      "originalSha256": "47e3055630d8eda1d512c3934006a5ac57b8365f25edc272b1ddb354112ff003"
+    },
+    {
+      "file": "donghua/weaver-rear-right.webp",
+      "sha256": "397e53fc6376472e4b377487946444ea3385af1e8dddd3c096101ef3db87ee92",
+      "bytes": 23330,
+      "provenance": "built",
+      "originalSha256": "47e3055630d8eda1d512c3934006a5ac57b8365f25edc272b1ddb354112ff003"
+    },
+    {
+      "file": "effects/build-failed.webp",
+      "sha256": "1c124d412763cd01e5a00bc95584b238b579f0c44447adc56913c7bc3720db47",
+      "bytes": 16244,
+      "provenance": "derived",
+      "originalSha256": "f1accb56ba375125d86686f6a2df8059f88b1c81c2fb0a441bae873823773ac6"
+    },
+    {
+      "file": "effects/cake.webp",
+      "sha256": "4be00202f73510f24827a1d77904559b289ee359a792148b35a5590b91216dce",
+      "bytes": 9096,
+      "provenance": "derived",
+      "originalSha256": "af165038e54043cac478a8a23ba8f95d46fd8afebf88622b96e7cabcb6e348dd"
+    },
+    {
+      "file": "effects/fire.webp",
+      "sha256": "7f4b56c235a4300c901fca6a5ba6acbd3319ade6f2cf7b153ac64ff9b17ea5c5",
+      "bytes": 6720,
+      "provenance": "derived",
+      "originalSha256": "22733e4bbf46fd81ef23da3e33fb2ca3b7219085c0846b06effd4dd814c0e09a"
+    },
+    {
+      "file": "effects/github-pr-merge.webp",
+      "sha256": "3094238f92499f7646c952ee755304502004a602870ad376c8b92f966f97339c",
+      "bytes": 21196,
+      "provenance": "derived",
+      "originalSha256": "3781d08c09a20d786b9cf0beaa0bf6b2d376c506408aa4592af7db7bc0613f31"
+    },
+    {
+      "file": "effects/glass-water.webp",
+      "sha256": "1150d5cdb5c5cb5c024ec36edd008f3f8f81445f6d53c77dfaf37098938916e3",
+      "bytes": 7488,
+      "provenance": "derived",
+      "originalSha256": "59e22e6167aaca7afcf54d85f75ac8fed1998d0651f2bd1b86cd413394e1934c"
+    },
+    {
+      "file": "effects/monster-energy.webp",
+      "sha256": "87168bfd4c0e22510f6f49e2bce75728016d0f439c75d81a5d0e1cc360e2e7e0",
+      "bytes": 1154,
+      "provenance": "derived",
+      "originalSha256": "e7e36de4fb040d6efa7e3366ec6aa3b0a96394e3c3e8492f34c21580a4ac41ca"
+    },
+    {
+      "file": "effects/need-coffee.webp",
+      "sha256": "dfd4bf11dd7ea5b347a035d6542af3f728372de89fbc16b5cf975b7164f9bf89",
+      "bytes": 6904,
+      "provenance": "derived",
+      "originalSha256": "2434648a3a9f72b05be6096a3cb261b0a536c05ed243dc650e1a79f8579da733"
+    },
+    {
+      "file": "effects/party.webp",
+      "sha256": "b354f1bc4c4a5a94d688c1836e4071ec7c46237a23b27d5fbf9f5f1368298c4d",
+      "bytes": 11604,
+      "provenance": "derived",
+      "originalSha256": "9d27f017641bae34e14a092894d92bbbf23e884b6910a342bff8b06e1b9dcd34"
+    },
+    {
+      "file": "effects/pizza.webp",
+      "sha256": "aea0e0f312d8ca5a1e3e3f6ec68dba340889db03bf01fc8709e64c911fae80b6",
+      "bytes": 8776,
+      "provenance": "derived",
+      "originalSha256": "cb1be30ef09b31c04db7720c27c86e699b3fabcd7fd3e87b44afa7a6b3bdae14"
+    },
+    {
+      "file": "effects/post-it.webp",
+      "sha256": "947c51adb95c557d14d72a780bee945b9ee0f13aca1c3a308e6758f34093dbf4",
+      "bytes": 5824,
+      "provenance": "derived",
+      "originalSha256": "7817ad1e9787300f6f231e3b3e12a925901a6c4dad111257f9627715d54da116"
+    },
+    {
+      "file": "effects/redbull-energy.webp",
+      "sha256": "4aecace2031071107d49b03d5541c41dba13995b448096c781117ff0775c3d08",
+      "bytes": 1384,
+      "provenance": "derived",
+      "originalSha256": "139fca26977358ca7ddaf70477a2626aa9ab8ebd24fbb42fbcc775ebf802d7de"
+    },
+    {
+      "file": "effects/rocket.webp",
+      "sha256": "1ba2756a713e769696a8166d0a691d69635f428e934956ec9dd745bf2ebbd59a",
+      "bytes": 9032,
+      "provenance": "derived",
+      "originalSha256": "5f061a625c4d209a47a73df1add653bc9983a35e2db7f3c793374ac0fcdc909c"
+    },
+    {
+      "file": "effects/sleeping.webp",
+      "sha256": "76bcf7d9298cde609f0bd0f5fec90037eaa21aea958ceb22bada1bd75d645532",
+      "bytes": 6630,
+      "provenance": "derived",
+      "originalSha256": "b2444ed9382e9b89967ceb19503083e8bf2f17f8668e4d3bcb3b1f61ee6c8c68"
+    },
+    {
+      "file": "effects/star.webp",
+      "sha256": "4b0e81ea53810bcbb5e0a680959ed3e38c11ffb666aea2a042ef9a803bed883c",
+      "bytes": 6814,
+      "provenance": "derived",
+      "originalSha256": "70d1eddc2c3239b646cd6acb3581775a51f0eb88ed5fd34b1915c6d87ac2e249"
+    },
+    {
+      "file": "effects/thumb-up.webp",
+      "sha256": "dc448c50292bf411eec14b7b1d0da5315ecd5279be0d5687edf806aaa3cb1f54",
+      "bytes": 5682,
+      "provenance": "derived",
+      "originalSha256": "e5e1e8108100a14c55f25797448c0a246af591a4375a2fc916f4eb17805d6e78"
+    },
+    {
+      "file": "effects/typing.webp",
+      "sha256": "86a5ac4fc8106c76bc92873c4f7489e829e820a00195759a72bb99477d3a4932",
+      "bytes": 3106,
+      "provenance": "derived",
+      "originalSha256": "b6582cda8ff1d5ec3198ef07413beb39b598d8ab49cc09530a561bf79d9abfe7"
+    },
+    {
+      "file": "effects/watering-can.webp",
+      "sha256": "3ba899e6dbf48963d84f231df45a9bb3bdf7ea43c5c5c2711780cabf9bc310d6",
+      "bytes": 7096,
+      "provenance": "derived",
+      "originalSha256": "688302206d285b3ea18a9297adc3185c7c2127862b23a5f026adedb168bde873"
+    },
+    {
+      "file": "frontend-walk-0.webp",
+      "sha256": "602eda76b7392a6b6718a60d57cfa30c469628e1c58aa04571c9bbf6592dd255",
+      "bytes": 36438,
+      "provenance": "derived",
+      "originalSha256": "bd5829891faa40ec14a5a4f66a12940b5e470ce9e80fb85589b2b5fb7a2a96f8"
+    },
+    {
+      "file": "frontend-walk-1.webp",
+      "sha256": "0b44b992d154776e6baf1d53492e66e5170abcdca4aa0546bfa1293981c19ac0",
+      "bytes": 28676,
+      "provenance": "derived",
+      "originalSha256": "fa7de6c69249c43d052156f227711677e328890cb9923f70ee971444d9f51c52"
+    },
+    {
+      "file": "frontend-walk-2.webp",
+      "sha256": "79d4396148ee79e4f4b937877c756ef5999b9ea7bd7f365696c3861f4b53dd53",
+      "bytes": 29096,
+      "provenance": "derived",
+      "originalSha256": "1dee63f4b3349717d71b30ab1764a68cccdb5804f7a08b56c3d11dda5450f8e4"
+    },
+    {
+      "file": "frontend-walk-3.webp",
+      "sha256": "1b644db06319610440b815287dced7a89eaea9951d08167e80bdcf019eea3c4f",
+      "bytes": 37070,
+      "provenance": "derived",
+      "originalSha256": "bf2d5c2d67a4290d0d2667fba1aa378eabbc8d8668aefc2a4c4c83bb293047f6"
+    },
+    {
+      "file": "frontend.webp",
+      "sha256": "1b644db06319610440b815287dced7a89eaea9951d08167e80bdcf019eea3c4f",
+      "bytes": 37070,
+      "provenance": "derived",
+      "originalSha256": "bf2d5c2d67a4290d0d2667fba1aa378eabbc8d8668aefc2a4c4c83bb293047f6"
+    },
+    {
+      "file": "fullstack-walk-0.webp",
+      "sha256": "a7aa25dd2442cba2d458dd2bc793459a489a93991bd8203039d5680d726b9110",
+      "bytes": 41850,
+      "provenance": "derived",
+      "originalSha256": "4e558d1839f18a93bd395ae45489b4521bd8ce77f3eb87ab765c02ab5b13ad1d"
+    },
+    {
+      "file": "fullstack-walk-1.webp",
+      "sha256": "4fb95cbfe5e35084ea3426fdf1e3ff9b24182db59a4ff61e89219734dfc2efb3",
+      "bytes": 37334,
+      "provenance": "derived",
+      "originalSha256": "591e792f244cd374111ee960745fe1a17924c04e6626e99ad6dd54905a463b4b"
+    },
+    {
+      "file": "fullstack-walk-2.webp",
+      "sha256": "4bd522f0f7d26a916381b19d45650360b48e40e8e60be6baa7b9ec698ed215e8",
+      "bytes": 37582,
+      "provenance": "derived",
+      "originalSha256": "ee7c50385e42e72256b05a94704a2dfc199171d97299c765b2820fbdd5ca7ea3"
+    },
+    {
+      "file": "fullstack-walk-3.webp",
+      "sha256": "e34c81d96bc44fa0c36fb89ce80f7528c6c1b6b658fc6870b0da1e3a7e687ac2",
+      "bytes": 42046,
+      "provenance": "derived",
+      "originalSha256": "fd3328ecd37a86c54589efb8d02e8e77d28d1b927a4bd29c685dcdb3c5303df9"
+    },
+    {
+      "file": "fullstack.webp",
+      "sha256": "e34c81d96bc44fa0c36fb89ce80f7528c6c1b6b658fc6870b0da1e3a7e687ac2",
+      "bytes": 42046,
+      "provenance": "derived",
+      "originalSha256": "fd3328ecd37a86c54589efb8d02e8e77d28d1b927a4bd29c685dcdb3c5303df9"
+    },
+    {
+      "file": "furniture/filling-closed.webp",
+      "sha256": "2f79084f7713c1ed1f545ecd9839570807dabaa5d0a69b91ae7070784e5e8314",
+      "bytes": 13000,
+      "provenance": "derived",
+      "originalSha256": "fe4e8ccc7e87dd1f03dcf0fa342f6969fe15914877a6b1c3ad723c81fc66fe89"
+    },
+    {
+      "file": "furniture/filling-open.webp",
+      "sha256": "58fb3c7f9d0de72bd4c5660eb3250c364a5d3626ca02afe5f1df6d42cf2cae84",
+      "bytes": 19836,
+      "provenance": "derived",
+      "originalSha256": "22f87bf71dca9df463cd831ee183934116271cd4a11c22d1ea0ea06529ec7f10"
+    },
+    {
+      "file": "furniture/standing-desk-left-front.webp",
+      "sha256": "883e40c18395ba0b99ea75834150156a0885d99247a9a729318839f1ff9ea393",
+      "bytes": 48292,
+      "provenance": "derived",
+      "originalSha256": "7bd89d04f90fc32b44783b145b68b1e6a8780112a437cb823477aa3e16ea026e"
+    },
+    {
+      "file": "furniture/standing-desk-left-rear.webp",
+      "sha256": "1a8ccc700385a73cfde424a2b3516b5ad49b767b5b3278dfb5ff9efccbc26ad5",
+      "bytes": 42404,
+      "provenance": "derived",
+      "originalSha256": "e53a4ab6f8605a61fc2a960fec5011bdcce7971b70f9a64f6b357dc03628b02c"
+    },
+    {
+      "file": "furniture/standing-desk-right-front.webp",
+      "sha256": "0a638ec16485253b7d70c560a1913bad9cdb6fdae3ff089fea8a60bc04ff26c6",
+      "bytes": 45972,
+      "provenance": "derived",
+      "originalSha256": "c2b54ddef7314503ede900a80ad38e87e2a98ea4e86e0b32ab9452174e8d4eec"
+    },
+    {
+      "file": "furniture/standing-desk-right-rear.webp",
+      "sha256": "5d56dfa2c2e9495104645baef6355e69677cabdc6d2f33c468587e020833da68",
+      "bytes": 36956,
+      "provenance": "derived",
+      "originalSha256": "0547179a861af84a301a9f2eca13ecf0ff68ae8113be9cbb658a899e98bf6037"
+    },
+    {
+      "file": "manager.webp",
+      "sha256": "1af3f7779989dce351ffbf85652497800c70f91d860e31b4afe0949c92854d63",
+      "bytes": 40864,
+      "provenance": "derived",
+      "originalSha256": "5c4005e6488b056982176097a74f4ae13a9b2f2b8c58c9e3ee388a5707323cef"
+    },
+    {
+      "file": "office/cats/cat-bandit.webp",
+      "sha256": "dbddbdb0dc8af2cbc15704d94e2aafd6102ca158530c7588b6b3d4eb5e0072d4",
+      "bytes": 13766,
+      "provenance": "derived",
+      "originalSha256": "6ae56b5edd742b82f9a69728301cb9840bcb2b956eeeeae2b625c11f98aacf98"
+    },
+    {
+      "file": "office/cats/cat-bandits-kittens.webp",
+      "sha256": "78923658bbfcaf8919809f783e60c4b94bf57b1a5ef1cbabbd5897f91a48e791",
+      "bytes": 9214,
+      "provenance": "derived",
+      "originalSha256": "736011b22a2f69cb3da33c9065029ad245bab70de07eb1dfb0d085ee6dbe7bb5"
+    },
+    {
+      "file": "office/cats/cat-comstock-alt.webp",
+      "sha256": "dc4896b06375950e2498fda532efe02ca8513ff69626c513dc96060de2f12df0",
+      "bytes": 8614,
+      "provenance": "derived",
+      "originalSha256": "edd903e7559e7a9e2df781db1abc26c7bec9ed8a1297c20ddfb69aa6198d96cb"
+    },
+    {
+      "file": "office/cats/cat-comstock.webp",
+      "sha256": "5e7f656930a84f1630e10b4df3d2b8c612d78012aad0a6249a860bc02d0b8eff",
+      "bytes": 7506,
+      "provenance": "derived",
+      "originalSha256": "49cea7be1c53c87af1bce8e33db49f90f0b039b4b71b2162b41611a2cb5f45ec"
+    },
+    {
+      "file": "office/cats/cat-ember.webp",
+      "sha256": "6e559a2e1847e05e37378094ecc72e14128729487431a76225dd6827118f4f94",
+      "bytes": 7806,
+      "provenance": "derived",
+      "originalSha256": "980df016d4709259bab15ecad762da72c0f6f315fcf2547ec659ee9b024b2689"
+    },
+    {
+      "file": "office/cats/cat-garbage.webp",
+      "sha256": "85d10d734a49c4fc1acd4a6d43ecaff90b3dabaa345e365b97342d941aab6bd9",
+      "bytes": 12362,
+      "provenance": "derived",
+      "originalSha256": "29f52d69e1ab57a1747dea5604210fffd48838f06dc7f409a5ff2f76603fa6e8"
+    },
+    {
+      "file": "office/cats/cat-mr-ash-alt.webp",
+      "sha256": "50b4e534bd597ac5509c3dbccd1f7fa557df1d7574784e86dad00d60989c5769",
+      "bytes": 8432,
+      "provenance": "derived",
+      "originalSha256": "0eb7670ba24bb5d42c3095ee5ddc3cd5b48eedffa5fd0792de72371c3f5e85fa"
+    },
+    {
+      "file": "office/cats/cat-mr-ash.webp",
+      "sha256": "7b228156702c9e694ecd916cdd972cb091202f0c2c1afdf7a11b538f175dec90",
+      "bytes": 6656,
+      "provenance": "derived",
+      "originalSha256": "74f9e58222019a7eead8a4c0a1fb7ff383398f7b0ef9554c3b227af2a60ebf0e"
+    },
+    {
+      "file": "office/cats/cat-phillip.webp",
+      "sha256": "245992c4f2c0153e2ab67acaef3dd5092f60c9ce4ec782a19f0fe1567a3f33ca",
+      "bytes": 9014,
+      "provenance": "derived",
+      "originalSha256": "b2971695974f4d23199c17bffbe674f3eee70d51ebd2ee14863cb4980d8cfa38"
+    },
+    {
+      "file": "office/cats/cat-princess-lady-alt.webp",
+      "sha256": "06a87c8dde339285044d602c4393282612912f3dfbb6287593dcb8b680e76a4b",
+      "bytes": 9340,
+      "provenance": "derived",
+      "originalSha256": "e39b57069a98af47c8eb8bfc9df5649e859cd6b411bec15d1f67c54895288e03"
+    },
+    {
+      "file": "office/cats/cat-princess-lady.webp",
+      "sha256": "7f9fa631a3f214786bc870440dc17c611a3804edf4ad60c3c219322bcc020b67",
+      "bytes": 9638,
+      "provenance": "derived",
+      "originalSha256": "c77ea1340d1b8ce7ed8993b9dbb316c8daf28f97eead1924ddf2c5a83693662e"
+    },
+    {
+      "file": "office/cats/cat-sprinkles.webp",
+      "sha256": "c3dc609b58301330a511ba357a0e2666ea138dfd8aa46a41db7739dd0508a202",
+      "bytes": 8544,
+      "provenance": "derived",
+      "originalSha256": "9683a973ab7c48c801d50e8b1f3672f140edfae17930c8e5a131f6c6427ff856"
+    },
+    {
+      "file": "office/characters/andy-bernard-front-left.webp",
+      "sha256": "0efecfccf25be22acb1a1ab7498135ae6338bf83f8d6d363396209660b40c303",
+      "bytes": 21204,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/andy-bernard-front-right.webp",
+      "sha256": "7c4bd4b996588179c528927e934e69f389dd80c1a610a1020239ba527c176b26",
+      "bytes": 21456,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/andy-bernard-rear-left.webp",
+      "sha256": "ce0a858d943f8e45f2ada6b19ed6c531974f5bf3b8daca7639d1855d3a42cfd8",
+      "bytes": 16922,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/andy-bernard-rear-right.webp",
+      "sha256": "b819562c96a9a636a651b100259be0228895b2c7b4d6ad1e29c4fc3300f98265",
+      "bytes": 16862,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/angela-martin-front-left.webp",
+      "sha256": "b05f89cc95c8b754b39ea9f885bc4c6eb5b416af38e7e0381bd55d7be398afd8",
+      "bytes": 21416,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/angela-martin-front-right.webp",
+      "sha256": "3883e20525b04e311765e8ac9e4859052203a19bfd05bd97f2be3667a170f197",
+      "bytes": 20806,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/angela-martin-rear-left.webp",
+      "sha256": "1ddaabde4d77a7525ad4bff7efa69c3b08da38f8f2f344ee16fb4606d44e831c",
+      "bytes": 18312,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/angela-martin-rear-right.webp",
+      "sha256": "ad7ebdbfad7bd00d2332cada4bb3e44892ba99dc959379d38b708f08398703f9",
+      "bytes": 17730,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/bob-vance-front-left.webp",
+      "sha256": "eb1a21d9139cf4ddc95ace7f1fa10c76c54c76ef092250d00612ac0d16e344ec",
+      "bytes": 34716,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/bob-vance-front-right.webp",
+      "sha256": "28a8316ff8a8568ffe2e12cb8bf86b7f2e353463cd302a3bba571ad2f3c04f1e",
+      "bytes": 34472,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/bob-vance-rear-left.webp",
+      "sha256": "3c9974561c717abccd8a0836e9ef4eecab8153496b1171909e5e18b422b1f56b",
+      "bytes": 34330,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/bob-vance-rear-right.webp",
+      "sha256": "f53bfa7bd4411002a078599190ffb4afdd4921d5b8a235cab3e888e66f1a043e",
+      "bytes": 34232,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/carol-stills-front-left.webp",
+      "sha256": "1c17956182fae2570e9e4b6cd3198d965405f3af5ec4acadb642149dbb7d10cf",
+      "bytes": 40000,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/carol-stills-front-right.webp",
+      "sha256": "6fafe59e808c9e04f453be9906731c2022faf31bad0c917f586eaea7b2ddc448",
+      "bytes": 40526,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/carol-stills-rear-left.webp",
+      "sha256": "8c262ebefef40f27fdb86a8f431cd14761f1bd7f207d424fddba67d6ba271a1b",
+      "bytes": 37640,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/carol-stills-rear-right.webp",
+      "sha256": "313ac0e609a99d3c2a0e5504ac4a737ca2243fb0531cf7f4120a6f250a250dab",
+      "bytes": 37592,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/creed-bratton-front-left.webp",
+      "sha256": "c912ebd2a93ecd6021fe45f207201ca1128629c0e5c3f0e7ad1385e9b54fcd8c",
+      "bytes": 19192,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/creed-bratton-front-right.webp",
+      "sha256": "cc6401915e2988a504199aea79c9244553b88999ea05c493f0854fc4d093155f",
+      "bytes": 18956,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/creed-bratton-rear-left.webp",
+      "sha256": "d398c51a867ccbfb417362c20d47651b6f7be57339bbdd5b446095c6b086b5b0",
+      "bytes": 15002,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/creed-bratton-rear-right.webp",
+      "sha256": "d81e3a090f20bb70869a13ffdab39561e004d8bc509162ece9ddcf8d7d0c3d1d",
+      "bytes": 14900,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/darryl-philbin-front-left.webp",
+      "sha256": "8c51b3f9b229dc058ebef71d865634b51fa490d262f9083472f149e2a28d2380",
+      "bytes": 19918,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/darryl-philbin-front-right.webp",
+      "sha256": "9f86d7901a4f37b80abed4d3101e6802befafe7efc9af7cb4c98b5b56745da7e",
+      "bytes": 20112,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/darryl-philbin-rear-left.webp",
+      "sha256": "825b4a7f70fa40bab717a4a8a89fac3f3f87544321ad5922cd11de0213ade326",
+      "bytes": 14848,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/darryl-philbin-rear-right.webp",
+      "sha256": "ec0768c2bd39216e4bbd8ccf1b03e68f1e6018ea4b7cc424beb8ed322e05e0a7",
+      "bytes": 15196,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/david-wallace-front-left.webp",
+      "sha256": "88354eafcecc2bcfc51ab5828896e4932678f1e5400b0a80677fbde496802cf7",
+      "bytes": 34944,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/david-wallace-front-right.webp",
+      "sha256": "afeffedf313b53a83548b8e628c464331f9283f572e93a1474eb21426e5af764",
+      "bytes": 35252,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/david-wallace-rear-left.webp",
+      "sha256": "23ad86d5b674d1ab0f0c2b77fc7764c3a18a4f0f48c1a65e8004e4bc7f1fa837",
+      "bytes": 32666,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/david-wallace-rear-right.webp",
+      "sha256": "9a93c26b711c47c455ffd6c98122741cfb51dd21d36036886948c826f41b9a73",
+      "bytes": 32302,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/dwight-schrute-front-left.webp",
+      "sha256": "b2f7b05bd7323fbfd542b4ca8956a025713a5542ac652329eaaa191345b6df36",
+      "bytes": 17088,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/dwight-schrute-front-right.webp",
+      "sha256": "b85bf0cbb4c5b7a52d92e98da45654b25294ae94127b4107368038be99bc9ec9",
+      "bytes": 19440,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/dwight-schrute-rear-left.webp",
+      "sha256": "427077c1a1b0606b19aec6e36fb1fd4d2dd7e739a57fc0c9398cf6cced48435f",
+      "bytes": 14344,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/dwight-schrute-rear-right.webp",
+      "sha256": "58ca13858e77a495bc53ffde474bf213d9debb4f9778ec86c48f38e475193b07",
+      "bytes": 11688,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/erin-hannon-front-left.webp",
+      "sha256": "a1794e93624ef0eec9c034f7241ab8458901dbc8ff10db0ddd33509668c29e03",
+      "bytes": 20694,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/erin-hannon-front-right.webp",
+      "sha256": "7b64a5aca23f21ef606ce1fc9f741245511a8531f0bc0502fdae94b2e8d78d87",
+      "bytes": 20404,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/erin-hannon-rear-left.webp",
+      "sha256": "8d23260def2a2898c0280aa4a38efa3a13096931a2f780987332b348fc9c5e73",
+      "bytes": 16918,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/erin-hannon-rear-right.webp",
+      "sha256": "d5affa24a7350ee39cb64f9854c44730cbd8e0aa77dd0d1d72f699f9444e094e",
+      "bytes": 17098,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/gabe-lewis-front-left.webp",
+      "sha256": "798b2a167a747390f094cce29b0cd8563b6d7fec74846a9d8dd5ce6bb93183bd",
+      "bytes": 36974,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/gabe-lewis-front-right.webp",
+      "sha256": "597253c0406e66135bbfcd0d1f54a8727884764d906b79a936cda19d590e6939",
+      "bytes": 36752,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/gabe-lewis-rear-left.webp",
+      "sha256": "56d6b148b403bb71d7633f02d06fcdcca9f377f35a9b08fabe349ad49c37a7bf",
+      "bytes": 34654,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/gabe-lewis-rear-right.webp",
+      "sha256": "c78b9a14b7440f56f48ec9cfadd74b76fede33f4fb9f105d5ac52f0b9823a0ac",
+      "bytes": 34240,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/holly-flax-front-left.webp",
+      "sha256": "c1e9f140bac850c30ed072c903bc8e367784e29a5e18b0d765648398bd49ad83",
+      "bytes": 23346,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/holly-flax-front-right.webp",
+      "sha256": "392b06742ee627ee8635115a2231405fe1f4ec40689c778d255db9efe5a3e987",
+      "bytes": 27474,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/holly-flax-rear-left.webp",
+      "sha256": "c62ef5c75e1f5e25bdc6219b4f7ae47d8fc2af876d8557c4023b0dcacb81f51a",
+      "bytes": 24772,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/holly-flax-rear-right.webp",
+      "sha256": "9f970b7a0137a013b00a699fade6eff319e2451041fe35a6a3a664b29abf29d2",
+      "bytes": 24910,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jan-levinson-front-left.webp",
+      "sha256": "38d448fbd70a9c0d092e458f1b338f7694897c13cbf11b3070f699410b86e224",
+      "bytes": 19656,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jan-levinson-front-right.webp",
+      "sha256": "2a6e1aa0627798e3783059cb1ff312e2791e0ab56f87bc4ebf95d342dad8624d",
+      "bytes": 20452,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jan-levinson-rear-left.webp",
+      "sha256": "8565c7fee4479eede6119ccd13d5ef7091d4351d4e76aff40d58f713bf2418fc",
+      "bytes": 15926,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jan-levinson-rear-right.webp",
+      "sha256": "99b66c975acb6dfb4e9db11e9ac7739742c344594b235b45f18dd25d72dad35f",
+      "bytes": 16004,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jim-halpert-front-left.webp",
+      "sha256": "1132ea652e61c12bc0044eeb68107e96f38d2e9036bb85ddb3b082055a13eddc",
+      "bytes": 19420,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jim-halpert-front-right.webp",
+      "sha256": "9070433ce71224f449b657f63efd00d54f5bfb6951b1125049cc0a8fbf03e334",
+      "bytes": 20626,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jim-halpert-rear-left.webp",
+      "sha256": "40530def5b3d7398c5899ee4f2f23db3e5a40322c8ed7b00fc7773ee81c1f199",
+      "bytes": 13930,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/jim-halpert-rear-right.webp",
+      "sha256": "cba6640ea28b41696b5a101bddc8352c377b41b3c0e8d312decbc4313a822578",
+      "bytes": 16012,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/karen-filippelli-front-left.webp",
+      "sha256": "2a9ec30fe4a4f945fedc419df2443f65ffc145ecd1b2d1d802be68e99f4aaeea",
+      "bytes": 23078,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/karen-filippelli-front-right.webp",
+      "sha256": "7a2376e9c6f790471747f1baa41c73783500d6c4dc315ee1b7fffe3398717665",
+      "bytes": 23052,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/karen-filippelli-rear-left.webp",
+      "sha256": "f13368e1f7d427151d331f4822aed7b0fa19168b3f25d7ff9c2f89060f788c5b",
+      "bytes": 16798,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/karen-filippelli-rear-right.webp",
+      "sha256": "6906f747b6d4ef2ac4e0c8cee9bc9b454250ef5d89455d10dc7990612e7dcd8f",
+      "bytes": 19668,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kelly-kapoor-front-left.webp",
+      "sha256": "6ef7a9ad8a3aadfdb105d5437ee5b05ad56e21496ef21a67d0b74a223f2c4280",
+      "bytes": 38586,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kelly-kapoor-front-right.webp",
+      "sha256": "bf3c3b9bab923c6b97fb766e43a841ccd161482d42e76350188dfa407b4951bb",
+      "bytes": 39212,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kelly-kapoor-rear-left.webp",
+      "sha256": "79fbcc273e0b98edd78dec991ca30a5cece9aabd1a1cc9b795a4a2c0afbbe8a5",
+      "bytes": 34958,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kelly-kapoor-rear-right.webp",
+      "sha256": "e2de5ce5b9b1b007806a07ed510b084b4274668fa5ab563d69d76a613c90e117",
+      "bytes": 33810,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kevin-malone-front-left.webp",
+      "sha256": "d1f541acb614103aa80659f299439e92adaa630867eebc34e414d251d21efe63",
+      "bytes": 17824,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kevin-malone-front-right.webp",
+      "sha256": "bfa26597512bac890b1d4fc7fc26de3285a82df6698109e81885f37fc4d1cfed",
+      "bytes": 17790,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kevin-malone-rear-left.webp",
+      "sha256": "87b7c67c8245f0f7f0b32fcd69f7f22db7aa91cea012930eec60d2b9ccddfb45",
+      "bytes": 13994,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/kevin-malone-rear-right.webp",
+      "sha256": "013ab3291253f3cabb0fd1153c06485e3b61adb198231d2f6279141b70c82c1f",
+      "bytes": 13666,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/meredith-palmer-front-left.webp",
+      "sha256": "f03729557994369f1614c23e8dbd351d9cae9125ed2cee26602baabd32f5c6ed",
+      "bytes": 17036,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/meredith-palmer-front-right.webp",
+      "sha256": "b0862cff2aa4aafe20d10d90751e9dccb4ea9d054b745253a5b91b16f33b022d",
+      "bytes": 17042,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/meredith-palmer-rear-left.webp",
+      "sha256": "ea78ec5c3291f86a0408f98cd7d75744ca48f542a6a94fc4215c080b937ef524",
+      "bytes": 15646,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/meredith-palmer-rear-right.webp",
+      "sha256": "ef4c51f6cc5c268795a0163341c91b1b5e920cca4ca9d9904a40cc05298f3f02",
+      "bytes": 15178,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/michael-scott-front-left.webp",
+      "sha256": "276e88b49c07d83b7093ea5d639649e9214bbaa351586f3fdb43677a6cc11208",
+      "bytes": 20410,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/michael-scott-front-right.webp",
+      "sha256": "dc11a80d3cf2cbd2affe46d848e3a2d8d417b4296db39cf5ab1f71f30cb4b24f",
+      "bytes": 20886,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/michael-scott-rear-left.webp",
+      "sha256": "9fc49453530c52de7f1e7fd31bb2902ab30b192f8c3018f00985f9faf63110d3",
+      "bytes": 15312,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/michael-scott-rear-right.webp",
+      "sha256": "fb4888005db53c09ee90545c56fb50abcf4a644bdc32fdc80c7e7e5f4cf66ce9",
+      "bytes": 15428,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/nellie-bertram-front-left.webp",
+      "sha256": "09f13da6f2e987cdeb5bfdb117e9496a17c74bb2a23a8f327011b6684f8bc29d",
+      "bytes": 25560,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/nellie-bertram-front-right.webp",
+      "sha256": "5ea924005f9c263f4247e34fe0c7a6ad6e054b3bb27122b007a704ef380af002",
+      "bytes": 22354,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/nellie-bertram-rear-left.webp",
+      "sha256": "d10d1d64f27a60aec5e9bab148c51b03691941fceaf367f6172647b151f6183c",
+      "bytes": 23074,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/nellie-bertram-rear-right.webp",
+      "sha256": "1f51286a5186ac85f2b780a4883cd3e343bd933e5af99a8cc544842afe06d56a",
+      "bytes": 22040,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/oscar-martinez-front-left.webp",
+      "sha256": "3a0153cec780f2b862bda374844161bcfedf16d56f33ccdf7d3ff33e94df376a",
+      "bytes": 21222,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/oscar-martinez-front-right.webp",
+      "sha256": "260b205b4d2ec6968a7aa449046d70d6ddda9df8773e5b18dfcdb6b1a5e49a3f",
+      "bytes": 20972,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/oscar-martinez-rear-left.webp",
+      "sha256": "c4a96bf851839a899ba2b1b30ae11d89738142cf13b9f5c1bbbcc4fe365520de",
+      "bytes": 16538,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/oscar-martinez-rear-right.webp",
+      "sha256": "5aecd4164f6c1357a5c4816804289cd7b3960ae0a1cbd96e50184c6f237fb20a",
+      "bytes": 16268,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/pam-beesly-front-left.webp",
+      "sha256": "7082accea8cd0bf1b8519ac612c51fd74683208fdd23838a1fbfe16473ddfa44",
+      "bytes": 20774,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/pam-beesly-front-right.webp",
+      "sha256": "30f0c0368a9f1a961bb28fc98161795aa167497f101304e4c50909300404a910",
+      "bytes": 21378,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/pam-beesly-rear-left.webp",
+      "sha256": "db6fd078a98a83211b7b67269c75cf34066b15267ad3d5cb222560a147dc13a2",
+      "bytes": 17220,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/pam-beesly-rear-right.webp",
+      "sha256": "c42a39d9601b02a4854a15d5a4ae3e329f37066a8358d072f7548894117de0b5",
+      "bytes": 16604,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/phyllis-vance-front-left.webp",
+      "sha256": "20ca9437a9f834cabb3c3087b1f38da767d1df61053e33f35874f4f7d4ddfd19",
+      "bytes": 20682,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/phyllis-vance-front-right.webp",
+      "sha256": "5ee6cadd671f142e4036c18877783056d51785dc266ec1052ec731364c9c976b",
+      "bytes": 20588,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/phyllis-vance-rear-left.webp",
+      "sha256": "82305a5607a9a8bbc1bd096f287f29a08dd096f32866dafcf671e94bb0d5eb47",
+      "bytes": 15374,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/phyllis-vance-rear-right.webp",
+      "sha256": "e7735405ab0b9e3288fa4cdc604b1091e100f24dc924be6d9440e2f9ab7e66fb",
+      "bytes": 15358,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/robert-california-front-left.webp",
+      "sha256": "61555e45d8d68bc79af49d89dd66465959ac9e63c0d6842cfe70e877a3694411",
+      "bytes": 34710,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/robert-california-front-right.webp",
+      "sha256": "db36e35eadcbd23fb9c42220e7c4b8e9d4f4931bb831f8a155afeab8f1fba13b",
+      "bytes": 35234,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/robert-california-rear-left.webp",
+      "sha256": "ce03cd8cb7ebbc7d8bf7e62976fb32887ca976e0a5dcfe3104df2c0ae2842732",
+      "bytes": 33646,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/robert-california-rear-right.webp",
+      "sha256": "f3d821a8c9b091b305363e048df189d173aa71571e268faeccee8c85bfbf6eea",
+      "bytes": 33440,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/roy-anderson-front-left.webp",
+      "sha256": "96e83fdaee84863657bfe0b776d6c58a26d2452815c98fc93228f0a0bcc74b80",
+      "bytes": 22970,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/roy-anderson-front-right.webp",
+      "sha256": "2dea6f76d266053c23a633dabefc374ec74460853ac7e8ae05d9542f4344b77a",
+      "bytes": 22272,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/roy-anderson-rear-left.webp",
+      "sha256": "0888acb5fe6f4ba09ba13247ce9028a914daaf5f2bc14f2350898ad5d2a7dea9",
+      "bytes": 18794,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/roy-anderson-rear-right.webp",
+      "sha256": "7d308a795184faa2abd8b3237d48f7d604f666b8a2a27c6f160d23b3047c1e01",
+      "bytes": 18198,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/ryan-howard-front-left.webp",
+      "sha256": "36a6dd21c70c3b7b1832512c0dae0055ad93317ec3a1ac66ea7c0676d7d0f60c",
+      "bytes": 19180,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/ryan-howard-front-right.webp",
+      "sha256": "3c0f238483f07e47b8b5ea7e6caa96e3f8c6d7f20ea3bfeb6994e7147be5c89f",
+      "bytes": 19806,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/ryan-howard-rear-left.webp",
+      "sha256": "9d669f45bc585bfd22ea3fb46772ac90faea540b39a7ccd68e85feece67bc20e",
+      "bytes": 13808,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/ryan-howard-rear-right.webp",
+      "sha256": "7090b54a0661a7a0e18a75a185ab5a78cffaf59e48f68e0645c92e5a0783cc46",
+      "bytes": 15840,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/stanley-hudson-front-left.webp",
+      "sha256": "0a1dfcb488a92cfd6fa2ad577fb3f7e12f90b925de5bac52422509657e23886a",
+      "bytes": 18524,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/stanley-hudson-front-right.webp",
+      "sha256": "05af1bb66a92e4cbfe4d3c745ded8ed7deb0b40b4cbd02bda950761e8e6a26eb",
+      "bytes": 19080,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/stanley-hudson-rear-left.webp",
+      "sha256": "64ce17a3f54492c12a89fdcc30e8e1f80bad6c6446fc933f5b3fff78744698b1",
+      "bytes": 13850,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/stanley-hudson-rear-right.webp",
+      "sha256": "e255ea278ddb067480ee72a312ac7e2210bcebee498f34d3c913069d3a3a034f",
+      "bytes": 15054,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/toby-flenderson-front-left.webp",
+      "sha256": "561c855535baa79fe82802d22b9e2d02df4d2a21236b55fa596d12f4c977d599",
+      "bytes": 24916,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/toby-flenderson-front-right.webp",
+      "sha256": "e0d6b592244e78f68572954220306e355e06b33311bc05f6c00ae1d75e15bf4a",
+      "bytes": 25130,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/toby-flenderson-rear-left.webp",
+      "sha256": "bae3c02fede2521899e85895db19bb3f1d8b3cbed7dc679747fab05c57994130",
+      "bytes": 21620,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/characters/toby-flenderson-rear-right.webp",
+      "sha256": "4873fcbef3e00fd940df17b71298ecb1ad07ccf47d6ac9661e369240b5f071d4",
+      "bytes": 21390,
+      "provenance": "unsourced"
+    },
+    {
+      "file": "office/props/cpr-dummy-mask.webp",
+      "sha256": "bb562f51161f0c5b7e7333215b3a77b70b4aa59e3eeaa9793cd533e646529bc6",
+      "bytes": 7888,
+      "provenance": "derived",
+      "originalSha256": "422b0162b314f9a0e7c4d68df5346d8720b2f3a80ff7a4bfcce434347c4a5686"
+    },
+    {
+      "file": "office/props/dunder-mifflin-logo.webp",
+      "sha256": "402972327963a8d23d04c6ef1d35a919a3451614e08f68a8c28eae694b2a02f3",
+      "bytes": 8782,
+      "provenance": "derived",
+      "originalSha256": "f35f05c3716e0dc877a0d5c0249afc418b2bfc7847e978ac9acbc945dc5147ef"
+    },
+    {
+      "file": "office/props/dunder-mifflin-paper-box.webp",
+      "sha256": "8d572686a17d80ddb299e88bf2af60c971a361c1c66c1799f1f37a129de43870",
+      "bytes": 35296,
+      "provenance": "derived",
+      "originalSha256": "72a0e35fe5601ed52f6d91d93b37576788a736bfc2d69a76f68150c87f3d587a"
+    },
+    {
+      "file": "office/props/dundie-award.webp",
+      "sha256": "b5a04b6376b0efb46ab0772257257e8ff5e7a7adad73c2a2c9b2b5cff85cdd34",
+      "bytes": 9518,
+      "provenance": "derived",
+      "originalSha256": "4866b84ce8d8f895951e82dc9d7c7ca9fcb78ef88cff43515a4d2c5b37f2a596"
+    },
+    {
+      "file": "office/props/finer-things-club.webp",
+      "sha256": "5a392a27f799e646bbc3f452d029541281fb34653cc82ee4f96e64a5d1268386",
+      "bytes": 9780,
+      "provenance": "derived",
+      "originalSha256": "f442c8d057d4a0b3fb141378b8042420bb323d35419f394dd5a9244ebe40a003"
+    },
+    {
+      "file": "office/props/fire-alarm.webp",
+      "sha256": "216e56b36848d71f4a02fd0bfaccf0e07344d539d18a3fae15a5cd25892f176d",
+      "bytes": 20642,
+      "provenance": "derived",
+      "originalSha256": "c8854efd7319418612cdb2c87c05c5f2b50fcdc36bf3bcf68ca09326d8afbb97"
+    },
+    {
+      "file": "office/props/golden-ticket-box.webp",
+      "sha256": "1c829ad298fb8dd04c3da18e691758023774df851ac64ff371c338871d263c16",
+      "bytes": 14146,
+      "provenance": "derived",
+      "originalSha256": "b19d8e49647fd25541d7d7652a7566e0326cd068b8bad5b0ca85dd630abeaed3"
+    },
+    {
+      "file": "office/props/jello-stapler.webp",
+      "sha256": "068335bc59ff02ac7cf9af0822321aa9a3ffdad92253abc4445e8e48dcf8c4b0",
+      "bytes": 7694,
+      "provenance": "derived",
+      "originalSha256": "5ab53966eacac11d69a4a21946314a7886800df8b57fbed4ca77b745fa828343"
+    },
+    {
+      "file": "office/props/lumpy.webp",
+      "sha256": "05c938f257cb7d5d5b6855dbcbd94cd29ccecfe3675b6df43412242315065373",
+      "bytes": 8796,
+      "provenance": "derived",
+      "originalSha256": "0028bb2af145bc0684454f64bc5db14ed32847ab8b2764b8f22ad8d2d14e78c9"
+    },
+    {
+      "file": "office/props/no-god-please-no.webp",
+      "sha256": "d288fdbe2642b40e4897b31a4288fb4de209941c4a31968ec2e48c4ee99111d2",
+      "bytes": 4620,
+      "provenance": "derived",
+      "originalSha256": "1c1968aff98c0a1070bc32c0532f6c2a65bc6a1e8d3fd7b9048a8b41d14b1225"
+    },
+    {
+      "file": "office/props/pretzel-day.webp",
+      "sha256": "a9e65a5c3df221707fafc9422e3840b48d6aa0e9f397b6c3e2e2a033b84d3421",
+      "bytes": 12618,
+      "provenance": "derived",
+      "originalSha256": "eb63390f1fbfc16574cf4b2794c73b21981d3a42e68e41e82f264e62de486b5f"
+    },
+    {
+      "file": "office/props/prison-mike.webp",
+      "sha256": "0698463dc9118b30ed86b5927df7e6fbd1897147fb5bbd54bd7ba8a32201eb55",
+      "bytes": 2846,
+      "provenance": "derived",
+      "originalSha256": "d6be36ee5cd4f5f964d436a8ee5e4fcc7ddbebaf7b71d021c6a6db23606d267e"
+    },
+    {
+      "file": "office/props/schrute-buck.webp",
+      "sha256": "72b0d5ce4be7d4872e5cc05814673a864e8656ee37eba3b2415e00caa989ef84",
+      "bytes": 9158,
+      "provenance": "derived",
+      "originalSha256": "3be95a3cf05da9a36a0804a64036ce78625fb95b6500efabf1fd16d141cf4b8f"
+    },
+    {
+      "file": "office/props/serenity-by-jan-candle.webp",
+      "sha256": "454761a2401f96a87e3d56e782d76aded9fc628d6af2d812a47af4770e6421b6",
+      "bytes": 11560,
+      "provenance": "derived",
+      "originalSha256": "7f46e255b6483553cea2c1813f6f49842f17f6067bbf0dfc441f0ba52c292632"
+    },
+    {
+      "file": "office/props/worlds-best-boss-mug.webp",
+      "sha256": "29bc49501678131b4db55757b0973382ca8ef50b9765c67735bee50a3c7affc5",
+      "bytes": 10478,
+      "provenance": "derived",
+      "originalSha256": "8109b15ea1bc2953260989e1cc612659b086a5f237ceb8190811cae041bc29a8"
+    },
+    {
+      "file": "reviewer-walk-0.webp",
+      "sha256": "a3e9a2ca7a8224e7ed06f2b594d6b27ca5f688b44eb31a3a3927af99206d8722",
+      "bytes": 28240,
+      "provenance": "derived",
+      "originalSha256": "6b80e1e7355377afdf6bce1be16eeb869d881ed47140d380036515b17704a7da"
+    },
+    {
+      "file": "reviewer-walk-1.webp",
+      "sha256": "d9902e3522848785336a0056a9c0952e14c3e690c6804aa45c25d9d7937fcd56",
+      "bytes": 25804,
+      "provenance": "derived",
+      "originalSha256": "1e3dd884372771473745530dad3fccb992ba699d7aadf08e0cf21b2fb16399ae"
+    },
+    {
+      "file": "reviewer-walk-2.webp",
+      "sha256": "77770ea5b55c995c4e9ebb4f52f4507e884047d655edbb173d447fdf7b4a2481",
+      "bytes": 25646,
+      "provenance": "derived",
+      "originalSha256": "1946287d58c2e048c1aa336ee6a133c6e94d9cbf15034607b8821d0bcbfae2d5"
+    },
+    {
+      "file": "reviewer-walk-3.webp",
+      "sha256": "acf50bd796f31f3769e3b4ac031144a200578865d148b352e38db7e5e595ba0e",
+      "bytes": 30198,
+      "provenance": "derived",
+      "originalSha256": "bd85d438002a2782d83cc2f02242195689ad5a172f8184c0ac6db5de26a74367"
+    },
+    {
+      "file": "reviewer.webp",
+      "sha256": "acf50bd796f31f3769e3b4ac031144a200578865d148b352e38db7e5e595ba0e",
+      "bytes": 30198,
+      "provenance": "derived",
+      "originalSha256": "bd85d438002a2782d83cc2f02242195689ad5a172f8184c0ac6db5de26a74367"
+    },
+    {
+      "file": "security-walk-0.webp",
+      "sha256": "4c091ae2fa77afbfe68fdbffce6fbfefd38a904541092520976cc85f26883230",
+      "bytes": 30432,
+      "provenance": "derived",
+      "originalSha256": "026b87136ae0b52e123653ade3a10fc7a3aa387c4e7fc9d6039c76c6e5ad5529"
+    },
+    {
+      "file": "security-walk-1.webp",
+      "sha256": "bad906edfbf070caaf58dab48840a52581505c99eef38a6fdb04630936ebf51d",
+      "bytes": 22060,
+      "provenance": "derived",
+      "originalSha256": "8523d29dbb4c65a3b9fc0aa7b1c3a832d7f6916a1085574047ac42de585aa57a"
+    },
+    {
+      "file": "security-walk-2.webp",
+      "sha256": "c6c1f485628d88298e600984eafeedeb0fe1e00e057ae99945871c52d0452186",
+      "bytes": 21694,
+      "provenance": "derived",
+      "originalSha256": "b2106ebea2609384b2c6c3823e6d4721be621fa8febef011025c40cffa4f0c96"
+    },
+    {
+      "file": "security-walk-3.webp",
+      "sha256": "f869a1b6b3025280470ee3ff9785b08e38eecdf99feecf1482b8c4d89d1eef87",
+      "bytes": 31232,
+      "provenance": "derived",
+      "originalSha256": "dac216279766e710108aba395c435800613e5f17e180f480fb13f8742a9c3b93"
+    },
+    {
+      "file": "security.webp",
+      "sha256": "f869a1b6b3025280470ee3ff9785b08e38eecdf99feecf1482b8c4d89d1eef87",
+      "bytes": 31232,
+      "provenance": "derived",
+      "originalSha256": "dac216279766e710108aba395c435800613e5f17e180f480fb13f8742a9c3b93"
+    },
+    {
+      "file": "tester-walk-0.webp",
+      "sha256": "76e5045c84efed4c941120a7bea0e79ef62a26d384b5908ba8177d88d941dba4",
+      "bytes": 32982,
+      "provenance": "derived",
+      "originalSha256": "f3cece4d0f3d8f5d15dd499d64e983b09cfa65f0d653229d873264064e575b5d"
+    },
+    {
+      "file": "tester-walk-1.webp",
+      "sha256": "169dc54e6297bce0a634cf1e6e25583e39e475caed662f4d892324d205797f67",
+      "bytes": 25708,
+      "provenance": "derived",
+      "originalSha256": "87691c7891c4741f4cc55b018e248ed2b957028cf862905103604f56dbaf4eb3"
+    },
+    {
+      "file": "tester-walk-2.webp",
+      "sha256": "814284439dbbec63e4674258ac38c8bb0bbd5c20e583d25e880c8ab43bd7e651",
+      "bytes": 26386,
+      "provenance": "derived",
+      "originalSha256": "9f0915bee9abfa0032fc8f698e2b3c65ef60152b5d7b6701ecc09a8f8fe4a172"
+    },
+    {
+      "file": "tester-walk-3.webp",
+      "sha256": "d505d9b93f5fa57f226ef68a0f487b2bb5673b86aade62ce8c49e7726235e01b",
+      "bytes": 32480,
+      "provenance": "derived",
+      "originalSha256": "941860711b9e52a48bebcf3b388feeb28794b83a4da287d5daeae8e033cc191d"
+    },
+    {
+      "file": "tester.webp",
+      "sha256": "d505d9b93f5fa57f226ef68a0f487b2bb5673b86aade62ce8c49e7726235e01b",
+      "bytes": 32480,
+      "provenance": "derived",
+      "originalSha256": "941860711b9e52a48bebcf3b388feeb28794b83a4da287d5daeae8e033cc191d"
+    }
+  ]
+}

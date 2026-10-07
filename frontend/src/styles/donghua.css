@@ -1,0 +1,176 @@
+/* ===========================================================================
+   donghua.css — design tokens + chrome for the donghua 3D theme.
+
+   Tokens are OKLCH, which is the 2026 default for a reason that matters here:
+   the palette is built from one hue family at several lightnesses, and in sRGB
+   those steps drift in perceived brightness. In OKLCH a lightness step is a
+   lightness step, so the UI chrome stays legible when it sits over a bright
+   lobby plate and over a near-black nap room without per-room tweaking.
+
+   Loaded AFTER office.css so these variables win, but it does not replace it:
+   2300 lines of working layout stay where they are. This file only owns the
+   look, not the geometry.
+   =========================================================================== */
+
+:root {
+  /* --- jade / gold / ink: the donghua triad ----------------------------- */
+  --dh-jade-100: oklch(92% 0.06 185);
+  --dh-jade-300: oklch(78% 0.12 190);
+  --dh-jade-500: oklch(62% 0.15 195);
+  --dh-jade-700: oklch(42% 0.11 198);
+
+  --dh-gold-200: oklch(90% 0.09 85);
+  --dh-gold-400: oklch(80% 0.14 80);
+  --dh-gold-600: oklch(66% 0.14 72);
+
+  --dh-ink-900: oklch(17% 0.025 250);
+  --dh-ink-800: oklch(22% 0.030 248);
+  --dh-ink-700: oklch(28% 0.035 246);
+  --dh-ink-400: oklch(55% 0.025 250);
+  --dh-ink-200: oklch(80% 0.015 250);
+
+  /* Burn-state hues, shared with the atmosphere shader so the panel trim and
+     the air in the room cannot disagree about how hot things are. */
+  --dh-state-normal:   var(--dh-jade-300);
+  --dh-state-warm:     oklch(80% 0.14 75);
+  --dh-state-hot:      oklch(72% 0.18 45);
+  --dh-state-critical: oklch(62% 0.22 25);
+  --dh-state-tripped:  oklch(72% 0.14 240);
+
+  /* --- surfaces ---------------------------------------------------------- */
+  --dh-panel: color-mix(in oklab, var(--dh-ink-900) 86%, transparent);
+  --dh-panel-raised: color-mix(in oklab, var(--dh-ink-800) 92%, transparent);
+  --dh-edge: color-mix(in oklab, var(--dh-jade-500) 42%, transparent);
+  --dh-edge-strong: color-mix(in oklab, var(--dh-jade-300) 70%, transparent);
+
+  /* The signature cue from the research: a bright rim where a surface turns
+     away from the light. On UI that becomes a 1px inset highlight on the top
+     edge plus a coloured outer glow. */
+  --dh-rim: inset 0 1px 0 color-mix(in oklab, var(--dh-jade-100) 34%, transparent);
+  --dh-glow-sm: 0 0 12px color-mix(in oklab, var(--dh-jade-500) 26%, transparent);
+  --dh-glow-md: 0 0 24px color-mix(in oklab, var(--dh-jade-500) 32%, transparent);
+  --dh-shadow: 0 10px 30px oklch(10% 0.02 250 / 0.55);
+
+  --dh-radius: 3px;
+  --dh-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* --- the WebGL air layer ------------------------------------------------ */
+/* Sits above the room plate and below every actor, so characters are *in*
+   the light rather than behind it. pointer-events none is essential: this
+   covers the whole stage and would otherwise eat every click on a door. */
+.atmosphere-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: screen;
+}
+
+/* The plate itself gets a touch of dimensional grounding: a soft inner
+   vignette and a cool floor bounce, both cheap and both reinforcing the
+   "this is a lit box" reading that the shader is selling. */
+.room-background {
+  filter: saturate(1.06) contrast(1.03);
+}
+.room-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 110%,
+      color-mix(in oklab, var(--dh-jade-500) 12%, transparent) 0%,
+      transparent 60%);
+}
+
+/* --- donghua panel chrome ----------------------------------------------- */
+/* Applied to the existing panels by class, so markup does not have to move.
+   No !important anywhere below: this file is imported last in
+   HermesOfficeApp.tsx and the selectors match office.css specificity exactly,
+   so plain source order already wins. The flags were removed rather than
+   kept "just in case" — a theme layer that shouts !important leaves a
+   customer re-skinning the product with nowhere left to escalate, which
+   defeats the purpose of having a theme layer. Asserted in cascade.test.ts. */
+.burn-hud,
+.approval-gate,
+.audit-panel,
+.audit-chip,
+.agents-panel,
+.chat-panel,
+.github-feed {
+  background: var(--dh-panel);
+  border: 1px solid var(--dh-edge);
+  border-radius: var(--dh-radius);
+  box-shadow: var(--dh-rim), var(--dh-glow-sm), var(--dh-shadow);
+  backdrop-filter: blur(10px) saturate(1.25);
+  -webkit-backdrop-filter: blur(10px) saturate(1.25);
+}
+
+/* Ornate corner brackets — the cheapest possible nod to the carved metal trim
+   that runs through donghua interiors. Drawn with gradients, so there is no
+   extra image request and they scale with the panel. */
+.burn-hud,
+.approval-gate,
+.audit-panel {
+  position: relative;
+}
+.burn-hud::before,
+.approval-gate::before,
+.audit-panel::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--dh-gold-400), var(--dh-gold-400)) left top / 9px 1px no-repeat,
+    linear-gradient(var(--dh-gold-400), var(--dh-gold-400)) left top / 1px 9px no-repeat,
+    linear-gradient(var(--dh-gold-400), var(--dh-gold-400)) right bottom / 9px 1px no-repeat,
+    linear-gradient(var(--dh-gold-400), var(--dh-gold-400)) right bottom / 1px 9px no-repeat;
+  opacity: 0.55;
+}
+
+/* --- state-reactive trim ------------------------------------------------- */
+/* The stage carries data-burn; panels pick the hue up from a single place so
+   a new state cannot be styled inconsistently across components. */
+[data-burn='normal']   { --dh-accent: var(--dh-state-normal); }
+[data-burn='warm']     { --dh-accent: var(--dh-state-warm); }
+[data-burn='hot']      { --dh-accent: var(--dh-state-hot); }
+[data-burn='critical'] { --dh-accent: var(--dh-state-critical); }
+[data-burn='tripped']  { --dh-accent: var(--dh-state-tripped); }
+
+[data-burn]:not([data-burn='normal']) .burn-hud {
+  border-color: color-mix(in oklab, var(--dh-accent) 65%, transparent);
+  box-shadow:
+    var(--dh-rim),
+    0 0 26px color-mix(in oklab, var(--dh-accent) 38%, transparent),
+    var(--dh-shadow);
+}
+
+/* --- characters: ground them in the scene -------------------------------- */
+/* A contact shadow under each sprite. Without it a stylized sprite floats,
+   which is the single most common tell of a 2D actor on a 3D-looking plate. */
+.char-sprite {
+  filter: drop-shadow(0 2px 3px oklch(12% 0.02 250 / 0.5));
+}
+.character::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 62%;
+  height: 10%;
+  transform: translateX(-50%) scaleY(0.4);
+  background: radial-gradient(ellipse at center,
+    oklch(10% 0.02 250 / 0.55) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* --- motion ------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .atmosphere-layer { opacity: 0.55; }
+  .burn-hud, .approval-gate, .audit-panel { transition: none !important; }
+}

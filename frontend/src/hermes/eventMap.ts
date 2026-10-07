@@ -45,8 +45,14 @@ export function agentForEnvelope(env: HermesEnvelope): string | null {
   const d = env as any
   switch (env.type) {
     case 'agent_status':
-    case 'agent_spawned':
-      return String(d.agent ?? d.agent?.name ?? '') || null
+    case 'agent_spawned': {
+      // `d.agent ?? d.agent?.name` never reached .name — ?? only falls through
+      // on null/undefined, so an object agent stringified to "[object Object]".
+      const a = d.agent
+      if (a == null) return null
+      if (typeof a === 'object') return String(a.name ?? a.id ?? '') || null
+      return String(a) || null
+    }
     case 'agent_finished':
     case 'tool_call':
     case 'tool_done':

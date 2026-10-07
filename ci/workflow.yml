@@ -1,0 +1,204 @@
+# Hermes Office v2 — CI  (canonical source)
+#
+# WHY THIS LIVES HERE AND NOT ONLY IN .github/workflows/
+# ------------------------------------------------------
+# This workspace does not persist dot-DIRECTORIES. Dot-files such as
+# .gitignore and .npmrc survive snapshots; `.github/` does not. The workflow
+# was written, verified, and silently lost twice before anyone noticed, and
+# each time the CHANGELOG was "corrected" with a different wrong explanation:
+# first that the file was never real, then that it was never created. Both
+# were wrong. It was created, and the directory it lived in evaporated.
+#
+# So the durable copy lives at this ordinary path, and `scripts/install-ci.sh`
+# copies it into place. If `.github/` disappears again, one command restores
+# it, and `scripts/check-ci.sh` reports the drift instead of leaving a green
+# badge over a workflow that is not there.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    name: Server — lint, parse, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # Upstream shipped `npm ci || npm install`, which tolerates a lockfile
+      # that disagrees with package.json. That is a defect to fix, not to
+      # route around, so the fallback is gone.
+      - name: Install (lockfile must be exact)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # Parse every server and test module, not the hand-picked three upstream
+      # checked. A syntax error in an unlisted file used to reach production.
+      - name: Parse all modules
+        run: |
+          fail=0
+          for f in server/*.js tests/*.js; do
+            node --check "$f" || { echo "::error file=$f::syntax error"; fail=1; }
+          done
+          exit $fail
+
+      # The server serves the built SPA, and one test asserts that a missing
+      # static asset returns a real 404 while an SPA route still serves
+      # index.html. That test needs frontend/dist to exist. Without this step
+      # the suite fails in CI while passing locally — the worst kind of red,
+      # because it looks like flakiness rather than a missing prerequisite.
+      - name: Build frontend (the static-serving test needs dist/)
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+
+      # Upstream had `node --test tests/ || true`, so the badge was green by
+      # construction. No `|| true` here: a red test turns the build red.
+      - name: Test
+        run: npm test
+
+      # Invoked through `bash` rather than `./`, because the executable bit
+      # does not survive every checkout or archive, and losing it produces a
+      # "command not found" that reads like a missing script.
+      - name: Clean shutdown with a live WebSocket
+        run: bash scripts/check-shutdown.sh
+
+      - name: CI workflow matches its canonical source
+        run: bash scripts/check-ci.sh
+
+      # check-plates.py and check-sprites.py both need Pillow. Without this
+      # step they fail on a fresh runner with ModuleNotFoundError — the asset
+      # gates were added without it and would have been red on arrival, the
+      # same way the SPA test was.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Pillow
+        run: pip install --quiet pillow
+
+      # check-assets.sh only proves a file with the right name exists. It says
+      # nothing about what is inside it: a plate truncated to zero bytes,
+      # swapped for the wrong room, or quietly re-encoded at half resolution
+      # all passed. Two plates once went missing unnoticed. The art is
+      # generated and cannot be regenerated, so the bytes are the master copy.
+      - name: Room plates match their hashes and the house style
+        run: python3 scripts/check-plates.py
+
+      # Room plates can only be checked against recorded hashes, because the
+      # art was generated. Sprites are produced by a deterministic filter, so
+      # they get the stronger guarantee: --regen rebuilds all 100 derived
+      # sprites from art/originals and demands a byte-for-byte match. Nothing
+      # else catches a drifted filter constant, since every file on disk still
+      # matches its hash.
+      - name: Sprites match their hashes and rebuild from source
+        run: python3 scripts/check-sprites.py --regen
+
+      # Prose is not type-checked, so it rots while the tests stay green.
+      # This repo's most persistent defect has been documentation that
+      # outran reality — a CI workflow claimed three times, a GitHub poller
+      # described hitting an endpoint that cannot return 200. The claims are
+      # now executed.
+      - name: ARCHITECTURE.md describes the repo that exists
+        run: python3 scripts/check-docs.py
+
+  frontend:
+    name: Frontend — typecheck and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install (lockfile must be exact)
+        run: npm ci
+
+      # `npm run build` is `tsc && vite build`, so a type error fails here.
+      - name: Typecheck and build
+        run: npm run build
+
+      # The governance surfaces — ApprovalGate, AuditBadge — enforce the guest
+      # redaction contract that became the ONLY boundary when auto-guest
+      # landed. They had no tests at all until Fase 7, which is a hard
+      # objection to answer in an enterprise sale.
+      - name: Test
+        run: npm test
+
+      - name: Report bundle size
+        run: |
+          echo "### Bundle" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          ls -la dist/assets/ >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  assets:
+    name: Assets — references resolve, nothing dropped
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Every sprite path the code asks for must exist. A typo renders as an
+      # invisible character rather than an error.
+      - name: Every referenced asset exists
+        run: |
+          fail=0
+          refs=$(grep -rhoE "/(sprites|rooms)/[A-Za-z0-9/._-]+\.(webp|png)" \
+                   frontend/src | sort -u)
+          for r in $refs; do
+            if [ ! -f "frontend/public$r" ]; then
+              echo "::error::missing asset referenced by code: $r"
+              fail=1
+            fi
+          done
+          [ "$fail" = 0 ] && echo "all $(echo "$refs" | wc -l) referenced assets present"
+          exit $fail
+
+      # The converse: an upstream asset must not vanish merely because no code
+      # references it. This is the check that would have caught the two room
+      # plates the WebP conversion dropped in silence — twice.
+      - name: Every upstream asset still accounted for
+        run: bash scripts/check-assets.sh
+
+  deployability:
+    name: Deployability — no host is hard-coded
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      # The repo once defaulted to one developer's Tailscale addresses and
+      # GitHub account, so a fresh install would quietly talk to machines the
+      # operator did not control. Nothing may reintroduce that.
+      - name: No private or tailnet addresses in shipped code
+        run: bash scripts/check-deployable.sh

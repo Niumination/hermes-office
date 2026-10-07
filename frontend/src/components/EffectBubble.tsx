@@ -8,7 +8,7 @@
 import React from 'react'
 
 interface EffectBubbleProps {
-  /** Full path to the sprite, e.g. '/sprites/effects/typing.png' */
+  /** Full path to the sprite, e.g. '/sprites/effects/typing.webp' */
   src: string
   /** Accessible label */
   alt?: string
