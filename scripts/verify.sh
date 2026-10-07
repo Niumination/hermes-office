@@ -56,7 +56,7 @@ echo "=== gates ==="
 gate "handoff integrity"   bash scripts/check-handoff.sh
 gate "eslint"              npx eslint server tests
 gate "frontend build"      bash -c 'cd frontend && npm run build'
-gate "backend tests"       node --test "tests/*.test.js"
+gate "backend tests"       bash -c 'node --test tests/*.test.js'
 gate "frontend tests"      bash -c 'cd frontend && npx vitest run'
 gate "clean shutdown"      bash scripts/check-shutdown.sh
 gate "upstream assets"     bash scripts/check-assets.sh

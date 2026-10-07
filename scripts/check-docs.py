@@ -56,7 +56,6 @@ def check(label: str, claimed, actual) -> None:
     if str(claimed).strip() != str(actual).strip():
         failures.append(f"{label}: doc says {claimed!r}, repo has {actual!r}")
 
-
 def want(label: str, pattern: str, haystack: str, where: str, flags=0):
     """Find a pattern that is not allowed to disappear.
 
@@ -78,6 +77,25 @@ def want(label: str, pattern: str, haystack: str, where: str, flags=0):
             f"{where} no longer states {label} in the form {pattern!r} — "
             f"that check silently stopped running")
     return m
+
+
+def _test_files() -> list[str]:
+    """Expand the test glob in Python, not in node and not in a shell.
+
+    subprocess without shell=True hands node the literal string
+    "tests/*.test.js". Node only expands that from v22; on Node 20 — the
+    version this repo declares in `engines` and pins in all three CI jobs —
+    it prints "Could not find" and runs zero tests, and this checker then
+    reported "could not read the runner" instead of a test count.
+
+    Expanding here drops the dependency on both a shell and a node version.
+    An empty result is a hard stop: counting zero tests and calling it a
+    match is the false green this file exists to prevent.
+    """
+    hits = sorted(glob.glob(os.path.join(ROOT, "tests", "*.test.js")))
+    if not hits:
+        raise SystemExit("FAIL: no tests/*.test.js found — nothing to count")
+    return hits
 
 
 def want_all(label: str, pattern: str, haystack: str, where: str,
@@ -187,7 +205,7 @@ def main() -> int:
             print("SKIP: backend test count — node_modules missing, run `npm ci` first")
         else:
             out = subprocess.run(
-                ["node", "--test", "tests/*.test.js"], cwd=ROOT, capture_output=True, text=True
+                ["node", "--test", *_test_files()], cwd=ROOT, capture_output=True, text=True
             )
             got = re.search(r"^# tests (\d+)", out.stdout, re.M)
             failed_to_load = "ERR_MODULE_NOT_FOUND" in out.stdout + out.stderr
@@ -406,7 +424,7 @@ def main() -> int:
     # READMEs, checked against the same runners.
     RUNNERS = [
         ("backend", r"\| (?:Backend tests|Test backend) \| \*\*(\d+)\*\* \|",
-         ["node", "--test", "tests/*.test.js"], ROOT, r"^# pass (\d+)$"),
+         ["node", "--test", *_test_files()], ROOT, r"^# pass (\d+)$"),
         ("frontend", r"\| (?:Frontend tests|Test frontend) \| \*\*(\d+)\*\* \|",
          ["npx", "vitest", "run", "--reporter=basic"], os.path.join(ROOT, "frontend"),
          r"Tests\s+(\d+) passed"),
