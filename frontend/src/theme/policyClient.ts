@@ -65,7 +65,12 @@ const GUEST_VIEWER_TIER = -1
  */
 export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
   const rooms = policy.rooms ?? []
-  const redacted = policy.redacted === true
+  // The server puts `redacted: true` on each ROOM for a guest, not on the
+  // document — see server/index.js `GET /policy`. Reading only the top-level
+  // flag meant the guest took the owner path, found every budget dropped, and
+  // got an empty ladder: the rail vanished and the whole theme looked dead.
+  const redacted =
+    policy.redacted === true || rooms.some((r) => (r as { redacted?: boolean }).redacted === true)
 
   if (!redacted) {
     const byId: Record<string, PolicyRoomLike> = {}

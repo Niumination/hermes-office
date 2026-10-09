@@ -102,4 +102,18 @@ describe('ladderFromPolicy — guest', () => {
     expect(snap2.rungs).toHaveLength(1)
     expect(snap2.rungs[0].tier).toBe(1) // untrusted, above idle
   })
+
+  it('reads redacted off the rooms when the document does not set it', () => {
+    // The real server stamps `redacted: true` onto each room, not the
+    // envelope. The top-level-only read silently took the owner path for a
+    // guest and emptied the ladder.
+    const asServed = {
+      rooms: GUEST_POLICY.rooms.map((r) => ({ ...r, redacted: true })),
+      ts: 1791550988984,
+    }
+    const snap2 = ladderFromPolicy(asServed)
+    expect(snap2.redacted).toBe(true)
+    expect(snap2.rungs).toHaveLength(8)
+    expect(snap2.viewerTier).toBe(-1)
+  })
 })
