@@ -74,6 +74,7 @@ gate "frontend tests"      bash -c 'cd frontend && npx vitest run'
 gate "clean shutdown"      bash scripts/check-shutdown.sh
 gate "upstream assets"     bash scripts/check-assets.sh
 gate "ci workflow"         bash scripts/check-ci.sh
+gate "dependency pins"     bash scripts/check-pins.sh
 gate "deployable"          bash scripts/check-deployable.sh
 gate "room plates"         python3 scripts/check-plates.py
 gate "doc claims"          python3 scripts/check-docs.py

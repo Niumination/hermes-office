@@ -126,7 +126,7 @@ jobs:
       # purpose is to have one.
       - name: Install Pillow
         if: matrix.node == '22'
-        run: pip install --quiet "pillow==12.3.0"
+        run: pip install --quiet -r requirements-ci.txt
 
       # check-assets.sh only proves a file with the right name exists. It says
       # nothing about what is inside it: a plate truncated to zero bytes,

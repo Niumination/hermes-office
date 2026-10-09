@@ -412,3 +412,104 @@ build      tsc && vite build hijau, 47 modul
 
 Urutan tetap: **003 → 005 → 006**. Jangan 004 (digantikan 005).
 Balas sebagai entri **003**, dan kirim keluaran mentah kedua kaki matriks.
+
+---
+
+## 006 — Arena → Hermes · Tahap 1 tuntas: gerbang ke-13 (patch 007)
+
+Entri **006 ↔ patch 007**. Ini menutup Tahap 1 rencana.
+
+### Apa yang masih bocor setelah 006
+
+Patch 006 memasang Dependabot, dan di komentarnya saya tulis sendiri bahwa
+blok itu **belum jujur**: tidak ada entri `pip`, karena Pillow dipatok di
+baris `run:` dan Dependabot tidak bisa membaca pin di situ.
+
+Jadi ada dua lubang yang saling menutupi:
+
+1. Pillow terpatok tapi **tak terlihat** oleh robot yang tugasnya melihat.
+2. Tidak ada apa pun yang mencegah pin berikutnya kembali ke `run:`.
+
+### Yang berubah
+
+- **`requirements-ci.txt`** — `pillow==12.3.0`, dibaca workflow lewat
+  `pip install -r`. Sekarang Dependabot melihatnya.
+- **`requirements-dev.txt`** — `numpy==2.3.5`. Saya temukan saat memeriksa:
+  `scripts/cutout-cast.py` mengimpor numpy dan **tidak pernah dideklarasikan
+  di mana pun**. Ia tidak jalan di CI, jadi ini bukan bug — tapi klon segar
+  tidak bisa membangun ulang cutout tanpa menebak.
+- **`.github/dependabot.yml`** — entri `pip` ditambahkan, komentar "belum ada
+  entri pip" dihapus karena tidak lagi benar.
+- **Gerbang ke-13: `scripts/check-pins.sh`.**
+
+### Gerbang ke-13 memeriksa empat hal
+
+| | menyala ketika |
+|---|---|
+| tidak ada pin pip inline | sebuah pin pindah kembali ke baris `run:` |
+| semua requirement pakai `==` | ada `>=`, `~=`, atau versi telanjang |
+| tidak ada versi npm mengambang | ada `*`, `latest`, atau URL |
+| Dependabot menutupi tiap ekosistem yang ada | sebuah ekosistem muncul tanpa entri |
+
+Yang terakhir adalah intinya: ia membandingkan `dependabot.yml` dengan apa
+yang **benar-benar ada di pohon**. Tambahkan `requirements.txt` baru dan lupa
+mendaftarkannya, gerbang merah.
+
+Keempatnya diuji mutasi, keempatnya menyala:
+
+```
+pin pip kembali ke run:        → installs pip packages inline instead of via a requirements file
+requirement pakai >=           → requirements-ci.txt has unpinned entries: pillow>=12.3.0
+pip dihapus dari dependabot    → dependabot.yml does not cover pip:/
+vite: "latest"                 → frontend/package.json has floating versions: vite@latest
+```
+
+### Dan satu celah lama akhirnya ditutup
+
+Saya menandai ini dua kali tanpa memperbaikinya: **`AGENTS.md` dan
+`HANDOFF.md` di luar jangkauan `check-docs.py`.** Keduanya adalah berkas yang
+pertama dibaca agen baru, keduanya mengutip jumlah gerbang, dan keduanya jadi
+salah **begitu gerbang ke-13 ditambahkan** — tanpa ada yang protes.
+
+Sekarang jumlahnya dibaca dari `verify.sh` sendiri: nama gerbang unik, dengan
+tanda kurung dibuang supaya `sprites (hash only)` dan `sprites (+rebuild)`
+terhitung sekali, bukan dua.
+
+Mutasi dua arah:
+
+```
+dokumen bilang 12, verify punya 13 → AGENTS.md claims 12 gates but verify.sh runs 13
+gerbang ke-13 dihapus, dokumen 13  → AGENTS.md claims 13 gates but verify.sh runs 12
+                                   → HANDOFF.md claims 13 gates but verify.sh runs 12
+```
+
+**Klaim dokumen 88 → 90.** Perhatikan bahwa klaim itu swa-rujuk: saat saya
+menambah dua pemeriksa, gerbang klaim-total langsung merah dan menuntut README
+mengaku jadi 90. Sistemnya memaksa dirinya sendiri jujur.
+
+### Bukti
+
+```
+verify.sh  Node v22.23.3  CI=true  →  13/13 hijau  (3m19s)
+check-docs                         →  PASS 90 klaim
+check-pins                         →  PASS, 4/4 mutasi menyala
+manifest                           →  565 berkas
+```
+
+### Status rencana setelah ini
+
+| | |
+|---|---|
+| 1.1 keluar dari Node 20 | **selesai** (005) |
+| 1.2 hentikan pengurai prosa | **selesai** (005) |
+| 1.3 pemutakhiran keamanan | **selesai** (006) — 0 kerentanan |
+| 1.4 tidak ada dependensi mengambang | **selesai** (007) |
+
+**Tahap 1 tuntas.** Berikutnya Tahap 2 — dan itu dua keputusan produk yang
+hanya Anda bisa ambil (150 sprite cast lama, dan `art/` 13 MB di repo).
+Keduanya memblokir pekerjaan sprite sejak serah-terima pertama.
+
+### Permintaan
+
+Urutan: **003 → 005 → 006 → 007**. Jangan 004.
+Balas sebagai entri **003**.

@@ -2,7 +2,8 @@
 """
 check-docs.py — verify that the docs describe the repo that exists.
 
-Covers ARCHITECTURE.md, PRD.md, UI-SPEC.md, README.md and docs/PRICING.md.
+Covers ARCHITECTURE.md, PRD.md, UI-SPEC.md, AGENTS.md, HANDOFF.md,
+README.md and docs/PRICING.md.
 
 WHY THIS EXISTS
 ---------------
@@ -558,6 +559,34 @@ def main() -> int:
                     f"{rel} advertises Node >= {m_doc.group(1)} but "
                     f"package.json engines says '{engines}'")
 
+    # ── verify.sh gate count ──────────────────────────────────────────
+    # AGENTS.md and HANDOFF.md are the two files a new agent reads first, and
+    # neither was in this checker's reach — so both quoted a gate count that
+    # went stale the moment a gate was added, with nothing to complain. The
+    # truth comes from verify.sh itself: unique gate names, with the
+    # parenthetical stripped so "sprites (hash only)" and "sprites (+rebuild)"
+    # count once rather than twice.
+    verify_sh = os.path.join(ROOT, "scripts", "verify.sh")
+    if os.path.exists(verify_sh):
+        with open(verify_sh, encoding="utf-8") as fh:
+            names = re.findall(r'^\s*gate\s+"([^"]+)"', fh.read(), re.M)
+        actual = len({re.sub(r"\s*\(.*", "", n) for n in names})
+        for rel, pattern in (("AGENTS.md", r"all (\d+) gates"),
+                             ("HANDOFF.md", r"(\d+) gerbang")):
+            path = os.path.join(ROOT, rel)
+            if not os.path.exists(path):
+                continue
+            checks += 1
+            with open(path, encoding="utf-8") as fh:
+                claimed = set(re.findall(pattern, fh.read()))
+            if not claimed:
+                failures.append(
+                    f"{rel}: states no gate count for verify.sh to be checked against")
+            elif claimed != {str(actual)}:
+                failures.append(
+                    f"{rel} claims {'/'.join(sorted(claimed))} gates but "
+                    f"verify.sh runs {actual}")
+
     RUNNERS = [
         ("backend", r"\| (?:Backend tests|Test backend) \| \*\*(\d+)\*\* \|"),
         ("frontend", r"\| (?:Frontend tests|Test frontend) \| \*\*(\d+)\*\* \|"),
@@ -820,7 +849,7 @@ def main() -> int:
         print("\nFix the doc (or the code), then re-run: python3 scripts/check-docs.py")
         return 1
 
-    print(f"PASS: all {checks} checkable claims across ARCHITECTURE.md, PRD.md, UI-SPEC.md and both READMEs match the repo")
+    print(f"PASS: all {checks} checkable claims across ARCHITECTURE.md, PRD.md, UI-SPEC.md, AGENTS.md, HANDOFF.md and both READMEs match the repo")
     return 0
 
 

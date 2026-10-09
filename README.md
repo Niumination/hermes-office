@@ -124,7 +124,7 @@ the normalisation is real work and it is already done here.
 |---|---|
 | Backend tests | **305** |
 | Frontend tests | **129** |
-| Machine-verified doc claims | **88** (`scripts/check-docs.py`) |
+| Machine-verified doc claims | **90** (`scripts/check-docs.py`) |
 | Bundle | 216 kB JS · 43.7 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
 
