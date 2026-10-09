@@ -114,7 +114,7 @@ jobs:
       # both legs, so they run once. check-docs is NOT gated this way: it
       # executes the test runners, and running it on both legs is what
       # catches a runtime that changes their output.
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: matrix.node == '22'
         with:
           python-version: "3.12"
