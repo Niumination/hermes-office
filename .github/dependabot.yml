@@ -1,0 +1,48 @@
+# Dependabot — the automation that would have caught this repo's last four
+# supply-chain defects before a person did.
+#
+# All four were the same shape: something pinned, then forgotten.
+#
+#   - the lockfile pinned to a mirror the CI runner could not reach;
+#   - three actions pinned to a Node runtime GitHub had already deprecated;
+#   - vite and vitest pinned below a published critical advisory
+#     (tinypool prototype-pollution to RCE, among five others);
+#   - Node pinned to a line that had been end-of-life for five months.
+#
+# None of them were found by a gate. Three were found by a person reading
+# a page. That is not a system that scales, and it is the reason this file
+# exists: the gates prove the repo is internally consistent, and this proves
+# the outside world has not moved underneath it.
+#
+# Weekly and grouped, deliberately. A dozen separate pull requests every
+# Monday is how a team learns to close Dependabot PRs unread, which is worse
+# than not having it: it manufactures the appearance of supervision.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      server:
+        patterns: ["*"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        patterns: ["*"]
+
+  # The actions were the ones that went quietly stale: a deprecation warning
+  # on every job is easy to scroll past for months.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  # No pip entry yet. Pillow is pinned inline in ci/workflow.yml rather than
+  # in a requirements file, and Dependabot cannot read a pin that lives in a
+  # `run:` line. Moving it to requirements-ci.txt is the follow-up that makes
+  # this block honest.

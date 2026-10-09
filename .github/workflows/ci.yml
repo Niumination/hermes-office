@@ -35,15 +35,32 @@ permissions:
 
 jobs:
   server:
-    name: Server — lint, parse, test
+    name: Server — lint, parse, test (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    # Two runtimes, not one. Node 20 reached end of life on 2026-04-30 and
+    # is gone from `engines`; 22 is maintenance LTS until 2027-04 and 24 is
+    # active LTS until 2028-04. The pair is not ceremony: moving to 24
+    # surfaced a native crash in better-sqlite3 11
+    # (`RemoveEnvironmentCleanupHook ... Assertion failed: (env) != nullptr`)
+    # that no single-version job could have shown, and a reporter format
+    # change that silently broke a gate. A single pinned version tells you
+    # the code works on that version; it tells you nothing about the next
+    # upgrade, which is the question that actually costs money.
+    #
+    # fail-fast is off on purpose: when one leg goes red the other leg's
+    # result is the information that tells you whether it is a real defect
+    # or a version-specific one.
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: ${{ matrix.node }}
           cache: npm
 
       # Upstream shipped `npm ci || npm install`, which tolerates a lockfile
@@ -93,11 +110,23 @@ jobs:
       # step they fail on a fresh runner with ModuleNotFoundError — the asset
       # gates were added without it and would have been red on arrival, the
       # same way the SPA test was.
-      - uses: actions/setup-python@v5
+      # The asset gates are pure Python and produce identical answers on
+      # both legs, so they run once. check-docs is NOT gated this way: it
+      # executes the test runners, and running it on both legs is what
+      # catches a runtime that changes their output.
+      - uses: actions/setup-python@v6
+        if: matrix.node == '22'
         with:
           python-version: "3.12"
+      # Pinned, not floating. check-sprites.py --regen rebuilds 100 sprites
+      # and demands a byte-for-byte match against recorded hashes, so the
+      # encoder producing those bytes is part of the contract. An unpinned
+      # `pillow` lets a Pillow release turn this gate red on a commit that
+      # changed nothing — a failure with no author, on a gate whose whole
+      # purpose is to have one.
       - name: Install Pillow
-        run: pip install --quiet pillow
+        if: matrix.node == '22'
+        run: pip install --quiet "pillow==12.3.0"
 
       # check-assets.sh only proves a file with the right name exists. It says
       # nothing about what is inside it: a plate truncated to zero bytes,
@@ -105,6 +134,7 @@ jobs:
       # all passed. Two plates once went missing unnoticed. The art is
       # generated and cannot be regenerated, so the bytes are the master copy.
       - name: Room plates match their hashes and the house style
+        if: matrix.node == '22'
         run: python3 scripts/check-plates.py
 
       # Room plates can only be checked against recorded hashes, because the
@@ -114,6 +144,7 @@ jobs:
       # else catches a drifted filter constant, since every file on disk still
       # matches its hash.
       - name: Sprites match their hashes and rebuild from source
+        if: matrix.node == '22'
         run: python3 scripts/check-sprites.py --regen
 
       # Prose is not type-checked, so it rots while the tests stay green.
@@ -132,11 +163,11 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
@@ -166,11 +197,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
 
       # Every sprite path the code asks for must exist. A typo renders as an
       # invisible character rather than an error.
@@ -199,7 +230,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # The repo once defaulted to one developer's Tailscale addresses and
       # GitHub account, so a fresh install would quietly talk to machines the
