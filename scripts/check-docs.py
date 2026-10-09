@@ -50,6 +50,65 @@ failures: list[str] = []
 checks = 0
 
 
+
+# --- reading a child process's prose safely -----------------------------
+#
+# Three checks below run a test runner and parse its output. Colour breaks
+# that parse, and colour is not the child's decision: picocolors, which
+# vitest ships, turns ANSI on whenever CI is set, with no terminal attached:
+#
+#     !(NO_COLOR || --no-color) && (FORCE_COLOR || --color || win32 ||
+#                                   (isTTY && TERM != "dumb") || !!env.CI)
+#
+# So this checker passed on every developer machine and could not pass on
+# any CI runner. "Tests  129 passed" arrived wrapped in escape sequences,
+# the count regex missed, and the gate reported "could not read the runner"
+# -- which reads like a broken environment, not a broken parser. It was red
+# on its first and only CI run for exactly this reason.
+#
+# Two defences, because either alone is one tool away from failing again:
+#   1. ask the child not to colour. NO_COLOR is honoured and FORCE_COLOR is
+#      REMOVED rather than set to "0" -- picocolors tests that variable for
+#      truthiness, and the string "0" is truthy in JavaScript, so
+#      FORCE_COLOR=0 would switch colour ON.
+#   2. strip ANSI from what comes back regardless, so a tool that ignores
+#      NO_COLOR cannot reintroduce the bug.
+_ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]")
+
+
+def _plain(s: str) -> str:
+    """Drop ANSI escape sequences so a regex can read the text underneath."""
+    return _ANSI_RE.sub("", s)
+
+
+def _run(cmd, cwd, timeout=None):
+    """Run a child whose output we intend to parse.
+
+    Returns (stdout, stderr), both already stripped of colour.
+    """
+    env = dict(os.environ)
+    env["NO_COLOR"] = "1"
+    env.pop("FORCE_COLOR", None)
+    out = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True,
+                         env=env, timeout=timeout)
+    return _plain(out.stdout), _plain(out.stderr)
+
+
+def _self_test_parsers() -> None:
+    """Prove the output parsers survive colour before trusting their silence.
+
+    This is not a documentation claim and is deliberately not counted as one.
+    It is the regression guard for the defect above: the failure mode was a
+    checker that could not read its own runner and blamed the environment,
+    so the coloured case is asserted on every run rather than assumed.
+    """
+    coloured = "Tests  \x1b[1m\x1b[32m129 passed\x1b[39m\x1b[22m (129)"
+    if not re.search(r"Tests\s+(?:\d+ failed \| )?(\d+) passed", _plain(coloured)):
+        raise SystemExit("FAIL: the vitest parser cannot read coloured output")
+    if not re.search(r"^# tests (\d+)", _plain("\x1b[32m# tests 305\x1b[39m"), re.M):
+        raise SystemExit("FAIL: the node --test parser cannot read coloured output")
+
+
 def check(label: str, claimed, actual) -> None:
     global checks
     checks += 1
@@ -118,6 +177,7 @@ def want_all(label: str, pattern: str, haystack: str, where: str,
 
 def main() -> int:
     global checks
+    _self_test_parsers()
     if not os.path.exists(DOC):
         print(f"FAIL: {DOC} missing")
         return 1
@@ -204,11 +264,9 @@ def main() -> int:
         if not os.path.isdir(os.path.join(ROOT, "node_modules")):
             print("SKIP: backend test count — node_modules missing, run `npm ci` first")
         else:
-            out = subprocess.run(
-                ["node", "--test", *_test_files()], cwd=ROOT, capture_output=True, text=True
-            )
-            got = re.search(r"^# tests (\d+)", out.stdout, re.M)
-            failed_to_load = "ERR_MODULE_NOT_FOUND" in out.stdout + out.stderr
+            so, se = _run(["node", "--test", *_test_files()], ROOT)
+            got = re.search(r"^# tests (\d+)", so, re.M)
+            failed_to_load = "ERR_MODULE_NOT_FOUND" in so + se
             if failed_to_load:
                 failures.append(
                     "backend suite could not load (ERR_MODULE_NOT_FOUND) — "
@@ -236,11 +294,8 @@ def main() -> int:
             print("SKIP: frontend test count — frontend/node_modules missing, "
                   "run `npm ci` in frontend/ first")
         else:
-            out = subprocess.run(
-                ["npx", "vitest", "run", "--reporter=basic"],
-                cwd=fe, capture_output=True, text=True,
-            )
-            blob = out.stdout + out.stderr
+            so, se = _run(["npx", "vitest", "run", "--reporter=basic"], fe)
+            blob = so + se
             got = re.search(r"Tests\s+(?:\d+ failed \| )?(\d+) passed", blob)
             if "ERR_MODULE_NOT_FOUND" in blob or "failed to load config" in blob:
                 failures.append(
@@ -440,8 +495,8 @@ def main() -> int:
         if not claimed:
             continue
         checks += 1
-        out = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=900)
-        blob = out.stdout + out.stderr
+        so, se = _run(cmd, cwd, timeout=900)
+        blob = so + se
         got = re.search(out_re, blob, re.M)
         # A failing suite lowers the pass count, which this check would
         # otherwise report as "the doc lies" — sending the reader to edit a
