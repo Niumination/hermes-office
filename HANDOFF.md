@@ -50,9 +50,9 @@ Patokan yang harus direproduksi (per 2026-10-08):
 |---|---|
 | handoff integrity | 562 berkas cocok |
 | eslint | 0 masalah |
-| frontend build | ~215 kB JS / 46,18 kB CSS (vite 8) — CSS naik 3,68 kB oleh `sect.css` |
+| frontend build | 216,57 kB JS / 46,98 kB CSS (vite 8) — tema 宗門 menambah ~1,3 kB JS dan ~4,5 kB CSS |
 | backend tests | **305** lulus, 0 gagal |
-| frontend tests | **148** lulus |
+| frontend tests | **160** lulus |
 | clean shutdown | keluar bersih dengan WebSocket hidup |
 | upstream assets | 258 aset terhitung |
 | ci workflow | cocok dengan `ci/workflow.yml` |

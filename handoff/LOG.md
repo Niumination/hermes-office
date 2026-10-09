@@ -758,3 +758,123 @@ backend                            →  305 tes
 Urutan: **003 → 005 → 006 → 007 → 008 → 009**. Jangan 004.
 009 butuh tarball asetnya diekstrak lebih dulu, sama seperti 008.
 Balas sebagai entri **003** — masih saya sisakan.
+
+---
+
+## 009 — Arena — temanya dinyalakan, dan sebuah hang ditemukan
+
+Entri 008 ditutup dengan kalimat: *"temanya bisa dirender, belum
+dinyalakan."* Entri ini menyalakannya — dan dalam prosesnya menemukan bug
+yang tidak ada hubungannya dengan tema.
+
+### Temanya kini benar-benar hidup
+
+`themeStore.ts` menyimpan pilihan dan menaruhnya di `<html data-theme>`,
+karena atribut itulah sumber kebenaran bagi CSS. Memakai
+`useSyncExternalStore`, bukan Context: dua pihak yang butuh nilai ini —
+toggle di topbar dan pencarian pelat jauh di dalam `OfficeStage` — terpisah
+oleh selusin komponen yang tidak peduli nilai itu.
+
+`OfficeStage.tsx` berubah **satu baris** secara efektif:
+
+```
+const defaultImage = phase === 'night' ? room.background.night : room.background.day
+const roomImage = platePath(room.id, theme, defaultImage)
+```
+
+Tema memilih pelat; fase siang/malam memilih pelat bawaan mana yang
+*seharusnya* dipakai. Jatuh-kembali tetap total untuk 12 ruangan.
+
+`ThemeToggle.tsx` adalah sakelar dua-state dengan **kedua label selalu
+terlihat**, bukan tombol ikon yang berganti makna saat ditekan — yang kedua
+memaksa pembaca mengingat apakah ikon menunjukkan keadaan sekarang atau
+keadaan yang akan didapat.
+
+Setiap akses `localStorage` dibungkus. Safari mode privat melempar di sana,
+dan dasbor tata kelola yang layar-putih karena gagal mengingat skema warna
+adalah cara memalukan untuk mati. Ada tesnya.
+
+### Bug yang ditemukan: hang di `prefers-reduced-motion`
+
+Saat menulis tes yang merender `OfficeStage` dengan reduced-motion menyala,
+worker vitest mati **SIGABRT, kehabisan memori**. Itu bukan tesnya.
+
+`OfficeStage` punya efek yang **bergantung pada `agents` dan juga menulis
+`agents`**:
+
+```
+useEffect(() => {
+  if (!reducedMotion) return
+  setAgents(prev => prev.map(a => ({ ...a, position: {...}, ... })))
+}, [agents, reducedMotion])
+```
+
+`prev.map()` selalu mengalokasikan array dan objek baru, jadi React selalu
+melihat nilai baru, menjalankan ulang efeknya, selamanya. Ia bahkan tidak
+bisa konvergen secara prinsip: salah satu field yang ditulisnya,
+`statusText: workMessage()`, acak.
+
+Artinya **tab mengunci bagi siapa pun yang menyalakan
+`prefers-reduced-motion`** — yaitu persis orang-orang yang cabang kode itu
+ada untuk melayani. Bug ini sudah ada sebelum tema sekte; ia tidak pernah
+ketahuan karena tidak ada tes yang pernah merender panggung dengan
+reduced-motion menyala.
+
+Perbaikannya: sentuh agen hanya bila ia memang melenceng dari sasarannya,
+dan kembalikan array sebelumnya apa adanya bila tidak ada yang berubah —
+identitas yang sama itulah yang membuat React berhenti.
+
+Dua tes regresi ditambahkan. Mode gagalnya adalah **hang**, bukan ekspektasi
+merah, jadi tes itu lulus dengan cara selesai; ekspektasi di dalamnya ada
+untuk membuktikan perilaku yang seharusnya tetap diberikan.
+
+### Pasangan kontras baru, didaftarkan saat dibuat
+
+Tombol terpilih menggambar `--sect-ink-0` di atas `--sect-gold` — satu-satunya
+pasangan terbalik (gelap di atas terang) di tema ini, dan pasangan yang
+gerbang 14 belum ukur. Ia didaftarkan pada saat yang sama ia dibuat, bukan
+nanti: Lc **78,4**. Pasangan yang diketahui perancang tapi tidak diketahui
+gerbang lebih buruk daripada tidak ada gerbang, karena ia menjual rasa aman
+yang palsu. Gerbang 14 kini **13 pasangan**.
+
+CSS toggle adalah satu-satunya aturan di `sect.css` yang **tidak** dicakup
+`[data-theme="sect"]`, dan memang harus begitu: ia kontrol yang menyalakan
+tema, jadi ia wajib terlihat saat temanya mati. Gaya dasarnya hanya memakai
+`currentColor`, supaya ia mewarisi tema inang alih-alih memperkenalkan
+pasangan warna yang tidak diukur siapa pun.
+
+### Satu kesalahan diagnosis yang pantas dicatat
+
+`check-docs` sempat melaporkan "this run checked 91" terhadap dokumen yang
+menulis 92 — satu pemeriksaan hilang diam-diam. Saya sempat memburunya
+sebagai regresi kode. Bukan: pohon ujinya belum dipasangi `node_modules` di
+akar, jadi pemeriksaan hitungan tes backend **SKIP**, dan skip menurunkan
+total. Backstop swa-rujuk yang menangkapnya, persis sesuai tujuannya.
+Pelajarannya untuk pembaca berikutnya: `SKIP` bukan hal netral di berkas
+ini — ia menggeser angka yang diklaim dokumen.
+
+### Bukti
+
+```
+verify.sh  Node v22.23.3  CI=true  →  14/14 hijau
+check-contrast                     →  PASS 13 pasangan token, APCA
+check-docs                         →  PASS 92 klaim
+frontend                           →  160 tes (148 + 12)
+backend                            →  305 tes
+bundel                             →  216,57 kB JS / 46,98 kB CSS
+```
+
+### Yang masih belum ada
+
+- Cincin 陣法 dan sapuan tinta View Transitions masih di prototipe.
+- `SectLadder` ada, teruji, **tapi belum dipasang di tata letak** — ia butuh
+  keputusan tata letak (menggantikan atau mendampingi pemilih ruangan yang
+  ada), dan itu keputusan produk, bukan keputusan saya.
+- Varian `@2x` pelat sekte.
+- `backdrop-filter` belum diprofil pada perangkat lemah.
+
+### Permintaan
+
+Urutan: **003 → 005 → 006 → 007 → [tarball 008] → 008 → [tarball 009] → 009
+→ 010**. Jangan 004. Patch 010 murni teks, tidak ada tarball.
+Balas sebagai entri **003** — masih saya sisakan.

@@ -10,6 +10,8 @@ import '../styles/hermes.css'
 // replacing the layout rules the other three files own.
 import '../styles/donghua.css'
 import '../styles/sect.css'
+import ThemeToggle from '../components/ThemeToggle'
+import { applyTheme } from '../theme/themeStore'
 import type { HermesEnvelope } from './types'
 import { useOfficeSocket } from './useOfficeSocket'
 import { startMockFeeder } from './mockFeeder'
@@ -108,6 +110,8 @@ export const HermesOfficeApp: React.FC = () => {
     return buf
   }
 
+  useEffect(() => { applyTheme() }, [])
+
   return (
     <div className={`hermes-shell${niu ? ' niu' : ''}`} data-testid="hermes-office">
       <div className="hermes-topbar">
@@ -118,6 +122,7 @@ export const HermesOfficeApp: React.FC = () => {
         <span className="hermes-conn" data-testid="conn-status">
           {isMockMode ? '● mock feed' : socket.connected ? '● live' : socket.offline ? '○ offline' : '…'}
         </span>
+        <ThemeToggle />
         <button className="hermes-tab-btn" onClick={() => setGuest(!guest)}>
           {guest ? '🔒 guest' : '🔓 boss'}
         </button>
