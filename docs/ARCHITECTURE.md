@@ -36,7 +36,7 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1263   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1268   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     585   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   412   validasi, clamp, REDAKSI, rate limit, ring buffer

@@ -291,7 +291,7 @@ kepatuhan menuntutnya, chat karena pengguna mengharapkannya.
 
 ## 8. Spesifikasi API
 
-26 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
+27 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
 beserta guard tiap rute, dan `scripts/check-docs.py` memverifikasi tabel itu
 dua arah** — rute di `index.js` tanpa baris tabel gagal, rute terdokumentasi
 yang tidak ada juga gagal.

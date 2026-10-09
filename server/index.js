@@ -80,7 +80,9 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
-app.options("*", (_req, res) => res.sendStatus(204));
+// Express 5 / path-to-regexp 8 rejects a bare "*": the wildcard needs a
+// parameter name. "*splat" matches every path exactly as the old "*" did.
+app.options("*splat", (_req, res) => res.sendStatus(204));
 
 // Content-Type enforcement for JSON POSTs (SECURITY.md §4)
 app.use((req, res, next) => {
@@ -1032,10 +1034,13 @@ if (existsSync(DIST)) {
   // SPA catch-all. Asset namespaces are excluded so a missing sprite returns a
   // real 404 instead of 200 + index.html (which silently breaks <img> debugging).
   const ASSET_NS = /^\/(sprites|rooms|assets)\//;
-  app.get(/^\/(?!ws$).*/, (req, res) => {
+  // Express 5 dropped RegExp routes and its sendFile() no longer resolves a
+  // bare absolute path (NotFoundError on an existing file). "*splat" is the
+  // path-to-regexp 8 catch-all; { root } is the form that still works.
+  app.get("*splat", (req, res) => {
     if (ASSET_NS.test(req.path)) return res.status(404).type("txt").send("Tidak ditemukan");
     res.setHeader("Cache-Control", "no-cache");
-    res.sendFile(join(DIST, "index.html"));
+    res.sendFile("index.html", { root: DIST });
   });
 } else {
   app.get("/", (_req, res) =>
