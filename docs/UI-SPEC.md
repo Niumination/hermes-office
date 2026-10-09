@@ -201,6 +201,11 @@ untuk tidak membacanya. Hilang sepenuhnya pada 401/403. Memuat kalimat
 Kalimat itu ada di test. Kalau seseorang menghapusnya demi pemasaran, build
 gagal.
 
+> **Catatan 9 Okt 2026:** UI sekarang Bahasa Indonesia, jadi yang dirender
+> adalah terjemahannya: **"Tahan-rusak, bukan anti-rusak."** `check-docs.py`
+> memeriksa versi Indonesia ini terhadap komponen (claim #561). Versi
+> Inggris di atas tetap sebagai catatan desain.
+
 ---
 
 ## 8. Gerak & Aksesibilitas

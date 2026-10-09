@@ -63,18 +63,18 @@ const ChatPanel: React.FC<Props> = ({ lines, typing, guest, onSend, onReaction }
       <div className="chat-header">
         <span className="chat-channel">{strings.chatChannel}</span>
         {niu && <span className="chat-niu-badge">Niu</span>}
-        {guest && <span className="chat-guest-badge">guest · read-only</span>}
+        {guest && <span className="chat-guest-badge">tamu · hanya baca</span>}
       </div>
 
       <div className="chat-body" ref={bodyRef}>
         {lines.length === 0 && (
-          <div className="chat-empty">No messages yet. Ask Hermes something…</div>
+          <div className="chat-empty">Belum ada pesan. Tanyakan sesuatu ke Hermes…</div>
         )}
         {lines.map(line => (
           <div key={line.id} className={`chat-line chat-${line.who}`}>
             <div className="chat-line-head">
               <span className="chat-who">
-                {line.who === 'you' ? 'You' : line.who === 'hermes' ? 'Hermes' : 'system'}
+                {line.who === 'you' ? 'Kamu' : line.who === 'hermes' ? 'Hermes' : 'sistem'}
               </span>
               <span className="chat-time">
                 {new Date(line.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -100,7 +100,7 @@ const ChatPanel: React.FC<Props> = ({ lines, typing, guest, onSend, onReaction }
         ))}
         {typing && (
           <div className="chat-line chat-typing">
-            <span className="chat-typing-label">{typing} is typing</span>
+            <span className="chat-typing-label">{typing} sedang mengetik</span>
             <span className="chat-typing-dots"><span /><span /><span /></span>
           </div>
         )}
@@ -110,12 +110,12 @@ const ChatPanel: React.FC<Props> = ({ lines, typing, guest, onSend, onReaction }
         <div className="chat-input-wrap">
           <input
             className="chat-input"
-            placeholder={`Message ${strings.chatChannel}`}
+            placeholder={`Tulis pesan ke ${strings.chatChannel}`}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') submit() }}
           />
-          <button className="chat-send" onClick={submit}>Send</button>
+          <button className="chat-send" onClick={submit}>Kirim</button>
         </div>
       )}
     </div>
@@ -167,14 +167,14 @@ export function chatLinesFromFrames(
 export function eventLine(e: HermesEnvelope): string {
   const d = e as any
   switch (e.type) {
-    case 'agent_spawned':   return `☁ ${d.agent?.name ?? 'agent'} joined — ${d.agent?.task ?? d.agent?.role ?? ''}`
-    case 'agent_finished':  return `✅ ${d.agentId ?? 'agent'} finished${d.summary ? ` — ${d.summary}` : ''}`
+    case 'agent_spawned':   return `☁ ${d.agent?.name ?? 'agent'} masuk — ${d.agent?.task ?? d.agent?.role ?? ''}`
+    case 'agent_finished':  return `✅ ${d.agentId ?? 'agent'} selesai${d.summary ? ` — ${d.summary}` : ''}`
     case 'tool_call':       return `⚡ ${d.agentId ?? ''} → ${d.tool ?? 'tool'}${d.detail ? ` (${d.detail})` : ''}`
     case 'mcp_call':        return `🔌 ${d.server ?? 'mcp'} → ${d.tool ?? ''}`
-    case 'a2a_task_in':     return `📥 a2a in: ${d.peer ?? '?'} → ${d.dest ?? '?'} — ${d.summary ?? ''}`
-    case 'a2a_task_out':    return `📤 a2a out: ${d.origin ?? '?'} → ${d.peer ?? '?'} [${d.state ?? ''}]`
-    case 'cron_fired':      return `⏰ cron fired: ${d.job ?? ''}${d.ok === false ? ' (failed)' : ''}`
-    case 'git_push':        return `🔄 ${d.repo ?? 'repo'} — ${d.commits ?? 1} commit(s) by ${d.author ?? '?'}`
+    case 'a2a_task_in':     return `📥 a2a masuk: ${d.peer ?? '?'} → ${d.dest ?? '?'} — ${d.summary ?? ''}`
+    case 'a2a_task_out':    return `📤 a2a keluar: ${d.origin ?? '?'} → ${d.peer ?? '?'} [${d.state ?? ''}]`
+    case 'cron_fired':      return `⏰ cron jalan: ${d.job ?? ''}${d.ok === false ? ' (gagal)' : ''}`
+    case 'git_push':        return `🔄 ${d.repo ?? 'repo'} — ${d.commits ?? 1} commit oleh ${d.author ?? '?'}`
     case 'channel_msg':     return `💬 ${d.platform ?? ''} ${d.direction ?? ''} via ${d.agent ?? ''}`
     case 'agent_status':    return `❤️ ${d.agent ?? ''} ${d.state ?? ''}`
     case 'service_status':  return `🖥 ${d.host ?? ''}/${d.unit ?? ''} ${d.state ?? ''}${d.detail ? ` — ${d.detail}` : ''}`

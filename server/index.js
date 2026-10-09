@@ -73,7 +73,7 @@ app.use(express.json({ limit: "16kb" }));
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && !config.allowedOrigins.has(origin)) {
-    return res.status(403).json({ error: "Forbidden origin" });
+    return res.status(403).json({ error: "Origin tidak diizinkan" });
   }
   if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -452,8 +452,8 @@ const ledgerRequired = (_req, res, next) =>
   ledger
     ? next()
     : res.status(503).json({
-        error: "Audit log unavailable",
-        detail: "The flight recorder is disabled or failed to open; decisions are not being recorded.",
+        error: "Catatan audit tidak tersedia",
+        detail: "Perekam keputusan dinonaktifkan atau gagal dibuka; keputusan tidak sedang direkam.",
       });
 
 /** Chain head — the value to anchor externally. Cheap enough to poll. */
@@ -722,7 +722,7 @@ app.get("/dossier", requireOwner, ledgerRequired, (req, res) => {
   const to = req.query.to ? Number(req.query.to) : Date.now();
   const from = req.query.from ? Number(req.query.from) : to - 30 * 86_400_000;
   if (!Number.isFinite(from) || !Number.isFinite(to) || from > to) {
-    return res.status(400).json({ error: "Invalid period", detail: "from/to must be epoch ms with from <= to" });
+    return res.status(400).json({ error: "Rentang tidak valid", detail: "from/to harus epoch ms dengan from <= to" });
   }
 
   const records = ledger.query({ from, to, limit: 5000 });
@@ -782,7 +782,7 @@ app.get("/policy", requireAny, (req, res) => {
 app.post("/agents/:agent/room", requireOwner, (req, res) => {
   const agent = String(req.params.agent || "").slice(0, 120);
   const room = String(req.body?.room || "").slice(0, 120);
-  if (!agent || !room) return res.status(400).json({ error: "agent + room required" });
+  if (!agent || !room) return res.status(400).json({ error: "agent + room wajib diisi" });
 
   const result = floor.assign(agent, room, req.identity?.source || "owner");
   if (result.ok) return res.json(result);
@@ -816,7 +816,7 @@ app.get("/approvals", requireAny, (req, res) => {
 /** An agent polls its own request; a bridge may read, only an owner decides. */
 app.get("/approvals/:id", requireAuth(["bridge", "owner"]), (req, res) => {
   const ap = floor.getApproval(String(req.params.id || ""));
-  if (!ap) return res.status(404).json({ error: "Unknown approval" });
+  if (!ap) return res.status(404).json({ error: "Persetujuan tidak dikenal" });
   res.json(ap);
 });
 
@@ -868,9 +868,9 @@ app.get("/", autoGuestSession);
 
 app.post("/auth/session", (req, res) => {
   const identity = authenticate(req);
-  if (!identity) return res.status(401).json({ error: "Unauthorized" });
+  if (!identity) return res.status(401).json({ error: "Tidak terotorisasi" });
   const sid = createSession(getBearer(req));
-  if (!sid) return res.status(429).json({ error: "Too many sessions" });
+  if (!sid) return res.status(429).json({ error: "Terlalu banyak sesi" });
   res.setHeader("Set-Cookie", sessionCookieHeader(sid));
   res.json({ ok: true, role: identity.role });
 });
@@ -878,7 +878,7 @@ app.post("/auth/session", (req, res) => {
 // POST /event — bridges only (cloud/mac). Owner intentionally excluded (SECURITY.md §2).
 app.post("/event", requireAuth(["bridge"]), (req, res) => {
   if (!req.is("application/json")) {
-    return res.status(415).json({ error: "Content-Type: application/json required" });
+    return res.status(415).json({ error: "Content-Type: application/json wajib" });
   }
   const result = bus.ingest(req.body, req.identity);
   if (!result.ok) return res.status(result.status).json({ error: result.error });
@@ -903,7 +903,7 @@ function rejectProtobuf(req, res, next) {
   const ctype = req.headers["content-type"] || "";
   if (ctype.includes("x-protobuf") || ctype.includes("application/grpc")) {
     return res.status(415).json({
-      error: "OTLP protobuf not supported; set OTEL_EXPORTER_OTLP_PROTOCOL=http/json",
+      error: "OTLP protobuf tidak didukung; set OTEL_EXPORTER_OTLP_PROTOCOL=http/json",
     });
   }
   next();
@@ -914,7 +914,7 @@ app.post("/v1/traces", requireAuth(["bridge"]), rejectProtobuf, otlpBody, (req, 
   try {
     mapped = otlpToEvents(req.body, { maxEvents: config.otlpMaxEventsPerBatch });
   } catch (err) {
-    return res.status(400).json({ error: "Malformed OTLP payload: " + err.message });
+    return res.status(400).json({ error: "Payload OTLP rusak: " + err.message });
   }
 
   // Most instrumentation emits `chat` and `execute_tool` spans but never
@@ -1033,7 +1033,7 @@ if (existsSync(DIST)) {
   // real 404 instead of 200 + index.html (which silently breaks <img> debugging).
   const ASSET_NS = /^\/(sprites|rooms|assets)\//;
   app.get(/^\/(?!ws$).*/, (req, res) => {
-    if (ASSET_NS.test(req.path)) return res.status(404).type("txt").send("Not found");
+    if (ASSET_NS.test(req.path)) return res.status(404).type("txt").send("Tidak ditemukan");
     res.setHeader("Cache-Control", "no-cache");
     res.sendFile(join(DIST, "index.html"));
   });
@@ -1060,7 +1060,7 @@ const wss = new WebSocketServer({
     const headers = { ...info.req.headers };
     const origin = info.req.headers.origin;
     if (origin && !config.allowedOrigins.has(origin)) {
-      done(false, 403, "Forbidden origin");
+      done(false, 403, "Origin tidak diizinkan");
       return;
     }
     if (!authenticate({ headers })) {

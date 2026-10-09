@@ -65,8 +65,8 @@ describe('ApprovalGate — owner view', () => {
     render(<ApprovalGate />)
 
     await screen.findByText('deployer')
-    expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /deny/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /setujui/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /tolak/i })).toBeInTheDocument()
   })
 
   it('posts the decision to the approval endpoint', async () => {
@@ -77,7 +77,7 @@ describe('ApprovalGate — owner view', () => {
     render(<ApprovalGate />)
     await screen.findByText('deployer')
 
-    await userEvent.click(screen.getByRole('button', { name: /approve/i }))
+    await userEvent.click(screen.getByRole('button', { name: /setujui/i }))
 
     await waitFor(() => {
       const posted = fetchMock.mock.calls.find(([url]) =>
@@ -105,8 +105,8 @@ describe('ApprovalGate — guest view', () => {
     render(<ApprovalGate />)
 
     await screen.findByText(/server-room/)
-    expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /deny/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /setujui/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /tolak/i })).not.toBeInTheDocument()
   })
 
   it('does not leak privileged words anywhere in the rendered output', async () => {

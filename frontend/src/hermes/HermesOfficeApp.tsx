@@ -15,7 +15,7 @@ import { applyTheme } from '../theme/themeStore'
 import type { HermesEnvelope } from './types'
 import { useOfficeSocket } from './useOfficeSocket'
 import { startMockFeeder } from './mockFeeder'
-import { useNiuMode, toggleNiuMode, getStrings } from './niu'
+import { useNiuMode, toggleNiuMode, getStrings, useLang, toggleLang } from './niu'
 import { useGuest, setGuest } from './guest'
 import { useWibCycle, wibPhaseNow, nightOpacityNow } from './wib'
 import AgentsPanel from './AgentsPanel'
@@ -31,6 +31,7 @@ const isMockMode = params.has('mock')
 
 export const HermesOfficeApp: React.FC = () => {
   const niu = useNiuMode()
+  const lang = useLang()
   const guest = useGuest()
   const wib = useWibCycle()
   const strings = getStrings()
@@ -115,23 +116,23 @@ export const HermesOfficeApp: React.FC = () => {
   return (
     <div className={`hermes-shell${niu ? ' niu' : ''}`} data-testid="hermes-office">
       <div className="hermes-topbar">
-        <span className="hermes-brand">{niu ? 'Kantor Niu 🏢' : '🏢 Hermes Office'}</span>
+        <span className="hermes-brand">{niu ? 'Kantor Niu 🏢' : '🏢 Kantor Hermes'}</span>
         <span className="hermes-wib" data-testid="wib-indicator">
           {wib.phase === 'day' ? '☀️' : '🌙'} {wib.label}
         </span>
         <span className="hermes-conn" data-testid="conn-status">
-          {isMockMode ? '● mock feed' : socket.connected ? '● live' : socket.offline ? '○ offline' : '…'}
+          {isMockMode ? '● data contoh' : socket.connected ? '● langsung' : socket.offline ? '○ luring' : '…'}
         </span>
         <ThemeToggle />
         <button className="hermes-tab-btn" onClick={() => setGuest(!guest)}>
-          {guest ? '🔒 guest' : '🔓 boss'}
+          {guest ? '🔒 tamu' : '🔓 bos'}
         </button>
         <button
           className="hermes-tab-btn"
-          onClick={() => toggleNiuMode()}
-          title="Niu-mode theme"
+          onClick={() => toggleLang()}
+          title="Ganti bahasa UI (ID / EN)"
         >
-          {niu ? '🍈 niu: on' : '🍈 niu: off'}
+          {lang === 'id' ? '🍈 ID' : '🍈 EN'}
         </button>
       </div>
 
@@ -151,11 +152,11 @@ export const HermesOfficeApp: React.FC = () => {
             <button
               className={`hermes-tab${tab === 'agents' ? ' active' : ''}`}
               onClick={() => setTab('agents')}
-            >Agents</button>
+            >Agen</button>
             <button
               className={`hermes-tab${tab === 'chat' ? ' active' : ''}`}
               onClick={() => setTab('chat')}
-            >Chat</button>
+            >Obrolan</button>
             <button
               className={`hermes-tab${tab === 'github' ? ' active' : ''}`}
               onClick={() => setTab('github')}

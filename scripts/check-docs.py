@@ -552,13 +552,17 @@ def main() -> int:
                       f"{m.group(1)},{m.group(2)}", f"{got.group(1)},{got.group(2)}")
 
         # The AuditBadge sentence is a compliance claim rendered to users.
+        # The UI is Bahasa Indonesia (README.id.md promise), so the rendered
+        # sentence is the Indonesian one; the English UI-SPEC quotes it
+        # verbatim for the design record so the check stays meaningful.
         badge = os.path.join(ROOT, "frontend/src/components/AuditBadge.tsx")
-        if "Tamper-evident, not tamper-proof" in ui and os.path.exists(badge):
+        RENDERED = "Tahan-rusak, bukan anti-rusak"
+        if RENDERED in ui and os.path.exists(badge):
             checks += 1
-            if "Tamper-evident, not tamper-proof" not in open(badge, encoding="utf-8").read():
+            if RENDERED not in open(badge, encoding="utf-8").read():
                 failures.append(
-                    "UI-SPEC claims AuditBadge renders 'Tamper-evident, not "
-                    "tamper-proof.' but the component no longer contains it")
+                    "UI-SPEC claims AuditBadge renders 'Tahan-rusak, bukan "
+                    "anti-rusak.' but the component no longer contains it")
 
 
     # --- README.md / README.id.md / PRICING.md / PRICING.id.md -----------

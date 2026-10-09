@@ -288,40 +288,40 @@ export function getEffect(
 // ---------------------------------------------------------------------------
 
 const SPAWN_MESSAGES = [
-  'reporting for duty!',
-  'clocked in',
-  'ready to ship',
-  'coffee first, then code',
-  'let\'s do this',
-  'opening vim...',
-  'pulling latest main',
+  'siap kerja!',
+  'sudah absen',
+  'siap kirim',
+  'kopi dulu, baru kode',
+  'ayo gas',
+  'buka vim...',
+  'tarik main terbaru',
 ]
 
 const WORK_MESSAGES = [
-  'on it',
-  'typing furiously',
-  'in the zone',
-  'making progress',
-  'checking the docs',
-  'git blame time',
-  'stack overflow to the rescue',
+  'lagi dikerjakan',
+  'ngetik kilat',
+  'dalem zona',
+  'ada progres',
+  'cek docs dulu',
+  'waktunya git blame',
+  'stack overflow penyelamat',
 ]
 
 const DONE_MESSAGES = [
-  'task complete!',
-  'shipped it',
-  'PR opened',
-  'done and dusted',
+  'tugas selesai!',
+  'sudah dikirim',
+  'PR dibuka',
+  'beres semua',
   'LGTM',
-  'merged to main',
-  'deployed',
+  'merge ke main',
+  'sukses deploy',
 ]
 
 const COFFEE_MESSAGES = [
-  'brb, coffee',
-  'need caffeine',
-  'grabbing a cup',
-  'coffee run',
+  'bentar, kopi',
+  'butuh kafein',
+  'ambil gelas dulu',
+  'waktu kopi',
 ]
 
 function pick<T>(arr: T[]): T {
@@ -329,12 +329,12 @@ function pick<T>(arr: T[]): T {
 }
 
 const WATER_MESSAGES = [
-  'stay hydrated',
-  'h2o break',
-  'water run',
-  'refilling bottle',
-  'hydration check',
-  'quick water break',
+  'banyak minum',
+  'rehat air',
+  'isi botol',
+  'ngambil minum',
+  'cek hidrasi',
+  'rehat air sebentar',
 ]
 
 export function spawnMessage(): string  { return pick(SPAWN_MESSAGES) }

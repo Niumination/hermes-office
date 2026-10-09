@@ -67,22 +67,22 @@ export const AuditBadge: React.FC<{ pollMs?: number }> = ({ pollMs = 30000 }) =>
       <button
         className="audit-chip"
         onClick={() => setOpen((v) => !v)}
-        title={head ? `Chain head: ${head.hash}` : 'Audit log'}
+        title={head ? `Kepala rantai: ${head.hash}` : 'Catatan audit'}
       >
         <span className="audit-dot" aria-hidden />
         <span className="audit-label">
-          {broken ? 'CHAIN BROKEN' : `AUDIT · ${head?.records ?? '—'}`}
+          {broken ? 'RANTAI PUTUS' : `AUDIT · ${head?.records ?? '—'}`}
         </span>
       </button>
 
       {open && (
         <div className="audit-panel">
           <div className="audit-row">
-            <span>Records</span>
+            <span>Catatan</span>
             <strong>{head?.records ?? '—'}</strong>
           </div>
           <div className="audit-row">
-            <span>Head</span>
+            <span>Kepala</span>
             {/* Selectable, full-length: this value is meant to be copied out. */}
             <code className="audit-hash" title={head?.hash}>{head?.hash ?? '—'}</code>
           </div>
@@ -90,26 +90,26 @@ export const AuditBadge: React.FC<{ pollMs?: number }> = ({ pollMs = 30000 }) =>
           {verify && (
             <div className={`audit-verdict ${verify.ok ? 'ok' : 'bad'}`}>
               {verify.ok
-                ? `Verified ${verify.checked} records in ${verify.tookMs ?? 0} ms`
-                : `FAILED: ${verify.reason}${verify.brokenAt ? ` at #${verify.brokenAt}` : ''}`}
+                ? `Terverifikasi ${verify.checked} catatan dalam ${verify.tookMs ?? 0} ms`
+                : `GAGAL: ${verify.reason}${verify.brokenAt ? ` di #${verify.brokenAt}` : ''}`}
             </div>
           )}
 
           <div className="audit-actions">
             <button onClick={runVerify} disabled={busy}>
-              {busy ? 'Verifying…' : 'Verify chain'}
+              {busy ? 'Memverifikasi…' : 'Verifikasi rantai'}
             </button>
             {/* A plain link, not fetch+blob: the server already sets
                 Content-Disposition, and letting the browser handle the
                 download keeps the export working if JS state is stale. */}
             <a className="audit-export" href="/dossier" download>
-              Export dossier
+              Ekspor dossier
             </a>
           </div>
 
           <p className="audit-note">
-            Tamper-evident, not tamper-proof. Copy the head hash somewhere this
-            server cannot reach to make tail truncation detectable.
+            Tahan-rusak, bukan anti-rusak. Salin hash kepala ke tempat yang
+            tidak bisa dijangkau server ini supaya pemangkasan ekor bisa dideteksi.
           </p>
         </div>
       )}

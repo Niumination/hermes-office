@@ -8,12 +8,12 @@ import type { GithubFeedItem, HermesEnvelope } from './types'
 
 function relTime(ts: number): string {
   const s = Math.max(0, Math.floor((Date.now() - ts) / 1000))
-  if (s < 60) return `${s}s ago`
+  if (s < 60) return `${s} dtk lalu`
   const m = Math.floor(s / 60)
-  if (m < 60) return `${m}m ago`
+  if (m < 60) return `${m} mnt lalu`
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h ago`
-  return `${Math.floor(h / 24)}d ago`
+  if (h < 24) return `${h} jam lalu`
+  return `${Math.floor(h / 24)} hari lalu`
 }
 
 function toItem(e: HermesEnvelope, i: number): GithubFeedItem {
@@ -60,31 +60,31 @@ export const GithubFeed: React.FC<Props> = ({ events }) => {
           value={filter}
           onChange={e => setFilter(e.target.value as 'all' | 'public')}
         >
-          <option value="all">All repos</option>
-          <option value="public">Public only</option>
+          <option value="all">Semua repo</option>
+          <option value="public">Publik saja</option>
         </select>
         <select
           className="github-filter"
           value={author}
           onChange={e => setAuthor(e.target.value)}
         >
-          <option value="">All authors</option>
+          <option value="">Semua penulis</option>
           {authors.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
       </div>
       <div className="github-list">
-        {shown.length === 0 && <div className="github-empty">No pushes yet</div>}
+        {shown.length === 0 && <div className="github-empty">Belum ada push</div>}
         {shown.map(item => (
           <div key={item.id} className="github-item">
             <div className="github-item-head">
               <span className="github-repo">🔄 {item.repo}</span>
-              {item.privat && <span className="github-lock" title="private repo">🔒</span>}
+              {item.privat && <span className="github-lock" title="repo privat">🔒</span>}
               <span className="github-time">{relTime(item.ts)}</span>
             </div>
             <div className="github-msg">
               <span className="github-author">{item.author}</span>
               {' — '}
-              {item.commits} commit{item.commits === 1 ? '' : 's'}
+              {item.commits} commit
               {item.message && <> — “{item.message}”</>}
             </div>
           </div>

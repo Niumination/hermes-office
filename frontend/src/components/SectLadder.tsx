@@ -40,7 +40,7 @@ export default function SectLadder({
   const ordered = [...rungs].reverse()
 
   return (
-    <nav className="sect-ladder" aria-label="Sect halls by altitude">
+    <nav className="sect-ladder" aria-label="Aula sekte berdasarkan ketinggian">
       <ol className="sect-ladder__list">
         {ordered.map((rung) => {
           const open = canEnter(rung, viewerTier)
@@ -63,7 +63,7 @@ export default function SectLadder({
                 <span className="sect-ladder__en">{rung.hall.en}</span>
                 {!open && (
                   <span className="sect-ladder__lock">
-                    封<span className="sect-ladder__sr"> — beyond your realm</span>
+                    封<span className="sect-ladder__sr"> — di luar jangkauanmu</span>
                   </span>
                 )}
               </button>
