@@ -649,3 +649,112 @@ Ini fondasi, bukan UI. Yang belum dikerjakan:
 
 Urutan: **003 → 005 → 006 → 007 → 008**. Jangan 004.
 Balas sebagai entri **003** — saya masih menyisakannya.
+
+---
+
+## 008 — Arena — tema 宗門 jadi UI, dan gerbang ke-14
+
+Entri 007 ditutup dengan daftar "yang belum ada". Entri ini mencoret
+sebagian besarnya, dan menambahkan satu gerbang.
+
+### Yang dikerjakan
+
+**Delapan aula, delapan pelat.** Empat pelat sisa (議事堂, 丹房, 齋堂, 靜室)
+dibuat dan masuk repo sebagai `meeting-room`, `mac-studio`, `kitchen`,
+`nap-room`. Sekarang **setiap** ruangan yang diatur `DEFAULT_POLICY` punya
+aula bergambar — tidak kurang, tidak lebih. Empat ruangan tak berkebijakan
+tetap tanpa pelat sekte, dan itu disengaja.
+
+`靜室` lahir di luar aturan: luminans 0,179 terhadap minimum 0,18. Meleset
+0,001 adalah godaan terbesar untuk melonggarkan ambang. Tidak dilakukan.
+Pelatnya dienkode ulang dengan gamma 1,20 → luminans **0,223**, yaitu di
+tengah jendela, bukan menggantung di tepinya. Tidak ada mekanisme
+pengecualian untuk luminans dan tidak akan saya ciptakan untuk satu berkas.
+
+**Komponen React, bukan prototipe lagi.** `SectLadder.tsx` menggambar tangga
+dari `sectLadder(policy.rooms)`; urutannya milik kebijakan, bukan milik
+komponen. Aula di atas tier penonton **tidak** diredupkan — ia dikunci,
+`aria-disabled`, dan klik-nya ditolak, karena server memang akan 403.
+`plates.ts` memilih seni per tema dengan jatuh-kembali diam untuk ruangan
+tanpa aula. `sect.css` memberi token, kabut, dan aura.
+
+**Qi menamai, tidak menambah.** Repo sudah punya `AtmosphereLayer` (shader
+WebGL) yang bereaksi pada lima state burn. `QI_NAMES` diketik sebagai
+`Record<AtmosphereState, …>` — tambah state keenam dan berkas ini berhenti
+dikompilasi. Tidak ada skala kedua; dua tangga untuk satu besaran adalah
+awal sebuah UI berbohong.
+
+**Gerbang 14 — `check-contrast.py`.** Kontras tema diukur dalam **APCA Lc**,
+bukan rasio WCAG 2.x, karena model 1998 itu meleset di UI gelap ke dua arah.
+12 pasangan token, levelnya level APCA (75 teks isi / 60 sekunder / 45
+minimum). Ia mengurai `oklch()` → sRGB sendiri, dan **menolak token di luar
+gamut** — browser akan memotongnya ke warna yang tidak pernah diukur.
+
+Gerbang ini menangkap tiga kegagalan pada jalannya yang pertama, dan yang
+terburuk justru rail kaca: Lc 48 terhadap 60 yang dibutuhkan. Jadi kaca
+diukur sebagaimana ia benar-benar tampil — dikomposit di atas **pelat sekte
+paling terang yang ada di disk**, diukur saat itu juga, bukan konstanta.
+Perbaikannya: mist 0,76→0,84 dan rail 62%→78%. Saya **tidak** mengambil
+margin terbesar yang tersedia: mist 0,88 lolos paling lapang tapi membuat
+teks sekunder hampir seterang teks utama, dan rail 86% menghapus fros-nya.
+Gerbang itu alat ukur, bukan fungsi yang dimaksimalkan.
+
+`--sect-cinnabar` mentok: ia tidak bisa sekaligus lebih terang dan sama
+jenuhnya — penjaga gamut yang menangkapnya. Diambil titik in-gamut terbaik
+(Lc 50,3, dari 47,1).
+
+Empat uji mutasi dijalankan atas gerbang ini: token digelapkan, token keluar
+gamut, token dihapus, rail ditransparankan. Keempatnya menyala.
+
+### Dua lubang di pemeriksa, ditutup
+
+1. **`AGENTS.md` menulis "87 documented claims" padahal 91**, dan check-docs
+   lolos — karena pemeriksa swa-rujuk hanya memindai empat berkas lain.
+   Kelas bug yang sama dengan literal `"18"` di entri 007: dokumen boleh
+   bohong di tempat yang tidak dipindai. `AGENTS.md` dimasukkan ke `SELF`;
+   totalnya kini **92** (bertambah satu karena pemeriksaannya sendiri ikut
+   dihitung). Diuji mutasi.
+
+2. **Pesan kegagalan suite menuduh pihak yang salah.** Saya menemukan
+   check-docs melaporkan "100 failing test(s) — fix the tests" pada pohon
+   yang `node --test`-nya hijau 305/305 dua puluh kali berturut-turut.
+   Sempat saya catat sebagai flake. **Itu keliru, dan repo ini tidak flaky.**
+   Penyebabnya deterministik: `node_modules` dipasang dengan Node 22 (ABI
+   127), lalu suite dijalankan dengan `/usr/bin/node` v20 (ABI 115), dan
+   `better-sqlite3` gagal `dlopen` — mematikan setiap suite yang membuka
+   ledger, kira-kira sepertiga repo.
+
+   Repo ini mendukung Node 20/22/24 justru supaya orang berpindah-pindah di
+   antaranya, jadi ini kesalahan rutin, bukan eksotis. Pesannya sekarang:
+   *"the tests are fine — a native addon was built against a different Node
+   version (addon built for Node 22, running Node 20). Run `npm rebuild`"*,
+   plus nama tes yang jatuh dan **dump keluaran runner ke berkas**. Kegagalan
+   yang tidak meninggalkan jejak tidak bisa diperbaiki; yang ini sekarang
+   meninggalkan jejak sendiri tanpa ada yang perlu mengingat sebuah flag.
+
+### Bukti
+
+```
+verify.sh  Node v22.23.3  CI=true  →  lihat blok di bawah
+check-plates                       →  PASS 26 plate (18 bawaan + 8 sekte)
+check-contrast                     →  PASS 12 pasangan token, APCA
+check-docs                         →  PASS 92 klaim
+frontend                           →  148 tes (136 + 12)
+backend                            →  305 tes
+```
+
+### Yang masih belum ada
+
+- **Belum ada pemilih tema di UI.** `sect.css` dimuat dan `plates.ts` siap,
+  tapi belum ada yang menyetel `data-theme="sect"` atau memanggil
+  `platePath()` dari `rooms.ts`. Tema sudah bisa dirender, belum dinyalakan.
+- Cincin 陣法 dan sapuan tinta View Transitions masih di prototipe.
+- Pelat sekte belum punya varian `@2x`.
+- `backdrop-filter` belum diprofil pada perangkat lemah.
+- tsconfig `lib` masih di bawah ES2022 (lihat entri 007).
+
+### Permintaan
+
+Urutan: **003 → 005 → 006 → 007 → 008 → 009**. Jangan 004.
+009 butuh tarball asetnya diekstrak lebih dulu, sama seperti 008.
+Balas sebagai entri **003** — masih saya sisakan.

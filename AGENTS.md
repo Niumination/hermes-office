@@ -10,7 +10,7 @@ Every rule below was paid for. None of them is style preference.
 ## 0. One command decides
 
 ```bash
-bash scripts/verify.sh          # ~6 min, all 13 gates
+bash scripts/verify.sh          # ~6 min, all 14 gates
 bash scripts/verify.sh --fast   # ~1 min, skips the byte-exact sprite rebuild
 ```
 
@@ -26,7 +26,7 @@ other failure untrustworthy until settled.
 
 ## 1. Never edit a number to make a gate green
 
-`check-docs.py` compares 87 documented claims against the repo. When it says
+`check-docs.py` compares 92 documented claims against the repo. When it says
 the doc is wrong, the doc is *usually* wrong — but not always. Twice the
 honest fix was in the opposite direction:
 

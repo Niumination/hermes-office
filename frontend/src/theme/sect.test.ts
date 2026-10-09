@@ -72,3 +72,19 @@ describe('sect theme', () => {
     expect(canEnter(ceo, ceo.tier)).toBe(true)
   })
 })
+
+describe('qi naming', () => {
+  it('names every burn state the office already has', async () => {
+    const { QI_NAMES } = await import('./sect')
+    // Not a second scale — a renaming of the existing one. If these keys ever
+    // drift from AtmosphereState, the file stops type-checking.
+    expect(Object.keys(QI_NAMES).sort()).toEqual(
+      ['critical', 'hot', 'normal', 'tripped', 'warm'])
+  })
+
+  it('reserves the deviation term for the tripped state', async () => {
+    const { QI_NAMES } = await import('./sect')
+    expect(QI_NAMES.tripped.cn).toBe('走火入魔')
+    expect(QI_NAMES.normal.cn).not.toBe(QI_NAMES.tripped.cn)
+  })
+})

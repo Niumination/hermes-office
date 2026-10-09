@@ -1,0 +1,207 @@
+/*
+ * 宗門 sect theme — tokens and the ladder.
+ *
+ * Scoped under [data-theme="sect"]: the default office is untouched, and the
+ * theme is one attribute away from off. Nothing here is loaded conditionally,
+ * because 4 kB of unused CSS costs less than a second stylesheet request.
+ *
+ * Three rules this file holds itself to, from the 2026 review:
+ *   1. No pure black. The deepest surface is oklch(0.17 …) — #000 flattens
+ *      OLED panels and kills the sense of air the atmosphere pass creates.
+ *   2. Depth must have a job. Glass appears on floating surfaces only (the
+ *      ladder rail), never as a full-page wash. Apple shipped a full-page
+ *      wash and added a switch to turn it off seven weeks later.
+ *   3. Colour is never the only carrier. Locked halls say 封 and carry
+ *      aria-disabled; qi deviation has a word, not just a hue.
+ *
+ * Contrast of the text pairs below is machine-checked in APCA Lc by
+ * scripts/check-contrast.py — gate 14. Editing a token here can fail CI.
+ */
+
+@layer sect.tokens, sect.surface, sect.ladder, sect.motion;
+
+@layer sect.tokens {
+  [data-theme='sect'] {
+    /* Four surface levels, per the dark-mode guidance: depth by lightness,
+       not by drop shadow. */
+    --sect-ink-0: oklch(0.17 0.02 265);
+    --sect-ink-1: oklch(0.22 0.025 265);
+    --sect-ink-2: oklch(0.28 0.03 265);
+    --sect-ink-3: oklch(0.35 0.035 265);
+
+    --sect-paper: oklch(0.95 0.012 85);
+    --sect-jade: oklch(0.82 0.13 165);
+    --sect-gold: oklch(0.86 0.13 85);
+    --sect-mist: oklch(0.84 0.022 250);
+    --sect-cinnabar: oklch(0.72 0.17 28);
+
+    --sect-rule: color-mix(in oklch, var(--sect-jade) 28%, transparent);
+    --sect-glow: color-mix(in oklch, var(--sect-jade) 45%, transparent);
+  }
+
+  /* Typed custom properties: an untyped var cannot be animated at all, so
+     the aura radius has to be declared to move. */
+  @property --sect-aura {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 0px;
+  }
+  @property --sect-aura-hue {
+    syntax: '<angle>';
+    inherits: true;
+    initial-value: 165deg;
+  }
+}
+
+@layer sect.surface {
+  [data-theme='sect'] {
+    background: var(--sect-ink-0);
+    color: var(--sect-paper);
+  }
+
+  /* 氣 — the aura is radius AND hue, so it survives a greyscale print and a
+     colour-blind reader. It reuses the burn states the office already has;
+     there is no second scale. */
+  [data-theme='sect'] [data-qi='normal']   { --sect-aura: 6px;  --sect-aura-hue: 165deg; }
+  [data-theme='sect'] [data-qi='warm']     { --sect-aura: 10px; --sect-aura-hue: 120deg; }
+  [data-theme='sect'] [data-qi='hot']      { --sect-aura: 15px; --sect-aura-hue: 85deg; }
+  [data-theme='sect'] [data-qi='critical'] { --sect-aura: 21px; --sect-aura-hue: 50deg; }
+  [data-theme='sect'] [data-qi='tripped']  { --sect-aura: 28px; --sect-aura-hue: 28deg; }
+
+  [data-theme='sect'] [data-qi] {
+    filter: drop-shadow(0 0 var(--sect-aura)
+            oklch(0.72 0.16 var(--sect-aura-hue) / 0.55));
+    transition: --sect-aura 600ms ease, --sect-aura-hue 600ms ease;
+  }
+}
+
+@layer sect.ladder {
+  .sect-ladder {
+    position: sticky;
+    top: 0;
+    padding: 0.75rem 0.5rem;
+    border-right: 1px solid var(--sect-rule);
+    background: color-mix(in oklch, var(--sect-ink-1) 86%, transparent);
+  }
+
+  /* Glass on the rail only — it floats over the room art, which is the one
+     place a frosted surface is doing work rather than decorating. */
+  @supports (backdrop-filter: blur(1px)) {
+    .sect-ladder {
+      /* 78%, not the 62% this started at: gate 14 measured the gloss text
+         at Lc 48 over the brightest hall, under the Lc 60 it needs. The
+         frost survives; the unreadable version of it did not. */
+      background: color-mix(in oklch, var(--sect-ink-1) 78%, transparent);
+      backdrop-filter: blur(14px) saturate(1.15);
+    }
+  }
+
+  .sect-ladder__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .sect-ladder__rung {
+    inline-size: 100%;
+    display: grid;
+    grid-template-columns: 4.2rem 0.75rem 1fr;
+    grid-template-areas: 'cap node cn' 'cap node en';
+    align-items: center;
+    gap: 0 0.5rem;
+    padding: 0.5rem 0.6rem;
+    border: 0;
+    border-radius: 0.4rem;
+    background: transparent;
+    color: var(--sect-paper);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .sect-ladder__rung:hover:not([data-locked]) {
+    background: var(--sect-ink-2);
+  }
+  .sect-ladder__rung:focus-visible {
+    outline: 2px solid var(--sect-gold);
+    outline-offset: 2px;
+  }
+
+  .sect-ladder__cap {
+    grid-area: cap;
+    color: var(--sect-mist);
+    font-variant-numeric: tabular-nums;
+    text-align: end;
+    font-size: 0.82rem;
+  }
+  .sect-ladder__node {
+    grid-area: node;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    justify-self: center;
+    border-radius: 50%;
+    background: var(--sect-jade);
+    box-shadow: 0 0 0.5rem var(--sect-glow);
+  }
+  .sect-ladder__cn { grid-area: cn; font-size: 0.98rem; letter-spacing: 0.04em; }
+  .sect-ladder__en { grid-area: en; font-size: 0.74rem; color: var(--sect-mist); }
+
+  /* 雲深不知處 — clouds too deep to know where. A locked hall is fogged, not
+     dimmed: dimming reads as "try harder", fog reads as "not for you". The
+     name stays legible so the hierarchy is still learnable. */
+  .sect-ladder__rung[data-locked] {
+    cursor: not-allowed;
+    color: var(--sect-mist);
+  }
+  .sect-ladder__rung[data-locked] .sect-ladder__node {
+    background: var(--sect-ink-3);
+    box-shadow: none;
+  }
+  .sect-ladder__rung[data-locked] .sect-ladder__en { opacity: 0.55; }
+
+  .sect-ladder__lock {
+    grid-area: cn / cn / en / en;
+    justify-self: end;
+    align-self: center;
+    color: var(--sect-mist);
+    font-size: 0.8rem;
+  }
+  .sect-ladder__sr {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sect-ladder__rung[aria-current='true'] {
+    background: var(--sect-ink-2);
+    box-shadow: inset 2px 0 0 var(--sect-gold);
+  }
+}
+
+@layer sect.motion {
+  /* 走火入魔 is the only thing on screen that animates on its own. A budget
+     that has blown through its cap is the one event worth stealing attention
+     for; anything else self-animating is noise. */
+  @keyframes sect-deviation {
+    from { filter: drop-shadow(0 0 14px oklch(0.70 0.17 28 / 0.45)); }
+    to   { filter: drop-shadow(0 0 30px oklch(0.70 0.19 28 / 0.75)); }
+  }
+  [data-theme='sect'] [data-qi='tripped'] {
+    animation: sect-deviation 1.1s ease-in-out infinite alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-theme='sect'] [data-qi='tripped'] { animation: none; }
+    [data-theme='sect'] [data-qi] { transition: none; }
+    /* The state must still be unmistakable without the pulse. */
+    [data-theme='sect'] [data-qi='tripped'] {
+      outline: 2px solid var(--sect-cinnabar);
+      outline-offset: 2px;
+    }
+  }
+}

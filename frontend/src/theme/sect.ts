@@ -92,3 +92,29 @@ export function sectLadder(rooms: Record<string, PolicyRoomLike>): SectRung[] {
 export function canEnter(rung: SectRung, viewerTier: number): boolean {
   return rung.tier <= viewerTier
 }
+
+// ── 氣 qi names for the burn states ────────────────────────────────────
+//
+// The office already has five burn states and AtmosphereLayer already reacts
+// to them. The sect theme must NOT introduce a second scale — two ladders for
+// one quantity is how a UI starts lying. So this renames, and nothing else.
+//
+// Typed as a total Record over AtmosphereState on purpose: add a sixth burn
+// state and this stops compiling, which is cheaper than shipping a state with
+// no name. The xianxia term is 走火入魔 (qi deviation) — excess qi turning on
+// its owner — which is what a tripped budget is.
+
+import type { AtmosphereState } from '../components/AtmosphereLayer'
+
+export interface QiName {
+  cn: string
+  en: string
+}
+
+export const QI_NAMES: Record<AtmosphereState, QiName> = {
+  normal: { cn: '調息', en: 'regulated' },
+  warm: { cn: '聚氣', en: 'gathering' },
+  hot: { cn: '氣盛', en: 'surging' },
+  critical: { cn: '氣逆', en: 'reversal' },
+  tripped: { cn: '走火入魔', en: 'deviation' },
+}

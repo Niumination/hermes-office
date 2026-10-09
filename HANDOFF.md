@@ -50,14 +50,15 @@ Patokan yang harus direproduksi (per 2026-10-08):
 |---|---|
 | handoff integrity | 562 berkas cocok |
 | eslint | 0 masalah |
-| frontend build | ~215 kB JS / 42,50 kB CSS (vite 8) |
+| frontend build | ~215 kB JS / 46,18 kB CSS (vite 8) — CSS naik 3,68 kB oleh `sect.css` |
 | backend tests | **305** lulus, 0 gagal |
-| frontend tests | **136** lulus |
+| frontend tests | **148** lulus |
 | clean shutdown | keluar bersih dengan WebSocket hidup |
 | upstream assets | 258 aset terhitung |
 | ci workflow | cocok dengan `ci/workflow.yml` |
 | deployable | tak ada ikatan host/akun |
-| room plates | 22 plate (18 bawaan + 4 sekte), hash + 7 aturan gaya |
+| room plates | 26 plate (18 bawaan + 8 sekte), hash + 7 aturan gaya |
+| theme contrast | 12 pasangan token tema 宗門 diukur dalam APCA Lc, termasuk teks di atas rail kaca di atas pelat paling terang |
 | doc claims | **87** klaim cocok |
 | sprites (+rebuild) | **282** sprite, 132 bangun ulang byte-exact |
 
@@ -91,7 +92,7 @@ bash scripts/check-handoff.sh
 
 Diuji bolak-balik sebelum dikirim: arsip diekstrak ke direktori kosong,
 tanpa `node_modules` dan tanpa `dist`, lalu `verify.sh` dijalankan dari nol
-— **13/13 gerbang hijau.** Jadi kalau di sisi Anda merah, perbedaannya ada
+— **13/14 gerbang hijau.** Jadi kalau di sisi Anda merah, perbedaannya ada
 di lingkungan, bukan di isi arsip, dan itu informasi yang berguna. Kirim
 keluaran mentahnya.
 
@@ -227,7 +228,7 @@ Aturan yang membuatnya berguna, bukan seremonial:
 | `docs/ARCHITECTURE.md` · `PRD.md` · `UI-SPEC.md` | spesifikasi, semuanya diperiksa mesin |
 | `docs/SPRITES.md` · `ROOM-PLATES.md` | provenance aset + apa yang menangkap apa |
 | `docs/PRICING.md` · `.id.md` | halaman harga, angkanya kini ikut diperiksa |
-| `scripts/verify.sh` | satu perintah, 13 gerbang |
+| `scripts/verify.sh` | satu perintah, 14 gerbang |
 | `scripts/check-handoff.sh` | integritas transfer |
 | `MANIFEST.sha256` | 561 berkas, sha256 |
 | `art/originals/sprites/` | 100 original — **jangan pernah ditimpa** |

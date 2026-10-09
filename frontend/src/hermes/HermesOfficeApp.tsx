@@ -9,6 +9,7 @@ import '../styles/hermes.css'
 // Loaded last: donghua tokens and chrome override the legacy look without
 // replacing the layout rules the other three files own.
 import '../styles/donghua.css'
+import '../styles/sect.css'
 import type { HermesEnvelope } from './types'
 import { useOfficeSocket } from './useOfficeSocket'
 import { startMockFeeder } from './mockFeeder'

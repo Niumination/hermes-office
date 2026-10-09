@@ -1,6 +1,6 @@
 {
   "note": "Integrity and provenance for room plates. Generated art cannot be reproduced; this records what exists and what it must look like. See docs/ROOM-PLATES.md. Regenerate with: python3 scripts/check-plates.py --write",
-  "count": 22,
+  "count": 26,
   "plates": [
     {
       "file": "ceo-office.webp",
@@ -278,6 +278,22 @@
       "offPalettePct": 0.1
     },
     {
+      "file": "sect/kitchen.webp",
+      "sha256": "76b3b8366d97069e28be679098925c37286182472f1e3fb3a79f7eaa428d3fad",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 318664,
+      "uniqueColors": 2592,
+      "lumMean": 0.387,
+      "lumP5": 0.098,
+      "lumP95": 0.875,
+      "satMean": 0.439,
+      "jadePct": 23.0,
+      "goldPct": 64.9,
+      "offPalettePct": 0.1
+    },
+    {
       "file": "sect/lobby.webp",
       "sha256": "e94cf854c02817dff807b478bed54259356afe80e933fa5869be8012653c8be6",
       "origin": "generated",
@@ -294,6 +310,22 @@
       "offPalettePct": 0.0
     },
     {
+      "file": "sect/mac-studio.webp",
+      "sha256": "f825407461a5fa9ad3a5e7b21837cc752753a4282dd45a000bae28d4efc8f76c",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 289228,
+      "uniqueColors": 2266,
+      "lumMean": 0.299,
+      "lumP5": 0.039,
+      "lumP95": 0.875,
+      "satMean": 0.665,
+      "jadePct": 31.9,
+      "goldPct": 60.5,
+      "offPalettePct": 0.0
+    },
+    {
       "file": "sect/main-office.webp",
       "sha256": "2cce408dd21e423fc1e786bc24623c3bf5045afeb0e2f5358cd7c644bac57d22",
       "origin": "generated",
@@ -307,6 +339,38 @@
       "satMean": 0.408,
       "jadePct": 17.5,
       "goldPct": 66.9,
+      "offPalettePct": 0.0
+    },
+    {
+      "file": "sect/meeting-room.webp",
+      "sha256": "e0578de4be8b79aa7cc9b6a2e5b930663814967ca83b9eb536b5c0ab6c86c0f4",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 318634,
+      "uniqueColors": 2552,
+      "lumMean": 0.294,
+      "lumP5": 0.039,
+      "lumP95": 0.824,
+      "satMean": 0.592,
+      "jadePct": 8.1,
+      "goldPct": 76.6,
+      "offPalettePct": 0.3
+    },
+    {
+      "file": "sect/nap-room.webp",
+      "sha256": "55a8653faa9eb2a31218cb0e3cd4a7f9946763d72323dba7c7a24e584358693b",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 242372,
+      "uniqueColors": 2067,
+      "lumMean": 0.223,
+      "lumP5": 0.027,
+      "lumP95": 0.682,
+      "satMean": 0.455,
+      "jadePct": 24.8,
+      "goldPct": 40.1,
       "offPalettePct": 0.0
     },
     {
