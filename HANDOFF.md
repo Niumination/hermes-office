@@ -91,7 +91,7 @@ bash scripts/check-handoff.sh
 
 Diuji bolak-balik sebelum dikirim: arsip diekstrak ke direktori kosong,
 tanpa `node_modules` dan tanpa `dist`, lalu `verify.sh` dijalankan dari nol
-— **12/12 gerbang hijau.** Jadi kalau di sisi Anda merah, perbedaannya ada
+— **13/13 gerbang hijau.** Jadi kalau di sisi Anda merah, perbedaannya ada
 di lingkungan, bukan di isi arsip, dan itu informasi yang berguna. Kirim
 keluaran mentahnya.
 
@@ -227,7 +227,7 @@ Aturan yang membuatnya berguna, bukan seremonial:
 | `docs/ARCHITECTURE.md` · `PRD.md` · `UI-SPEC.md` | spesifikasi, semuanya diperiksa mesin |
 | `docs/SPRITES.md` · `ROOM-PLATES.md` | provenance aset + apa yang menangkap apa |
 | `docs/PRICING.md` · `.id.md` | halaman harga, angkanya kini ikut diperiksa |
-| `scripts/verify.sh` | satu perintah, 12 gerbang |
+| `scripts/verify.sh` | satu perintah, 13 gerbang |
 | `scripts/check-handoff.sh` | integritas transfer |
 | `MANIFEST.sha256` | 561 berkas, sha256 |
 | `art/originals/sprites/` | 100 original — **jangan pernah ditimpa** |

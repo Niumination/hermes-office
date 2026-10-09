@@ -42,7 +42,13 @@ updates:
     schedule:
       interval: weekly
 
-  # No pip entry yet. Pillow is pinned inline in ci/workflow.yml rather than
-  # in a requirements file, and Dependabot cannot read a pin that lives in a
-  # `run:` line. Moving it to requirements-ci.txt is the follow-up that makes
-  # this block honest.
+  # Pillow and numpy now live in requirements-ci.txt / requirements-dev.txt,
+  # so Dependabot can finally see them. scripts/check-pins.sh fails the build
+  # if a pin ever moves back into a `run:` line where this cannot read it.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      python:
+        patterns: ["*"]

@@ -1,0 +1,8 @@
+# CI's set, plus what only a developer needs.
+-r requirements-ci.txt
+
+# numpy is imported by scripts/cutout-cast.py alone, which rebuilds the cast
+# cutouts by hand and never runs in CI. It is pinned here rather than left
+# undeclared so that a fresh clone can reproduce the cutouts, and so that
+# Dependabot watches it.
+numpy==2.3.5

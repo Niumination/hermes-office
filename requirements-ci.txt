@@ -1,0 +1,11 @@
+# Everything CI installs, pinned exactly.
+#
+# This file exists so Dependabot can see these versions. A pin written inline
+# in a `run:` line is invisible to it, which is how actions/setup-node sat
+# three major versions behind for months without anyone being told.
+#
+# Pillow is used by check-plates.py and check-sprites.py. It is pinned rather
+# than floating because --regen rebuilds 100 sprites and compares hashes: a
+# Pillow encoder change rewrites every byte and turns the gate red on a commit
+# that touched nothing.
+pillow==12.3.0
