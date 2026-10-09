@@ -15,7 +15,7 @@
 ```
 /home/agentuser/niumination/hermes-office/        # app (git clone dari Niumination/hermes-office)
 ├── server/ frontend/ scripts/ ...
-├── dist/                             # hasil vite build (gitignored)
+├── frontend/dist/                   # hasil vite build (gitignored)
 ├── data/office.db                    # SQLite (gitignored, backup harian)
 └── .env.office                       # secret (0600, gitignored)
 ```
@@ -34,8 +34,11 @@ cp .env.office.example .env.office
 chmod 600 .env.office
 
 # 3. Build frontend
-npm ci
-npm run build            # vite build → dist/
+#    Skrip build ada di frontend/, BUKAN di akar repo — akar hanya punya
+#    start/dev/test/lint. `npm run build` di akar gagal dengan "Missing
+#    script: build".
+npm ci                                 # server deps (better-sqlite3, addon native)
+cd frontend && npm ci && npm run build && cd ..
 
 # 4. Install service
 bash scripts/install-service.sh
@@ -121,14 +124,34 @@ Relay membaca `~/.hermes/a2a_audit.jsonl` + heartbeat file. Log: `~/Library/Logs
 
 ```bash
 cd ~/niumination/hermes-office
-git pull origin main
-npm ci
-npm run build
+git pull origin main                     # main adalah sumber kebenaran (lihat §7.1)
+npm ci                                   # server deps — addon native, WAJIB node >= 22
+cd frontend && npm ci && npm run build && cd ..
 systemctl --user restart hermes-office   # dari terminal eksternal, bukan dari agent
 ```
 
-Rollback: `git checkout <tag-sebelumnya> && npm ci && npm run build && restart`.
+> **Jebakan Node:** `better-sqlite3` adalah addon native. Kalau versi Node
+> berganti antara `npm ci` dan restart, `dlopen` gagal dan ~100 test yang
+> membuka ledger mati dengan pesan yang menuduh test-nya rusak. Jalankan
+> `node -v` dulu; kalau berbeda: `npm rebuild better-sqlite3`.
+
+Rollback: `git checkout <tag-sebelumnya> && npm ci && (cd frontend && npm ci && npm run build) && restart`.
 DB migration: office-server menjalankan migrasi idempotent saat start; untuk rollback major, restore `data/office.db` dari backup.
+
+### 7.1 main vs dev
+
+`main` adalah sumber kebenaran dan branch yang dilayani. `dev` adalah tempat
+pekerjaan berjalan; perbedaannya harus selalu fast-forward bersih
+(`git rev-list --count main..dev` = N, `dev..main` = 0) sebelum digabung:
+
+```bash
+git checkout main
+git merge --ff-only dev        # menolak kalau ada divergence
+git push origin main
+```
+
+CI hanya berjalan `on: push: branches: [main]`, jadi langkah ini juga
+satunya yang memicu pengujian lengkap sebuah rilis.
 
 ## 8. Backup
 

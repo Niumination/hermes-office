@@ -39,6 +39,9 @@ afterEach(() => resetThemeForTests())
 
 describe('OfficeStage honours the theme', () => {
   it('draws the default plate when the theme is off', () => {
+    // resetThemeForTests() sekarang kembali ke 宗門 (default publik), jadi
+    // tes "tema mati" harus mematikannya secara eksplisit.
+    setTheme('default')
     const { container } = render(<Harness />)
     expect(bg(container)).toContain('/rooms/office-day.webp')
     expect(bg(container)).not.toContain('/sect/')

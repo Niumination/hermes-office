@@ -23,6 +23,11 @@ import type { ThemeId } from './plates'
 
 const KEY = 'hermes.theme'
 const THEMES: readonly ThemeId[] = ['default', 'sect']
+// Default untuk situs publik adalah 宗門: inilah identitas visual produk,
+// dan pengunjung tidak punya cara tahu ada tombol yang harus ditekan.
+// Tombol ThemeToggle tetap mematikannya, dan preferensi tersimpan jadi
+// pengunjung yang memilih "Office" tidak melihatnya lagi.
+const DEFAULT_THEME: ThemeId = 'sect'
 
 const listeners = new Set<() => void>()
 
@@ -31,9 +36,9 @@ function readStored(): ThemeId {
     const raw = localStorage.getItem(KEY)
     return (THEMES as readonly string[]).includes(raw ?? '')
       ? (raw as ThemeId)
-      : 'default'
+      : DEFAULT_THEME
   } catch {
-    return 'default'
+    return DEFAULT_THEME
   }
 }
 
@@ -68,7 +73,9 @@ function subscribe(cb: () => void): () => void {
 }
 
 export function useTheme(): ThemeId {
-  return useSyncExternalStore(subscribe, getTheme, () => 'default')
+  // getServerSnapshot: default yang sama dengan readStored, supaya SSR/CSR
+  // tidak berkedip ke tema lain saat hidrasi.
+  return useSyncExternalStore(subscribe, getTheme, () => DEFAULT_THEME)
 }
 
 /** Test seam: forget everything this module remembered. */
@@ -78,7 +85,7 @@ export function resetThemeForTests(): void {
   } catch {
     /* ignore */
   }
-  current = 'default'
-  applyTheme('default')
+  current = DEFAULT_THEME
+  applyTheme(DEFAULT_THEME)
   listeners.clear()
 }

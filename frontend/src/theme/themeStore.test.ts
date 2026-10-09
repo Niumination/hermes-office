@@ -50,7 +50,7 @@ describe('theme store', () => {
     // not reach the data-theme attribute and style the page as nothing.
     localStorage.setItem('hermes.theme', 'dragon-mode')
     applyTheme()
-    expect(getTheme()).toBe('default')
+    expect(getTheme()).toBe('sect')
   })
 
   it('applies the remembered theme without anyone clicking', () => {

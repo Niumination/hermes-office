@@ -81,6 +81,16 @@ export default function SectLadder({
           )
         })}
       </ol>
+      {viewerTier < 0 && (
+        // Seorang tamu melihat SELURUH aula terkunci. Itu benar — server
+        // memang 403 — tapi tanpa kalimat ini peta pegunungan yang
+        // seluruhnya tergembok terbaca sebagai rusak, bukan sebagai
+        // disengaja. Ini penjelasan, bukan janji akses.
+        <p className="sect-ladder__note">
+          Aula terkunci untuk pengunjung. Masuk sebagai bos untuk berjalan
+          di dalamnya.
+        </p>
+      )}
     </nav>
   )
 }

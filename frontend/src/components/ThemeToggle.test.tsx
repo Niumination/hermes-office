@@ -16,12 +16,13 @@ describe('ThemeToggle', () => {
 
   it('marks the active option for assistive tech', async () => {
     render(<ThemeToggle />)
-    expect(screen.getByRole('button', { name: 'Office' }))
-      .toHaveAttribute('aria-pressed', 'true')
-    await userEvent.click(screen.getByRole('button', { name: /宗門/ }))
+    // Default sekarang 宗門, jadi Office yang awalnya tidak aktif.
     expect(screen.getByRole('button', { name: /宗門/ }))
       .toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(screen.getByRole('button', { name: 'Office' }))
     expect(screen.getByRole('button', { name: 'Office' }))
+      .toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /宗門/ }))
       .toHaveAttribute('aria-pressed', 'false')
   })
 
