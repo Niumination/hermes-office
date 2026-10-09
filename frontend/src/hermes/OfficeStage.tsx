@@ -12,6 +12,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import type { Agent, OfficeEvent } from '../types'
 import { AGENT_CONFIGS } from '../types'
 import Character from '../components/Character'
+import { platePath } from '../theme/plates'
+import { useTheme } from '../theme/themeStore'
 import BurnOverlay from '../components/BurnOverlay'
 import ApprovalGate from '../components/ApprovalGate'
 import AuditBadge from '../components/AuditBadge'
@@ -149,6 +151,7 @@ interface Props {
 }
 
 const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendingTick, spawnedRef }) => {
+  const theme = useTheme()
   const [agents, setAgents] = useState<Agent[]>(() => [createBoss(), ...CAST_IDS.map(createCastMember)])
   const agentsRef = useRef<Agent[]>([])
   agentsRef.current = agents
@@ -320,19 +323,47 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
   }, [reducedMotion])
 
   // Reduced-motion: flush agents straight to their targets.
+  //
+  // This effect depends on `agents` and also writes `agents`, so it MUST be
+  // able to decide that there is nothing to do. It could not: `prev.map()`
+  // allocated a fresh array and fresh objects every pass, React saw a new
+  // value, re-ran the effect, and the loop never closed -- a hard hang for
+  // anyone with prefers-reduced-motion set, which is to say exactly the
+  // people the branch exists to serve. (`statusText: workMessage()` is
+  // random, so it could not even converge by accident.)
+  //
+  // Returning the previous array unchanged is what lets React bail out, so
+  // the rule here is: touch an agent only if it is actually off its mark,
+  // and keep the identity of every agent that is already settled.
   useEffect(() => {
     if (!reducedMotion) return
-    setAgents(prev => prev.map(a => ({
-      ...a,
-      position: { ...a.targetPosition },
-      pathQueue: [],
-      state: a.state === 'new-hire' || a.state === 'walking-to-desk' ? 'working' : a.state,
-      statusText: a.state === 'new-hire' || a.state === 'walking-to-desk' ? workMessage() : a.statusText,
-    })))
+    setAgents(prev => {
+      let changed = false
+      const next = prev.map(a => {
+        const offTarget = a.position.x !== a.targetPosition.x
+          || a.position.y !== a.targetPosition.y
+        const queued = (a.pathQueue?.length ?? 0) > 0
+        const arriving = a.state === 'new-hire' || a.state === 'walking-to-desk'
+        if (!offTarget && !queued && !arriving) return a
+        changed = true
+        return {
+          ...a,
+          position: { ...a.targetPosition },
+          pathQueue: [],
+          state: arriving ? 'working' : a.state,
+          statusText: arriving ? workMessage() : a.statusText,
+        }
+      })
+      return changed ? next : prev
+    })
   }, [agents, reducedMotion])
 
   const room = ROOMS[activeRoom]
-  const roomImage = phase === 'night' ? room.background.night : room.background.day
+  // The theme picks the plate; the day/night phase picks which default
+  // plate it would otherwise have been. platePath() falls back silently for
+  // rooms the sect has no hall for, so this stays total for all 12 rooms.
+  const defaultImage = phase === 'night' ? room.background.night : room.background.day
+  const roomImage = platePath(room.id, theme, defaultImage)
   const aspect = room.width / room.height
   const roomAgents = agents.filter(a => a.room === activeRoom)
   const doorCounts = room.connections.map(c => ({

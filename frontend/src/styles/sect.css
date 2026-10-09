@@ -18,7 +18,7 @@
  * scripts/check-contrast.py — gate 14. Editing a token here can fail CI.
  */
 
-@layer sect.tokens, sect.surface, sect.ladder, sect.motion;
+@layer sect.tokens, sect.surface, sect.ladder, sect.toggle, sect.motion;
 
 @layer sect.tokens {
   [data-theme='sect'] {
@@ -203,5 +203,63 @@
       outline: 2px solid var(--sect-cinnabar);
       outline-offset: 2px;
     }
+  }
+}
+
+@layer sect.toggle {
+  /* The ONLY rules in this file that are not scoped to [data-theme="sect"],
+     and they have to be: this is the control that turns the theme on, so it
+     must be visible while the theme is off. Keeping it here anyway means
+     everything about the theme lives in one file.
+
+     The base styling borrows nothing but `currentColor`, so it inherits the
+     host theme instead of introducing a colour pair nobody measured. Under
+     the sect theme it switches to the tokens gate 14 already checks. */
+  .theme-toggle {
+    display: inline-flex;
+    gap: 0;
+    border: 1px solid currentColor;
+    border-radius: 0.4rem;
+    overflow: hidden;
+    opacity: 0.85;
+    font-size: 0.78rem;
+  }
+  .theme-toggle__opt {
+    padding: 0.2rem 0.55rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .theme-toggle__opt + .theme-toggle__opt {
+    border-inline-start: 1px solid currentColor;
+  }
+  .theme-toggle__opt[aria-pressed='true'] {
+    background: currentColor;
+  }
+  /* The pressed label cannot be `currentColor` on `currentColor`. Flipping
+     it to the surface colour keeps it legible in either host theme without
+     naming a colour this file does not own. */
+  .theme-toggle__opt[aria-pressed='true'] {
+    color: Canvas;
+  }
+  .theme-toggle__opt:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -2px;
+  }
+  .theme-toggle__gloss { opacity: 0.75; }
+
+  [data-theme='sect'] .theme-toggle {
+    border-color: var(--sect-rule);
+    color: var(--sect-paper);
+    opacity: 1;
+  }
+  [data-theme='sect'] .theme-toggle__opt + .theme-toggle__opt {
+    border-inline-start-color: var(--sect-rule);
+  }
+  [data-theme='sect'] .theme-toggle__opt[aria-pressed='true'] {
+    background: var(--sect-gold);
+    color: var(--sect-ink-0);
   }
 }

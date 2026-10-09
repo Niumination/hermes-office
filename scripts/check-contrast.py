@@ -56,6 +56,12 @@ PAIRS = [
      'rail text where the rail is glass over the brightest hall'),
     ('--sect-mist', ('glass', '--sect-ink-1', 0.78), 'secondary',
      'gloss where the rail is glass over the brightest hall'),
+    # Dark-on-light, the only inverted pair in the theme: the selected
+    # option of the theme toggle. Added the moment it was introduced --
+    # a pair the designer knows about but the gate does not is worse than
+    # no gate, because it buys false confidence.
+    ('--sect-ink-0', '--sect-gold', 'secondary',
+     'selected theme-toggle label, dark on gold'),
 ]
 
 LEVELS = {'body': 75.0, 'secondary': 60.0, 'critical': 45.0, 'minimum': 45.0}
