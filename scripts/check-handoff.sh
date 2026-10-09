@@ -32,8 +32,9 @@ cd "$ROOT"
 MANIFEST="MANIFEST.sha256"
 
 # Everything a clone needs, and nothing a clone regenerates. node_modules,
-# dist and data are excluded because they are outputs: hashing them would
-# make the manifest fail for correct reasons, which trains people to ignore
+# dist, data and __pycache__ are excluded because they are outputs: hashing
+# them would make the manifest fail for correct reasons, which trains people
+# to ignore
 # it — the precise failure this file exists to prevent.
 list_files() {
   find . \
@@ -44,6 +45,7 @@ list_files() {
     -path ./frontend/dist -prune -o \
     -path ./data -prune -o \
     -path ./coverage -prune -o \
+    -name '__pycache__' -prune -o \
     -name '.env.office' -prune -o \
     -name '.DS_Store' -prune -o \
     -name "$MANIFEST" -prune -o \
@@ -113,7 +115,7 @@ declare -A EXPECT=(
   ["art/originals/sprites|*.webp"]=100
   ["art/donghua-cast|*.webp"]=16
   ["frontend/public/sprites|*.webp"]=282
-  ["frontend/public/rooms|*.webp"]=22   # 18 tema bawaan + 4 tema 宗門 di rooms/sect/
+  ["frontend/public/rooms|*.webp"]=26   # 18 tema bawaan + 8 tema 宗門 di rooms/sect/
 )
 for key in "${!EXPECT[@]}"; do
   dir="${key%%|*}"; pat="${key##*|}"; want="${EXPECT[$key]}"

@@ -77,6 +77,7 @@ gate "ci workflow"         bash scripts/check-ci.sh
 gate "dependency pins"     bash scripts/check-pins.sh
 gate "deployable"          bash scripts/check-deployable.sh
 gate "room plates"         python3 scripts/check-plates.py
+gate "theme contrast"      python3 scripts/check-contrast.py
 gate "doc claims"          python3 scripts/check-docs.py
 if [[ $FAST -eq 1 ]]; then
   gate "sprites (hash only)" python3 scripts/check-sprites.py

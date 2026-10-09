@@ -98,6 +98,77 @@ def _run(cmd, cwd, timeout=None):
 
 
 
+
+
+def _abi_hint(blob: str) -> str:
+    """Tell the truth when the runtime, not the code, is what broke.
+
+    better-sqlite3 is a native addon. Install under one Node and run under
+    another and every suite that opens the ledger dies in dlopen -- about a
+    third of this repo. The count alone then says "100 failing tests, fix
+    the tests", which sends a buyer to debug code that is fine. This repo
+    supports Node 20, 22 and 24 precisely so people will switch between
+    them, which makes this a routine mistake, not an exotic one.
+    """
+    if "ERR_DLOPEN_FAILED" not in blob and "NODE_MODULE_VERSION" not in blob:
+        return "fix the tests, not the README"
+    m = re.search(r"NODE_MODULE_VERSION (\d+)\.\s*This version of Node\.js "
+                  r"requires\s*NODE_MODULE_VERSION (\d+)", blob)
+    detail = ""
+    if m:
+        abi = {"115": "20", "127": "22", "137": "24"}
+        built, want = m.group(1), m.group(2)
+        detail = (" (addon built for Node %s, running Node %s)"
+                  % (abi.get(built, "ABI " + built), abi.get(want, "ABI " + want)))
+    return ("the tests are fine — a native addon was built against a "
+            "different Node version%s. Run `npm rebuild` (or reinstall) "
+            "with the Node you are testing on" % detail)
+
+
+def _keep_evidence(name: str, blob: str) -> str:
+    """Write the runner output to disk when a suite fails.
+
+    An intermittent failure that leaves no trace cannot be fixed. This
+    checker once reported 100 failing backend tests on a tree where the
+    same command passed 305/305 twenty times in a row; by the time anyone
+    re-ran it, the output was gone. Now the evidence outlives the run.
+
+    Best effort on purpose: if the file cannot be written, the failure
+    being reported is still the important one, so the inability to save a
+    log must never replace it.
+    """
+    try:
+        path = os.path.join(tempfile.gettempdir(),
+                            "check-docs-%s-failure.log" % name)
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write(blob)
+        return "; full runner output saved to %s" % path
+    except OSError:
+        return ""
+
+
+def _which_failed(blob: str, limit: int = 8) -> str:
+    """Name the tests that failed, not just how many.
+
+    This exists because of a real incident: a run of this checker reported
+    "100 failing test(s)" while `node --test tests/*.test.js` passed 305/305
+    standalone, 20 times in a row and under 4x CPU load. The count alone
+    made the event undiagnosable -- by the time anyone looked, the evidence
+    was gone. A count is a smoke alarm; this is the bit that says which room.
+
+    TAP and the spec reporter are both handled, because the runtime matrix
+    spans Node 20/22 (TAP) and 24 (spec).
+    """
+    names = re.findall(r"^not ok \d+ - (.+?)\s*$", blob, re.M)
+    if not names:
+        names = re.findall(r"^\s*\u2716 (.+?)(?:\s*\(|$)", blob, re.M)
+    if not names:
+        return " (no failing test names found in the runner output)"
+    shown = names[:limit]
+    more = "" if len(names) <= limit else f", and {len(names) - limit} more"
+    return "; failed: " + ", ".join(shown) + more
+
+
 def _backend_counts():
     """Ask node's test runner for its counts in a format it promises to keep.
 
@@ -508,6 +579,11 @@ def main() -> int:
     for lang, rel in list(READMES.items()) + list(PRICINGS.items()):
         full = os.path.join(ROOT, rel)
         text[rel] = open(full, encoding="utf-8").read() if os.path.exists(full) else None
+    # AGENTS.md also quotes the claim total, so it has to be readable here
+    # for the self-count backstop at the bottom of this function.
+    _agents = os.path.join(ROOT, "AGENTS.md")
+    text["AGENTS.md"] = (open(_agents, encoding="utf-8").read()
+                         if os.path.exists(_agents) else None)
 
     readme_path = os.path.join(ROOT, READMES["en"])
     rd = text[READMES["en"]]
@@ -647,7 +723,8 @@ def main() -> int:
         if failing is not None and failing != "0":
             failures.append(
                 f"{name} suite has {failing} failing test(s) — "
-                f"fix the tests, not the README")
+                + _abi_hint(blob)
+                + _which_failed(blob) + _keep_evidence(name, blob))
         elif passed is None:
             failures.append(f"README {name} test count: could not read the runner")
         else:
@@ -854,6 +931,11 @@ def main() -> int:
         "README.id.md": r"\| Klaim dokumen yang diverifikasi mesin \| \*\*(\d+)\*\*",
         "docs/PRICING.md": r"(\d+) machine-verified documentation",
         "docs/PRICING.id.md": r"(\d+) klaim dokumen yang diverifikasi mesin",
+        # AGENTS.md drifted to 87 while the real total was 91 and nothing
+        # caught it, because this dict was the only thing that looks at a
+        # self-count and AGENTS.md was not in it. A doc that states the
+        # number must be held to it, wherever it states it.
+        "AGENTS.md": r"compares (\d+) documented claims",
     }
     # Both language versions must quote the SAME total, so every self-claim
     # is counted before any is compared. Incrementing inside the loop gave

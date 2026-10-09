@@ -28,3 +28,7 @@ Thumbs.db
 
 # claude-office upstream leftovers (we port, not vendor)
 upstream/
+
+# Python bytecode caches are per-interpreter outputs, never sources.
+__pycache__/
+*.pyc
