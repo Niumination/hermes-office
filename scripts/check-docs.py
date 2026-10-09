@@ -587,6 +587,37 @@ def main() -> int:
                     f"{rel} claims {'/'.join(sorted(claimed))} gates but "
                     f"verify.sh runs {actual}")
 
+    # ── sect theme covers every governed room ─────────────────────────
+    # frontend/src/theme/sect.ts names a hall per room. A room the policy
+    # governs but the theme forgot would render as a blank rung — the kind of
+    # gap that only shows up when someone finally clicks it. The room ids come
+    # from the policy itself rather than a second list.
+    _sect_path = os.path.join(ROOT, "frontend/src/theme/sect.ts")
+    sect_src = (open(_sect_path, encoding="utf-8").read()
+                if os.path.exists(_sect_path) else "")
+    if sect_src:
+        checks += 1
+        try:
+            ids = subprocess.run(
+                ["node", "-e",
+                 "import('./server/policy.js').then(m=>"
+                 "console.log(Object.keys(m.DEFAULT_POLICY.rooms).join(',')))"],
+                cwd=ROOT, capture_output=True, text=True, timeout=60)
+            governed = [r for r in ids.stdout.strip().split(",") if r]
+        except Exception:
+            governed = []
+        body = sect_src.split("SECT_HALLS", 1)[-1]
+        named = set(re.findall(r"^\s*'?([a-z][a-z-]*)'?\s*:\s*\{", body, re.M))
+        if not governed:
+            failures.append(
+                "could not read the policy room ids to check the sect theme against")
+        else:
+            missing = [r for r in governed if r not in named]
+            if missing:
+                failures.append(
+                    "frontend/src/theme/sect.ts has no hall for governed "
+                    f"room(s): {', '.join(sorted(missing))}")
+
     RUNNERS = [
         ("backend", r"\| (?:Backend tests|Test backend) \| \*\*(\d+)\*\* \|"),
         ("frontend", r"\| (?:Frontend tests|Test frontend) \| \*\*(\d+)\*\* \|"),
@@ -712,8 +743,16 @@ def main() -> int:
         import json as _json
         man = _json.loads(_slurp("frontend/public/rooms/PLATES.json"))
         entries = man["plates"] if isinstance(man, dict) else man
-        check("docs/ROOM-PLATES.md plate count",
-              "18", str(len(entries)))
+        # This used to compare the manifest against a literal 18 typed into
+        # this file. That is not a documentation check — it is the checker
+        # holding its own private copy of the number, free to disagree with
+        # every document while still reporting PASS. The claim belongs to the
+        # doc; this reads it from there.
+        m_pc = want("the recorded plate count", r"\*\*(\d+) plate\*\*", rp,
+                    "docs/ROOM-PLATES.md")
+        if m_pc:
+            check("docs/ROOM-PLATES.md plate count",
+                  m_pc.group(1), str(len(entries)))
         reviewed = [e for e in entries if e.get("offPaletteReviewed")]
         # Every reviewed exception must be named in the prose. An unexplained
         # waiver in a manifest is how a real defect gets grandfathered in.

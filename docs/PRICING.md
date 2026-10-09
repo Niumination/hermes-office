@@ -62,7 +62,7 @@ that loop as a named finding; the budget cap stops it before morning.
 **Compared to building it.** A hash chain done correctly, redaction that is
 actually tested, a guest contract that does not leak in one of the two places
 it lives, a deterministic replay usable as evidence. That is not a sprint.
-This repo carries 305 backend tests and 90 machine-verified documentation
+This repo carries 305 backend tests and 91 machine-verified documentation
 claims precisely because these parts are easy to get *almost* right.
 
 **Compared to competitors.** Langfuse Enterprise is $2,499/year for tracing

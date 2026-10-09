@@ -113,7 +113,7 @@ declare -A EXPECT=(
   ["art/originals/sprites|*.webp"]=100
   ["art/donghua-cast|*.webp"]=16
   ["frontend/public/sprites|*.webp"]=282
-  ["frontend/public/rooms|*.webp"]=18
+  ["frontend/public/rooms|*.webp"]=22   # 18 tema bawaan + 4 tema 宗門 di rooms/sect/
 )
 for key in "${!EXPECT[@]}"; do
   dir="${key%%|*}"; pat="${key##*|}"; want="${EXPECT[$key]}"

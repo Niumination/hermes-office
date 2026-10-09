@@ -182,10 +182,21 @@ def accept(name, m, entry=None):
 
 
 def plates():
-    return sorted(
-        f for f in os.listdir(PLATE_DIR)
-        if f.lower().endswith((".webp", ".png", ".jpg"))
-    )
+    """Every plate under frontend/public/rooms, including theme subfolders.
+
+    This used to be a flat os.listdir, which meant art in a subdirectory was
+    invisible to all seven rules — it could enter the repo ungated, which is
+    the exact failure this file exists to prevent. Keys stay relative to
+    PLATE_DIR with forward slashes, so top-level entries are unchanged and
+    the existing manifest keeps matching.
+    """
+    found = []
+    for dirpath, _dirs, files in os.walk(PLATE_DIR):
+        for f in files:
+            if f.lower().endswith((".webp", ".png", ".jpg")):
+                rel = os.path.relpath(os.path.join(dirpath, f), PLATE_DIR)
+                found.append(rel.replace(os.sep, "/"))
+    return sorted(found)
 
 
 def build():

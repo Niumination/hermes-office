@@ -49,6 +49,12 @@ ada yang sadar. Hash menutup itu.
 dihasilkan — itulah sebabnya klaim "asli murni" di atas bisa bertahan lama.
 `frontend/public/rooms/PLATES.json` kini menyatakannya per plate.
 
+Manifest mencatat **22 plate**: 18 tema bawaan di akar `rooms/`, dan 4 tema
+宗門 di `rooms/sect/`. Keduanya tunduk pada tujuh aturan yang sama — seni tema
+tidak mendapat keringanan. (Angka 18 di bagian *Koreksi* dan *Ambang* di atas
+adalah catatan sejarah: ambang memang diukur dari korpus asli itu, dan
+mengubahnya akan memalsukan asal-usul aturan.)
+
 **Perluasan.** "Custom policy, theming" adalah fitur tier berbayar. Pelanggan
 yang menambah ruangan perlu tahu apa yang membuat sebuah plate pantas. Ambang
 di bawah adalah jawabannya.
