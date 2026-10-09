@@ -38,10 +38,12 @@ is what let them do that quietly.
 Exit 0 = every checked claim matches. Exit 1 = a doc lies.
 """
 import glob
+import json
 import os
 import re
 import subprocess
 import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOC = os.path.join(ROOT, "docs", "ARCHITECTURE.md")
@@ -94,6 +96,61 @@ def _run(cmd, cwd, timeout=None):
     return _plain(out.stdout), _plain(out.stderr)
 
 
+
+def _backend_counts():
+    """Ask node's test runner for its counts in a format it promises to keep.
+
+    `--test-reporter=tap` is explicit on purpose. Node's DEFAULT reporter is
+    not stable across releases: a non-TTY run prints TAP on 20 and 22
+    ("# tests 305") and the spec reporter on 24 ("i tests 305"). A checker
+    that reads whatever the default happens to be passes on the version you
+    run today and fails on the next LTS, reporting "could not read the
+    runner" instead of naming the real problem. Asking for a named reporter
+    makes the format part of the request rather than a coincidence.
+
+    Returns (blob, total, passed, failed); any count may be None if the
+    runner could not be read at all.
+    """
+    so, se = _run(["node", "--test", "--test-reporter=tap", *_test_files()],
+                  ROOT, timeout=900)
+    blob = so + se
+
+    def num(key):
+        m = re.search(r"^# %s (\d+)$" % key, blob, re.M)
+        return m.group(1) if m else None
+
+    return blob, num("tests"), num("pass"), num("fail")
+
+
+def _frontend_counts(fe):
+    """Ask vitest for JSON instead of for a sentence.
+
+    The prose this used to scrape is already gone in the version the
+    security upgrade needs: `--reporter=basic` was deprecated in Vitest 2
+    and removed in Vitest 3. JSON is the runner's machine contract, so it
+    survives both the upgrade and whatever the console formatter does next.
+
+    Returns (blob, total, passed, failed), counts as strings or None.
+    """
+    with tempfile.TemporaryDirectory(prefix="vitest-json-") as tmp:
+        out = os.path.join(tmp, "report.json")
+        so, se = _run(["npx", "vitest", "run", "--reporter=json",
+                       "--outputFile=" + out], fe, timeout=900)
+        blob = so + se
+        try:
+            with open(out, encoding="utf-8") as fh:
+                d = json.load(fh)
+        except (OSError, ValueError):
+            return blob, None, None, None
+    total = d.get("numTotalTests")
+    failed = d.get("numFailedTests")
+    passed = d.get("numPassedTests")
+    if passed is None and total is not None and failed is not None:
+        passed = total - failed
+    fmt = lambda v: None if v is None else str(v)
+    return blob, fmt(total), fmt(passed), fmt(failed)
+
+
 def _self_test_parsers() -> None:
     """Prove the output parsers survive colour before trusting their silence.
 
@@ -102,11 +159,13 @@ def _self_test_parsers() -> None:
     checker that could not read its own runner and blamed the environment,
     so the coloured case is asserted on every run rather than assumed.
     """
-    coloured = "Tests  \x1b[1m\x1b[32m129 passed\x1b[39m\x1b[22m (129)"
-    if not re.search(r"Tests\s+(?:\d+ failed \| )?(\d+) passed", _plain(coloured)):
-        raise SystemExit("FAIL: the vitest parser cannot read coloured output")
-    if not re.search(r"^# tests (\d+)", _plain("\x1b[32m# tests 305\x1b[39m"), re.M):
-        raise SystemExit("FAIL: the node --test parser cannot read coloured output")
+    tap = "\x1b[32m# tests 305\x1b[39m\n# pass 305\n# fail 0\n"
+    plain = _plain(tap)
+    for key, expected in (("tests", "305"), ("pass", "305"), ("fail", "0")):
+        m = re.search(r"^# %s (\d+)$" % key, plain, re.M)
+        if not m or m.group(1) != expected:
+            raise SystemExit(
+                "FAIL: the TAP parser cannot read '# %s' from coloured output" % key)
 
 
 def check(label: str, claimed, actual) -> None:
@@ -142,10 +201,11 @@ def _test_files() -> list[str]:
     """Expand the test glob in Python, not in node and not in a shell.
 
     subprocess without shell=True hands node the literal string
-    "tests/*.test.js". Node only expands that from v22; on Node 20 — the
-    version this repo declares in `engines` and pins in all three CI jobs —
-    it prints "Could not find" and runs zero tests, and this checker then
-    reported "could not read the runner" instead of a test count.
+    "tests/*.test.js". Node only expands that from v22, and this repo ran
+    on Node 20 when the bug was found: it printed "Could not find", ran
+    zero tests, and this checker reported "could not read the runner"
+    instead of a test count. Expanding here keeps that true on every
+    runtime, including the ones not invented yet.
 
     Expanding here drops the dependency on both a shell and a node version.
     An empty result is a hard stop: counting zero tests and calling it a
@@ -264,17 +324,21 @@ def main() -> int:
         if not os.path.isdir(os.path.join(ROOT, "node_modules")):
             print("SKIP: backend test count — node_modules missing, run `npm ci` first")
         else:
-            so, se = _run(["node", "--test", *_test_files()], ROOT)
-            got = re.search(r"^# tests (\d+)", so, re.M)
-            failed_to_load = "ERR_MODULE_NOT_FOUND" in so + se
-            if failed_to_load:
+            blob, total, _passed, _failed = _backend_counts()
+            if "ERR_MODULE_NOT_FOUND" in blob:
                 failures.append(
                     "backend suite could not load (ERR_MODULE_NOT_FOUND) — "
                     "run `npm ci`; this is an environment problem, not a doc problem"
                 )
                 checks += 1
-            elif got:
-                check("backend test count", m.group(1), got.group(1))
+            elif total is not None:
+                check("backend test count", m.group(1), total)
+            else:
+                # Staying silent here used to shift the total claim count,
+                # so the run reported "checked 85" alongside the real
+                # failure and buried it. Count the check, name the cause.
+                failures.append("backend test count — could not read the runner")
+                checks += 1
 
     m = re.search(r"\| Frontend \| \*\*(\d+)\*\*", doc)
     if m:
@@ -294,19 +358,17 @@ def main() -> int:
             print("SKIP: frontend test count — frontend/node_modules missing, "
                   "run `npm ci` in frontend/ first")
         else:
-            so, se = _run(["npx", "vitest", "run", "--reporter=basic"], fe)
-            blob = so + se
-            got = re.search(r"Tests\s+(?:\d+ failed \| )?(\d+) passed", blob)
+            blob, total, _passed, _failed = _frontend_counts(fe)
             if "ERR_MODULE_NOT_FOUND" in blob or "failed to load config" in blob:
                 failures.append(
                     "frontend suite could not start — run `npm ci` in frontend/; "
                     "this is an environment problem, not a doc problem"
                 )
                 checks += 1
-            elif got:
-                check("frontend test count", m.group(1), got.group(1))
+            elif total is not None:
+                check("frontend test count", m.group(1), total)
             else:
-                failures.append("frontend test count — could not parse vitest output")
+                failures.append("frontend test count — vitest wrote no JSON report")
                 checks += 1
 
     # --- 5. PRD.md --------------------------------------------------------
@@ -477,14 +539,30 @@ def main() -> int:
     # it was still selling "61 machine-verified claims" when the real figure
     # had moved to 83. Both sales files now quote the same figures as the
     # READMEs, checked against the same runners.
+    # The supported runtime is a security statement, not a style note.
+    # Node 20 reached end of life on 2026-04-30 and receives no patches, so
+    # a README still advertising it is exactly the kind of claim that
+    # outruns reality — the failure this file exists to catch. Read the
+    # number from package.json instead of trusting the prose.
+    with open(os.path.join(ROOT, "package.json"), encoding="utf-8") as fh:
+        engines = (json.load(fh).get("engines") or {}).get("node", "")
+    m_eng = re.search(r"(\d+)", engines)
+    if m_eng:
+        checks += 1
+        for rel in READMES.values():
+            if text.get(rel) is None:
+                continue
+            m_doc = re.search(r"Node\s*(?:\u2265|>=)\s*(\d+)", text[rel])
+            if m_doc and m_doc.group(1) != m_eng.group(1):
+                failures.append(
+                    f"{rel} advertises Node >= {m_doc.group(1)} but "
+                    f"package.json engines says '{engines}'")
+
     RUNNERS = [
-        ("backend", r"\| (?:Backend tests|Test backend) \| \*\*(\d+)\*\* \|",
-         ["node", "--test", *_test_files()], ROOT, r"^# pass (\d+)$"),
-        ("frontend", r"\| (?:Frontend tests|Test frontend) \| \*\*(\d+)\*\* \|",
-         ["npx", "vitest", "run", "--reporter=basic"], os.path.join(ROOT, "frontend"),
-         r"Tests\s+(\d+) passed"),
+        ("backend", r"\| (?:Backend tests|Test backend) \| \*\*(\d+)\*\* \|"),
+        ("frontend", r"\| (?:Frontend tests|Test frontend) \| \*\*(\d+)\*\* \|"),
     ]
-    for name, pattern, cmd, cwd, out_re in RUNNERS:
+    for name, pattern in RUNNERS:
         claimed = {}
         for rel in READMES.values():
             if text.get(rel) is None:
@@ -495,28 +573,29 @@ def main() -> int:
         if not claimed:
             continue
         checks += 1
-        so, se = _run(cmd, cwd, timeout=900)
-        blob = so + se
-        got = re.search(out_re, blob, re.M)
+        if name == "backend":
+            blob, _total, passed, failing = _backend_counts()
+        else:
+            blob, _total, passed, failing = _frontend_counts(
+                os.path.join(ROOT, "frontend"))
         # A failing suite lowers the pass count, which this check would
         # otherwise report as "the doc lies" — sending the reader to edit a
         # number when the real problem is a broken test. It misled the
         # author of this very function once, which is how it got written.
-        if name == "backend" and got:
-            BACKEND_PASSES[0] = got.group(1)
-        failing = re.search(r"^# fail (\d+)$", blob, re.M)
-        if failing and failing.group(1) != "0":
+        if name == "backend" and passed:
+            BACKEND_PASSES[0] = passed
+        if failing is not None and failing != "0":
             failures.append(
-                f"{name} suite has {failing.group(1)} failing test(s) — "
+                f"{name} suite has {failing} failing test(s) — "
                 f"fix the tests, not the README")
-        elif not got:
+        elif passed is None:
             failures.append(f"README {name} test count: could not read the runner")
         else:
             for rel, value in claimed.items():
-                if value != got.group(1):
+                if value != passed:
                     failures.append(
                         f"{rel} {name} test count: doc says '{value}', "
-                        f"runner reports {got.group(1)}")
+                        f"runner reports {passed}")
 
     # The quickstart is the first command a buyer types. A README that opens
     # with a script that does not exist ends the evaluation there.

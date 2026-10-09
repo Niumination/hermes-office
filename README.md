@@ -110,7 +110,7 @@ Hermes Mac ──────────────┘    Express 4 + ws      
                      flight recorder┴─► SQLite (hash chain) ──► external anchors
 ```
 
-ESM, Node ≥ 20. No external services, no mandatory account, no outbound calls
+ESM, Node ≥ 22. No external services, no mandatory account, no outbound calls
 except the anchor webhooks you configure yourself.
 
 Ingest is **OpenTelemetry GenAI semconv** — the `create_agent`,
@@ -124,7 +124,7 @@ the normalisation is real work and it is already done here.
 |---|---|
 | Backend tests | **305** |
 | Frontend tests | **129** |
-| Machine-verified doc claims | **87** (`scripts/check-docs.py`) |
+| Machine-verified doc claims | **88** (`scripts/check-docs.py`) |
 | Bundle | 216 kB JS · 43.7 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
 

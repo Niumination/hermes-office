@@ -1,5 +1,9 @@
-/// <reference types="vitest" />
-import { defineConfig } from 'vite'
+// defineConfig comes from vitest/config, not from vite. The `test` block
+// below is Vitest's, and from Vitest 3 the vite-typed defineConfig rejects
+// it — `npm run build` runs `tsc` first, so that surfaces as a build
+// failure rather than a test failure, which sends you looking in the wrong
+// place. The old `/// <reference types="vitest" />` shim is gone in v3+.
+import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 // base './' so built assets resolve under BOTH a path prefix

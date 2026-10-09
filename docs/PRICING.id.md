@@ -63,7 +63,7 @@ sebelum paginya.
 **Dibandingkan membangunnya sendiri.** Rantai hash yang benar, redaksi yang
 teruji, kontrak tamu yang tidak bocor di salah satu dari dua tempat, replay
 deterministik yang bisa dipakai sebagai bukti. Itu bukan sprint. Repo ini
-punya 305 test backend dan 87 klaim dokumen yang diverifikasi mesin justru
+punya 305 test backend dan 88 klaim dokumen yang diverifikasi mesin justru
 karena bagian-bagian ini mudah dibuat *hampir* benar.
 
 **Dibandingkan pesaing.** Langfuse Enterprise $2.499/tahun untuk tracing dan

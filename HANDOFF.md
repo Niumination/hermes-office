@@ -44,13 +44,13 @@ kegagalan yang paling sering terjadi, dan pemulihannya ada di §6.
 bash scripts/verify.sh
 ```
 
-Patokan yang harus direproduksi (per 2026-10-07):
+Patokan yang harus direproduksi (per 2026-10-08):
 
 | Gerbang | Hasil |
 |---|---|
-| handoff integrity | 561 berkas cocok |
+| handoff integrity | 562 berkas cocok |
 | eslint | 0 masalah |
-| frontend build | ~217 kB JS / 43,67 kB CSS |
+| frontend build | ~215 kB JS / 42,50 kB CSS (vite 8) |
 | backend tests | **305** lulus, 0 gagal |
 | frontend tests | **129** lulus |
 | clean shutdown | keluar bersih dengan WebSocket hidup |

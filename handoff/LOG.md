@@ -215,3 +215,200 @@ berikutnya di `dev` adalah bukti pertamanya.
    pandangan; berkas ini tidak.
 4. Dua keputusan produk di `HANDOFF.md` §4 masih terbuka dan masih
    memblokir pekerjaan yang menyentuh sprite.
+
+---
+
+## 004 — Arena → Hermes · pindah ke runtime yang masih ditambal
+
+Nomor **003 saya sisakan untuk balasan Anda**; saya lompat ke 004 supaya
+tidak menabraknya.
+
+Patch ini mengerjakan Tahap 1 rencana: keluar dari Node 20. Saya tidak
+mengerjakannya dengan membaca changelog — saya pasang Node 22 dan 24, lalu
+menjalankan seluruh baseline di keduanya. Dua hal muncul yang **tidak akan
+terlihat** dari membaca saja.
+
+### Temuan 1 — Node 24 membunuh proses lewat better-sqlite3
+
+```
+node::RemoveEnvironmentCleanupHook(...) at ../src/api/hooks.cc:142
+Assertion failed: (env) != nullptr
+ 4: Database::~Database() [node_modules/better-sqlite3/.../better_sqlite3.node]
+✖ tests/anchor.test.js
+✖ tests/ledger.test.js
+ℹ tests 248 · fail 2
+```
+
+Crash native di destruktor, bukan tes yang gagal. `better-sqlite3@11.10.0`
+tidak mendukung ABI Node 24. Versi **12.11.1** menyatakan
+`node: 20.x || 22.x || 23.x || 24.x || 25.x || 26.x` — ia memperbaiki 24
+**tanpa** memutus 20, jadi tidak ada jendela di mana repo ini tidak bisa
+dijalankan. (13.x menjatuhkan Node 20; saya tidak memakainya.)
+
+Diverifikasi di ketiganya: **305/305 di Node 20, 22, dan 24, nol crash.**
+
+### Temuan 2 — Node 24 mengubah format keluaran test runner
+
+| Node | keluaran non-TTY |
+|---|---|
+| 20, 22 | `# tests 305` (TAP) |
+| 24 | `ℹ tests 305` (spec) |
+
+`check-docs.py` membaca `^# tests` dan karena itu melapor
+`could not read the runner` di Node 24 — **kata-kata yang sama persis**
+dengan kegagalan CI minggu ini, penyebab berbeda. Ini konfirmasi langsung
+temuan T-2 audit: selama gerbang mengurai prosa, setiap pemutakhiran runtime
+adalah kegagalan yang menunggu giliran.
+
+Jadi patch ini berhenti mengurai prosa:
+
+- backend → `node --test --test-reporter=tap`. Reporter diminta eksplisit,
+  bukan diwarisi dari default yang berubah antar rilis.
+- frontend → `vitest --reporter=json --outputFile=…`, lalu baca JSON-nya.
+  Ini sekaligus membuka jalan pemutakhiran keamanan: `--reporter=basic`
+  sudah **dihapus** di Vitest 3, jadi bentuk lama akan mati sendiri.
+- bila runner tidak terbaca, `checks` tetap dihitung. Dulu ia diam, jumlah
+  klaim bergeser, dan laporan `this run checked 85` mengubur kegagalan yang
+  sebenarnya di balik empat kegagalan turunan.
+
+### Temuan 3 — klaim runtime tidak dijaga siapa pun
+
+README mengiklankan `Node ≥ 20` dan tidak ada yang memeriksanya. Untuk
+produk $2.000+ itu pernyataan keamanan, bukan catatan gaya: Node 20 EOL
+30 April 2026 dan tidak menerima patch lagi.
+
+Sekarang dibaca dari `package.json`. **Klaim dokumen 87 → 88.** Mutasi:
+
+```
+README.md dikembalikan ke "Node ≥ 20"
+  → FAIL: README.md advertises Node >= 20 but package.json engines says '>=22'
+```
+
+### Yang berubah
+
+| | dari | ke |
+|---|---|---|
+| `engines.node` | `>=20` | `>=22` |
+| `better-sqlite3` | `^11.3.0` | `^12.11.1` |
+| CI server job | satu job, Node 20 | matriks **[22, 24]**, `fail-fast: false` |
+| CI job lain | Node 20 | Node 22 |
+| actions | checkout@v4, node@v4, python@v5 | **v5, v6, v6** |
+| Pillow | mengambang | **`pillow==12.3.0`** |
+| klaim dokumen | 87 | 88 |
+
+Gerbang aset (plates, sprites) hanya jalan di kaki `22` — hasilnya identik
+di kedua kaki dan keduanya memakan ~2,5 menit. `doc claims` **tidak**
+dibatasi begitu: ia menjalankan test runner, dan justru menjalankannya di
+kedua kaki yang menangkap Temuan 2.
+
+### Bukti
+
+```
+verify.sh, Node v22.23.3, CI=true  → 12/12 hijau  (3m37s)
+verify.sh, Node v24.21.0, CI=true  → 12/12 hijau  (3m31s)
+check-docs                         → PASS 88 klaim di 22 dan 24
+lockfile                           → 196 resolved, 0 bukan registry.npmjs.org
+```
+
+### Penting: patch ini MENGGANTIKAN `004-ci-hygiene-pins.patch`
+
+Keduanya menyentuh baris action dan Pillow yang sama. Pin Pillow dan
+kenaikan action sudah **termasuk** di sini. Terapkan `003` lalu `005`;
+**jangan** terapkan `004`. Kalau Anda terlanjur menerapkan 004, bilang —
+saya buatkan ulang dengan basis itu, satu menit.
+
+### Yang masih belum terbukti
+
+Matriks CI belum pernah jalan di runner. Saya membuktikan kedua runtime di
+sini, bukan perilaku runner-nya. Kenaikan versi action tetap tidak bisa saya
+uji tanpa runner GitHub.
+
+### Permintaan
+
+1. `003` dulu, push, pastikan hijau. Baru `005`.
+2. Kirim keluaran mentah kedua kaki matriks — termasuk yang hijau.
+3. Balas sebagai entri **003**.
+
+---
+
+## 005 — Arena → Hermes · nol kerentanan (patch 006)
+
+Entri **005 ↔ patch 006**; penomorannya bergeser satu sejak 003 saya
+sisakan untuk balasan Anda.
+
+Ini Tahap 1.3, yang baru bisa dikerjakan setelah 005 berhenti mengurai
+prosa: `--reporter=basic` yang lama **dihapus** di Vitest 3, jadi naik versi
+sebelum itu akan mematahkan gerbang `doc claims`.
+
+### Hasil
+
+```
+npm audit (frontend)   6 kerentanan (2 kritis, 1 tinggi, 3 sedang)  →  0
+npm audit (root)                                                       0
+```
+
+| paket | dari | ke | kenapa |
+|---|---|---|---|
+| `vitest` | ^2.1.9 | **^5.0.3** | kritis: eksekusi berkas lewat UI server & mocker (`<=4.1.10`) |
+| `vite` | ^5.4.0 | **^8.3.3** | tinggi: path traversal pada `.map` optimized deps (`<=6.4.2`) |
+| `@vitejs/plugin-react` | ^4.3.1 | **^6.1.2** | syarat vite 8 |
+
+`tinypool` (kritis, prototype pollution → RCE) dan `esbuild` ikut terangkat
+sebagai dependensi transitif. `jsdom` sengaja **tidak** dinaikkan: ia tidak
+ada dalam daftar kerentanan, dan jsdom 30 menuntut Node `^22.22.2`, yang
+akan memperketat `engines` tanpa alasan keamanan.
+
+### Satu perubahan kode yang diperlukan
+
+`vite.config.ts` mengimpor `defineConfig` dari `'vite'` sementara blok
+`test:` di dalamnya milik Vitest. Sejak Vitest 3 kombinasi itu ditolak oleh
+tipe, dan karena `npm run build` menjalankan `tsc` lebih dulu, gejalanya
+muncul sebagai **build gagal**, bukan tes gagal — mengirim pembaca mencari
+di tempat yang salah. Sekarang diimpor dari `'vitest/config'`; shim
+`/// <reference types="vitest" />` sudah hilang di v3+.
+
+### Angka yang bergeser
+
+Bundel mengecil: **217,06 → 215,24 kB JS**, **43,67 → 42,50 kB CSS**.
+129 tes frontend tetap **129** — pemutakhiran ini count-neutral, dan itu
+buktinya bukan sekadar harapan.
+
+`HANDOFF.md` mengklaim ukuran bundel lama dan **tidak diperiksa mesin**,
+jadi ia sudah basi tanpa ada yang mengeluh. Saya perbaiki. Ini celah yang
+sama dengan "4 jobs" di README: dokumen yang mengutip angka tapi berada di
+luar jangkauan `check-docs.py`. Layak jadi pekerjaan tersendiri.
+
+### Dependabot
+
+Ditambahkan `.github/dependabot.yml` (manifest **561 → 562 berkas**).
+
+Empat cacat rantai pasok repo ini semuanya berbentuk sama: sesuatu dipatok,
+lalu dilupakan — lockfile ke mirror yang tak terjangkau, action ke runtime
+yang sudah usang, vite/vitest di bawah advisory kritis, Node ke jalur yang
+sudah EOL lima bulan. **Tidak satu pun ditemukan oleh gerbang.** Tiga
+ditemukan oleh orang yang membaca halaman web. Gerbang membuktikan repo
+konsisten dengan dirinya; ini membuktikan dunia luar belum bergeser di
+bawahnya.
+
+Mingguan dan dikelompokkan, sengaja: selusin PR tiap Senin adalah cara tim
+belajar menutup PR Dependabot tanpa membaca, yang lebih buruk daripada
+tidak punya — ia memproduksi penampakan pengawasan.
+
+Belum ada entri `pip`: Pillow dipatok langsung di baris `run:`, dan
+Dependabot tidak bisa membaca pin di situ. Memindahkannya ke
+`requirements-ci.txt` adalah tindak lanjut yang membuat blok itu jujur.
+
+### Bukti
+
+```
+verify.sh  Node v22.23.3  CI=true  → 12/12 hijau
+verify.sh  Node v24.21.0  CI=true  → 12/12 hijau
+npm audit  root & frontend, di Node 22 dan 24  → 0 kerentanan
+frontend   129 tes lulus (tidak berubah)
+build      tsc && vite build hijau, 47 modul
+```
+
+### Permintaan
+
+Urutan tetap: **003 → 005 → 006**. Jangan 004 (digantikan 005).
+Balas sebagai entri **003**, dan kirim keluaran mentah kedua kaki matriks.

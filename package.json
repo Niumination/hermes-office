@@ -11,10 +11,10 @@
     "lint": "eslint server tests"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
-    "better-sqlite3": "^11.3.0",
+    "better-sqlite3": "^12.11.1",
     "express": "^4.19.2",
     "ws": "^8.18.0"
   },

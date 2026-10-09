@@ -113,7 +113,7 @@ Hermes Mac ───────────┘    Express 4 + ws        /kiosk 
                    flight rec ───┴─► SQLite (rantai hash) ──► jangkar eksternal
 ```
 
-ESM, Node ≥ 20. Tanpa layanan eksternal, tanpa akun yang wajib, tanpa panggilan
+ESM, Node ≥ 22. Tanpa layanan eksternal, tanpa akun yang wajib, tanpa panggilan
 keluar kecuali webhook jangkar yang Anda konfigurasikan sendiri.
 
 Ingest lewat **OpenTelemetry GenAI semconv** — operasi `create_agent`,
@@ -127,7 +127,7 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 |---|---|
 | Test backend | **305** |
 | Test frontend | **129** |
-| Klaim dokumen yang diverifikasi mesin | **87** (`scripts/check-docs.py`) |
+| Klaim dokumen yang diverifikasi mesin | **88** (`scripts/check-docs.py`) |
 | Bundel | 216 kB JS · 43,7 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 

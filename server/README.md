@@ -1,6 +1,6 @@
 # Hermes Office — server
 
-Node 20 + Express 4 + ws + better-sqlite3. One process: event hub, static host, chat proxy.
+Node 22 + Express 4 + ws + better-sqlite3. One process: event hub, static host, chat proxy.
 Contract: `docs/EVENTS.md` (source of truth) — mirrored in `tests/eventbus.test.js`.
 
 ## Run
