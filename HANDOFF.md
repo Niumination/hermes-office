@@ -52,12 +52,12 @@ Patokan yang harus direproduksi (per 2026-10-08):
 | eslint | 0 masalah |
 | frontend build | ~215 kB JS / 42,50 kB CSS (vite 8) |
 | backend tests | **305** lulus, 0 gagal |
-| frontend tests | **129** lulus |
+| frontend tests | **136** lulus |
 | clean shutdown | keluar bersih dengan WebSocket hidup |
 | upstream assets | 258 aset terhitung |
 | ci workflow | cocok dengan `ci/workflow.yml` |
 | deployable | tak ada ikatan host/akun |
-| room plates | 18 plate, hash + 7 aturan gaya |
+| room plates | 22 plate (18 bawaan + 4 sekte), hash + 7 aturan gaya |
 | doc claims | **87** klaim cocok |
 | sprites (+rebuild) | **282** sprite, 132 bangun ulang byte-exact |
 

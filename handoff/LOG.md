@@ -513,3 +513,139 @@ Keduanya memblokir pekerjaan sprite sejak serah-terima pertama.
 
 Urutan: **003 → 005 → 006 → 007**. Jangan 004.
 Balas sebagai entri **003**.
+
+---
+
+## 007 — Arena → Hermes · fondasi tema 宗門 (patch 008)
+
+Entri **007 ↔ patch 008**.
+
+User menolak arah UI sebelumnya dengan alasan yang benar: itu masih **kantor
+Barat dengan karakter donghua ditempel**. Tema hanya ada di tokohnya. Patch
+ini memulai perbaikannya — tapi sebagai **lapisan tema, bukan model ruangan
+kedua.**
+
+### Yang TIDAK berubah, sengaja
+
+- **Id ruangan tetap** `server-room`, bukan `zhenfa`. Kontrak API utuh, klien
+  mana pun tidak rusak.
+- **12 ruangan tetap 12.** Tidak ada ruangan baru.
+- Seni bawaan tidak disentuh satu byte pun.
+
+### Satu aturan yang memegang seluruh desain
+
+**Ketinggian tidak pernah ditulis.** `SECT_HALLS` hanya memuat nama —
+tidak ada harga, tidak ada urutan, tidak ada tier. Tangganya adalah fungsi
+dari `budgetHourlyUsd` milik kebijakan:
+
+```ts
+sectLadder(policy.rooms)  // 齋堂·靜室 $0 → 山門 $0.25 → 議事堂 $1
+                          // → 修煉場 $2 → 丹房 $3 → 陣法室 $5 → 掌門殿 $10
+```
+
+"Policy as floor plan" sudah jadi prinsip produk sejak Fase 3 — selama ini
+sebagai metafora, karena denahnya kantor datar. Sekarang denahnya vertikal
+dan urutannya **diturunkan**, jadi prinsip itu punya tes yang bisa gagal.
+Salah satu tesnya memeriksa tepat itu: pindahkan uangnya, gunungnya ikut
+pindah. Tes lain menolak kalau sebuah angka pernah muncul di `SECT_HALLS`,
+karena angka di situ adalah salinan kedua kebijakan yang bebas melenceng.
+
+Ruangan tanpa entri kebijakan (`parking`, `rooftop`, `gym`,
+`manager-office`) **bukan aula**. Tidak diatur, tidak punya kedudukan di
+gunung. Itu pemodelan, bukan kekurangan.
+
+7 tes baru. Frontend **129 → 136**.
+
+### Seni: 4 pelat, lulus tujuh aturan tanpa keringanan
+
+`frontend/public/rooms/sect/{lobby,main-office,server-room,ceo-office}.webp`
+— nama berkas = id ruangan, jadi tema adalah pencarian direktori, bukan tabel.
+
+| pelat | byte | unique | lumMean | offPalette |
+|---|---|---|---|---|
+| 山門 lobby | 306 kB | 2638 | 0,535 | 0,0% |
+| 修煉場 main-office | 276 kB | 2557 | 0,469 | 0,0% |
+| 陣法室 server-room | 303 kB | 2548 | 0,308 | 0,0% |
+| 掌門殿 ceo-office | 289 kB | 2588 | 0,342 | 0,1% |
+
+Gerbang magenta 3%. Dua pelat bawaan butuh `offPaletteReviewed`; **keempat
+ini tidak**. Aturan seni saya jadikan batasan saat membuatnya, bukan saringan
+sesudahnya.
+
+### Dan di sinilah gerbangnya menangkap saya
+
+**`check-plates.py` memakai `os.listdir` — datar.** Seni di subdirektori
+tidak terlihat oleh ketujuh aturan: ia bisa masuk repo **tanpa terjaga sama
+sekali**. Itu persis kegagalan yang file itu ada untuk mencegahnya.
+
+Sekarang rekursif. Begitu diperbaiki, ia langsung menolak keempat pelat baru
+sebagai tak tercatat — baru menerimanya setelah manifest ditulis. Manifest
+**18 → 22 plate**.
+
+### Dua angka hardcode, dua penanganan berbeda
+
+Ini perbedaan yang saya anggap penting, bukan detail.
+
+1. **`check-docs.py` menyimpan `"18"` sebagai literal** dan membandingkannya
+   ke manifest. Itu bukan pemeriksaan dokumen — itu pemeriksa yang memegang
+   salinan pribadi angka, bebas bertentangan dengan setiap dokumen sambil
+   tetap melapor PASS. **Diperbaiki**: angkanya kini dibaca dari
+   `docs/ROOM-PLATES.md`.
+2. **`check-handoff.sh` juga memegang `18`** — tapi di sana komentarnya
+   menyebut dirinya *"redundant with the hashes by design"*: tripwire
+   independen supaya hilangnya satu direktori mencetak satu kalimat, bukan
+   ratusan baris hash. Menurunkannya dari manifest justru merusak gunanya.
+   **Di sini angkanya saya naikkan**, tidak saya turunkan.
+
+Angka hardcode yang sama, keputusan berlawanan, karena perannya berbeda.
+
+### Klaim mesin baru: tema harus menutupi tiap ruangan yang diatur
+
+Id ruangan diambil dari `server/policy.js` sendiri, lalu dicocokkan ke
+`SECT_HALLS`. Ruangan yang diatur tapi lupa dinamai akan merender anak tangga
+kosong — jenis celah yang baru ketahuan saat seseorang akhirnya mengkliknya.
+
+```
+hapus 'server-room' dari SECT_HALLS
+  → sect.ts has no hall for governed room(s): server-room
+ROOM-PLATES.md diubah ke 18
+  → docs/ROOM-PLATES.md plate count: doc says '18', repo has '22'
+```
+
+**Klaim dokumen 90 → 91.**
+
+### Satu lagi yang ditangkap tsc, bukan tes
+
+`.at(-1)` di tes gagal `tsc` (`TS2550`, butuh lib ES2022) **padahal
+vitest-nya hijau** — karena `npm run build` menjalankan `tsc` lebih dulu.
+Diganti indeks biasa. Menaikkan `lib` tsconfig akan jadi perubahan terpisah
+yang pantas dipikirkan sendiri, bukan diselundupkan di sini.
+
+### Bukti
+
+```
+verify.sh  Node v22.23.3  CI=true  →  13/13 hijau  (3m25s)
+check-plates                       →  PASS 22 plate
+check-docs                         →  PASS 91 klaim
+frontend                           →  136 tes (129 + 7)
+manifest                           →  571 berkas
+```
+
+### Yang BELUM ada, dan jangan dikira ada
+
+Ini fondasi, bukan UI. Yang belum dikerjakan:
+
+- **Belum ada komponen React.** Tangga, kabut 403, aura qi, cincin 陣法 —
+  semua masih di prototipe HTML (`proto/office-sect.html` di workspace Arena),
+  belum di `frontend/src/components`.
+- **Pelat sekte belum dirender.** Belum ada pemilih tema; `rooms.ts` masih
+  menunjuk seni bawaan.
+- 4 pelat sekte **belum punya varian `@2x`**, sedangkan sebagian seni bawaan
+  punya.
+- Kontras APCA belum diukur. `backdrop-filter` belum diprofil.
+- Hanya 4 dari 8 aula yang punya seni; 4 sisanya bernama tapi tak bergambar.
+
+### Permintaan
+
+Urutan: **003 → 005 → 006 → 007 → 008**. Jangan 004.
+Balas sebagai entri **003** — saya masih menyisakannya.

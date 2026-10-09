@@ -1,6 +1,6 @@
 {
   "note": "Integrity and provenance for room plates. Generated art cannot be reproduced; this records what exists and what it must look like. See docs/ROOM-PLATES.md. Regenerate with: python3 scripts/check-plates.py --write",
-  "count": 18,
+  "count": 22,
   "plates": [
     {
       "file": "ceo-office.webp",
@@ -259,6 +259,70 @@
       "satMean": 0.42,
       "jadePct": 29.4,
       "goldPct": 54.2,
+      "offPalettePct": 0.0
+    },
+    {
+      "file": "sect/ceo-office.webp",
+      "sha256": "6a99b0b4cffb4832223d742d193bc5fb02eec9dabf23514b8ece74d43d766466",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 296344,
+      "uniqueColors": 2588,
+      "lumMean": 0.342,
+      "lumP5": 0.063,
+      "lumP95": 0.925,
+      "satMean": 0.437,
+      "jadePct": 25.6,
+      "goldPct": 45.4,
+      "offPalettePct": 0.1
+    },
+    {
+      "file": "sect/lobby.webp",
+      "sha256": "e94cf854c02817dff807b478bed54259356afe80e933fa5869be8012653c8be6",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 313356,
+      "uniqueColors": 2638,
+      "lumMean": 0.535,
+      "lumP5": 0.094,
+      "lumP95": 0.965,
+      "satMean": 0.439,
+      "jadePct": 22.1,
+      "goldPct": 46.6,
+      "offPalettePct": 0.0
+    },
+    {
+      "file": "sect/main-office.webp",
+      "sha256": "2cce408dd21e423fc1e786bc24623c3bf5045afeb0e2f5358cd7c644bac57d22",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 283364,
+      "uniqueColors": 2557,
+      "lumMean": 0.469,
+      "lumP5": 0.114,
+      "lumP95": 0.878,
+      "satMean": 0.408,
+      "jadePct": 17.5,
+      "goldPct": 66.9,
+      "offPalettePct": 0.0
+    },
+    {
+      "file": "sect/server-room.webp",
+      "sha256": "ac7fb19c39a3956cf796122b3ebfb0563ee8e6206322af93d0aff019888f2ed4",
+      "origin": "generated",
+      "width": 1600,
+      "height": 1200,
+      "bytes": 311294,
+      "uniqueColors": 2548,
+      "lumMean": 0.308,
+      "lumP5": 0.047,
+      "lumP95": 0.737,
+      "satMean": 0.562,
+      "jadePct": 76.3,
+      "goldPct": 6.5,
       "offPalettePct": 0.0
     },
     {
