@@ -126,7 +126,7 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 | | |
 |---|---|
 | Test backend | **305** |
-| Test frontend | **160** |
+| Test frontend | **169** |
 | Klaim dokumen yang diverifikasi mesin | **92** (`scripts/check-docs.py`) |
 | Bundel | 216 kB JS · 43,7 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |

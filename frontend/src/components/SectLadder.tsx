@@ -28,6 +28,13 @@ export interface SectLadderProps {
   viewerTier: number
   currentRoom?: string
   onSelect?: (room: string) => void
+  /**
+   * Hide the dollar caps. Used for a guest, whose /policy is redacted and
+   * carries no budget at all (SECURITY.md §3): a cap of $0 would read as
+   * "free", which is the opposite of the truth, so the column is dropped
+   * instead.
+   */
+  hideCaps?: boolean
 }
 
 export default function SectLadder({
@@ -35,6 +42,7 @@ export default function SectLadder({
   viewerTier,
   currentRoom,
   onSelect,
+  hideCaps,
 }: SectLadderProps) {
   // Summit first: the mountain reads top-down on screen.
   const ordered = [...rungs].reverse()
@@ -55,9 +63,11 @@ export default function SectLadder({
                 aria-disabled={open ? undefined : 'true'}
                 onClick={() => open && onSelect?.(rung.room)}
               >
-                <span className="sect-ladder__cap">
-                  {rung.capUsd === 0 ? '—' : `$${rung.capUsd.toFixed(2)}`}
-                </span>
+                {hideCaps
+                  ? null
+                  : <span className="sect-ladder__cap">
+                      {rung.capUsd === 0 ? '—' : `$${rung.capUsd.toFixed(2)}`}
+                    </span>}
                 <span className="sect-ladder__node" aria-hidden="true" />
                 <span className="sect-ladder__cn">{rung.hall.cn}</span>
                 <span className="sect-ladder__en">{rung.hall.en}</span>
