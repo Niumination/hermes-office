@@ -17,6 +17,19 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Run every gate the way the runner will run it.
+#
+# GitHub Actions sets CI=true, and that one variable changes what the tools
+# underneath print: picocolors — which vitest ships — switches ANSI on when
+# CI is set, with no terminal attached. A gate that parses a runner's output
+# therefore behaved differently here than there. The doc-claims gate was
+# green on every developer machine and red on the runner, which is the only
+# place the answer counted, and this script reported the wrong answer with
+# complete confidence. Exporting CI here makes "green locally" and "green in
+# CI" answers to the same question. An outer CI value wins, so the runner
+# stays authoritative over this line.
+export CI="${CI:-true}"
+
 FAST=0
 [[ "${1:-}" == "--fast" ]] && FAST=1
 
