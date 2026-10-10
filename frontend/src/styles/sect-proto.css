@@ -1,0 +1,366 @@
+@layer tokens, base, ladder, stage, rail, motion;
+
+@property --qi    { syntax:'<number>'; inherits:true;  initial-value:0; }
+@property --sweep { syntax:'<angle>';  inherits:false; initial-value:0deg; }
+@property --lift  { syntax:'<number>'; inherits:false; initial-value:0; }
+
+@layer tokens {
+  :root{
+    color-scheme: dark;
+    --s-cultivator: url("/sprites/donghua/cultivator-front-left.webp");
+    --s-weaver: url("/sprites/donghua/weaver-front-left.webp");
+    --s-forge: url("/sprites/donghua/forge-front-left.webp");
+    --s-guardian: url("/sprites/donghua/guardian-front-left.webp");
+    --s-scholar: url("/sprites/donghua/scholar-front-left.webp");
+    --s-alchemist: url("/sprites/donghua/alchemist-front-left.webp");
+    --s-physician: url("/sprites/donghua/physician-front-left.webp");
+    --s-elder: url("/sprites/donghua/elder-front-left.webp");
+    --p-shanmen: url("/rooms/sect/lobby.webp");
+    --p-xiulian: url("/rooms/sect/main-office.webp");
+    --p-zhenfa: url("/rooms/sect/server-room.webp");
+    --p-zhangmen: url("/rooms/sect/ceo-office.webp");
+
+    /* Elevation ladder. Five steps, never pure black — and here it is literal:
+       higher surface = higher up the mountain. */
+    --s0: oklch(13.5% 0.020 262);
+    --s1: oklch(17.5% 0.024 262);
+    --s2: oklch(21.5% 0.028 260);
+    --s3: oklch(26.5% 0.032 258);
+    --s4: oklch(32.5% 0.036 256);
+
+    --ink:   oklch(96% 0.014 95);
+    --ink-2: oklch(76% 0.020 95);
+    --ink-3: oklch(58% 0.022 95);
+
+    --jade:     oklch(74% 0.145 168);
+    --gold:     oklch(83% 0.140  86);
+    --cinnabar: oklch(63% 0.195  28);
+    --deviate:  oklch(59% 0.235 332);
+    --bone:     oklch(92% 0.022  92);
+    --bamboo:   oklch(27% 0.030  95);
+
+    --qi-0: var(--jade);
+    --qi-1: color-mix(in oklch, var(--jade) 55%, var(--gold));
+    --qi-2: var(--gold);
+    --qi-3: var(--cinnabar);
+    --qi-4: var(--deviate);
+
+    --r-s:9px; --r-m:14px; --r-l:20px;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --han: "Noto Serif SC","Songti SC","SimSun","Source Han Serif SC", ui-serif, serif;
+  }
+  /* One derived ladder, used by every qi-bearing element. */
+  [style*="--qi"], .sect-qi-scope{
+    --qi-col: color-mix(in oklch,
+       color-mix(in oklch, var(--qi-0), var(--qi-2) calc(clamp(0,var(--qi),2) * 50%)),
+       color-mix(in oklch, var(--qi-2), var(--qi-4) calc(clamp(0,calc(var(--qi) - 2),2) * 50%))
+       calc(clamp(0, calc(var(--qi) - 1.999), 1) * 100%));
+  }
+}
+
+@layer base {
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family:var(--font); color:var(--ink);
+    background:
+      radial-gradient(140% 100% at 50% -20%, oklch(23% 0.045 258) 0%, transparent 62%),
+      var(--s0);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{margin:0;font-weight:620;letter-spacing:-.012em}
+  .han{font-family:var(--han)}
+
+  .sect-shell{min-height:100%;display:grid;grid-template-rows:auto 1fr auto;gap:12px;
+    padding:12px;max-width:1620px;margin-inline:auto}
+
+  /* Glass only on floating chrome. Never on the halls themselves. */
+  .sect-glass{
+    background:color-mix(in oklch,var(--s2) 74%,transparent);
+    backdrop-filter:blur(13px) saturate(1.25);
+    border:1px solid color-mix(in oklch,var(--bone) 13%,transparent);
+    border-radius:var(--r-m);
+    box-shadow:0 1px 0 color-mix(in oklch,var(--bone) 9%,transparent) inset,
+               0 18px 46px -26px oklch(0% 0 0/.92);
+  }
+
+  header.sect-bar{display:flex;align-items:center;gap:12px;padding:9px 13px}
+  .sect-seal2{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;
+    font-family:var(--han);font-size:19px;font-weight:700;
+    color:oklch(20% .04 40);
+    background:linear-gradient(150deg,var(--cinnabar),oklch(from var(--cinnabar) calc(l - .18) c h));
+    box-shadow:0 0 0 1px color-mix(in oklch,var(--gold) 45%,transparent),
+               0 0 20px -6px var(--cinnabar)}
+  .sect-bar h1{font-size:14.5px}
+  .sect-bar h1 .han{font-size:16px;margin-right:5px}
+  .sect-bar p{margin:1px 0 0;font-size:11px;color:var(--ink-3)}
+  .sect-bar .sect-grow{margin-right:auto}
+
+  .sect-seg{display:flex;gap:3px;padding:3px;border-radius:10px;
+    background:color-mix(in oklch,var(--s1) 78%,transparent);
+    border:1px solid color-mix(in oklch,var(--bone) 10%,transparent)}
+  .sect-seg button{font:inherit;font-size:12px;color:var(--ink-2);cursor:pointer;background:none;
+    border:0;padding:6px 11px;border-radius:7px;transition:.16s;font-family:var(--han)}
+  .sect-seg button[aria-pressed=true]{background:var(--s3);color:var(--ink);
+    box-shadow:0 0 0 1px color-mix(in oklch,var(--gold) 26%,transparent)}
+
+  main{display:grid;grid-template-columns:116px minmax(0,1fr) 336px;gap:12px;align-items:start}
+  @media (max-width:1180px){ main{grid-template-columns:104px minmax(0,1fr)} .sect-rail{grid-column:1/-1} }
+  @media (max-width:760px){ main{grid-template-columns:1fr} .sect-ladder2{display:none} }
+}
+
+/* ───────────────────────── the mountain = the policy ──────────────────── */
+@layer ladder {
+  .sect-ladder2{position:relative;display:grid;gap:0;padding:14px 8px;align-content:start}
+  /* the mountain path */
+  .sect-ladder2::before{content:'';position:absolute;left:50%;top:26px;bottom:26px;width:2px;
+    translate:-50% 0;border-radius:2px;
+    background:linear-gradient(var(--gold),color-mix(in oklch,var(--jade) 60%,transparent),var(--s3))}
+  .sect-rung{position:relative;display:grid;justify-items:center;gap:3px;padding:11px 2px;
+    background:none;border:0;cursor:pointer;font:inherit;color:var(--ink-3);
+    transition:color .18s}
+  .sect-rung__cap{font-size:10px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .sect-rung__node{width:15px;height:15px;rotate:45deg;border-radius:3px;background:var(--s3);
+    border:1.5px solid color-mix(in oklch,var(--bone) 24%,transparent);
+    transition:background .25s,box-shadow .25s,scale .25s;position:relative;z-index:1}
+  .sect-rung__cn{font-family:var(--han);font-size:13px;color:var(--ink-2)}
+  .sect-rung__band{font-size:9.5px;opacity:.75}
+  .sect-rung__lock{display:none;font-family:var(--han);font-size:10px;color:var(--cinnabar)}
+  .sect-rung:hover{color:var(--ink-2)} .sect-rung:hover .sect-rung__node{scale:1.15}
+  .sect-rung[aria-current=true] .sect-rung__node{background:var(--gold);border-color:var(--gold);
+    box-shadow:0 0 18px -2px var(--gold)}
+  .sect-rung[aria-current=true] .sect-rung__cn{color:var(--gold)}
+  .sect-rung[data-locked] .sect-rung__node{background:var(--s1);border-style:dashed;
+    border-color:color-mix(in oklch,var(--cinnabar) 50%,transparent);box-shadow:none}
+  .sect-rung[data-locked] .sect-rung__cn{color:var(--ink-3);opacity:.55}
+  .sect-rung[data-locked] .sect-rung__lock{display:block}
+  .sect-rung[data-locked]{cursor:not-allowed}
+}
+
+@layer stage {
+  .sect-stage{position:relative;border-radius:var(--r-l);overflow:hidden;isolation:isolate;
+    aspect-ratio:4/3;background:var(--s1);view-transition-name:stage;
+    border:1px solid color-mix(in oklch,var(--bone) 10%,transparent);
+    container-type:size;container-name:stage}
+  .sect-hall{position:absolute;inset:0}
+  .sect-hall[hidden]{display:none}
+  /* The plate is the master copy. We light it; we never repaint it. */
+  .sect-hall__plate{position:absolute;inset:0;background:var(--plate) center/cover no-repeat;
+    filter:saturate(.95) brightness(.84) contrast(1.05)}
+  .sect-hall__grade{position:absolute;inset:0;pointer-events:none;mix-blend-mode:soft-light;
+    background:radial-gradient(72% 56% at 16% 6%, oklch(80% .10 230/.52), transparent 70%),
+               radial-gradient(92% 72% at 60% 110%, oklch(74% .12 62/.38), transparent 70%)}
+  .sect-hall__vig{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(122% 96% at 50% 42%, transparent 50%, oklch(7% .02 262/.74) 100%)}
+  .sect-hall__ink{position:absolute;inset:-12%;pointer-events:none;opacity:.12;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/><feColorMatrix type='saturate' values='0'/></filter><rect width='300' height='300' filter='url(%23f)'/></svg>")}
+  /* cloud sea — the altitude cue, drifting slowly */
+  .sect-hall__clouds{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .sect-hall__clouds i{position:absolute;left:-30%;right:-30%;height:34%;
+    background:radial-gradient(60% 100% at 30% 60%, oklch(92% .02 240/.26), transparent 72%),
+               radial-gradient(50% 100% at 72% 45%, oklch(88% .02 230/.20), transparent 70%);
+    filter:blur(9px)}
+  .sect-hall__clouds i:nth-child(1){bottom:-6%;animation:drift 44s linear infinite}
+  .sect-hall__clouds i:nth-child(2){bottom:8%;opacity:.5;animation:drift 72s linear infinite reverse}
+  @keyframes drift{to{transform:translateX(22%)}}
+
+  .sect-hall__seal{position:absolute;left:14px;top:13px;display:grid;gap:1px;padding:7px 12px;
+    border-radius:var(--r-s);background:color-mix(in oklch,var(--s0) 62%,transparent);
+    backdrop-filter:blur(8px);
+    border:1px solid color-mix(in oklch,var(--gold) 28%,transparent)}
+  .sect-hall__seal b{font-family:var(--han);font-size:17px;color:var(--bone);letter-spacing:.06em}
+  .sect-hall__seal span{font-size:10px;color:var(--ink-3)}
+
+  /* 雲深不知處 — a hall above your realm is not dimmed, it is not revealed.
+     This is the kiosk downgrading itself, drawn. */
+  .sect-hall__fog{position:absolute;inset:0;display:none;place-items:center;
+    background:color-mix(in oklch,var(--s0) 58%,transparent);
+    backdrop-filter:blur(17px) saturate(.55)}
+  .sect-hall[data-locked] .sect-hall__fog{display:grid}
+  .sect-hall[data-locked] .sect-agent{display:none}
+  .sect-hall__fog span{display:grid;gap:4px;justify-items:center;font-family:var(--han);
+    font-size:20px;color:var(--bone);letter-spacing:.22em;text-shadow:0 2px 20px oklch(0% 0 0/.8)}
+  .sect-hall__fog small{font-family:var(--font);font-size:10.5px;letter-spacing:.12em;
+    color:var(--ink-3);text-transform:uppercase}
+
+  .sect-agent{position:absolute;left:var(--x);top:var(--y);translate:-50% -100%;scale:var(--sc);
+    transform-origin:50% 100%;background:none;border:0;padding:0;cursor:pointer;z-index:2;
+    transition:scale .22s}
+  .sect-agent__art{display:block;height:clamp(84px,21cqh,172px);aspect-ratio:var(--ar);
+    background:var(--sprite) center bottom/contain no-repeat;
+    filter:drop-shadow(0 3px 11px oklch(0% 0 0/.6))}
+  /* aura = burn ratio, on two channels: radius AND hue. Colour alone would
+     fail every colour-blind reviewer. */
+  .sect-agent__aura{position:absolute;left:50%;bottom:-9px;translate:-50% 0;
+    width:calc(50px + var(--qi) * 25px);aspect-ratio:1/.4;border-radius:50%;
+    background:radial-gradient(closest-side,
+      color-mix(in oklch,var(--qi-col) 88%,transparent), transparent 72%);
+    opacity:calc(.2 + var(--qi) * .19);filter:blur(calc(2px + var(--qi) * 2px));
+    transition:width .5s,opacity .5s}
+  .sect-agent[style*="--qi:4"] .sect-agent__aura{animation:deviate 1.5s ease-in-out infinite}
+  @keyframes deviate{50%{opacity:.95;filter:blur(7px)}}
+  .sect-agent:hover{scale:calc(var(--sc) * 1.05)}
+  .sect-agent:hover .sect-agent__art{filter:drop-shadow(0 0 13px var(--qi-col)) drop-shadow(0 3px 11px oklch(0% 0 0/.6))}
+  .sect-agent__tag{position:absolute;left:50%;top:-6px;translate:-50% -100%;display:grid;gap:1px;
+    padding:5px 9px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .18s,translate .18s;
+    background:color-mix(in oklch,var(--s0) 80%,transparent);backdrop-filter:blur(7px);
+    border:1px solid color-mix(in oklch,var(--qi-col) 40%,transparent);
+    font-size:10px;color:var(--ink-3);line-height:1.3}
+  .sect-agent__tag b{display:block;font-family:var(--han);font-size:13px;color:var(--bone);font-weight:600}
+  .sect-agent:hover .sect-agent__tag,.sect-agent:focus-visible .sect-agent__tag{opacity:1;translate:-50% -108%}
+  @container stage (max-width:520px){ .sect-agent__tag{display:none} }
+
+  .sect-dossier{margin:0;inset:auto;border:0;padding:13px;width:282px;color:var(--ink);
+    background:color-mix(in oklch,var(--s2) 90%,transparent);
+    backdrop-filter:blur(19px) saturate(1.3);
+    border:1px solid color-mix(in oklch,var(--gold) 22%,transparent);border-radius:var(--r-m);
+    box-shadow:0 26px 62px -28px oklch(0% 0 0/.95)}
+  .sect-dossier::backdrop{background:oklch(7% .02 262/.34)}
+  @supports (anchor-name:--x){
+    .sect-dossier{position-anchor:var(--anchor);position-area:top center;margin-bottom:11px;
+      position-try-fallbacks:flip-block,flip-inline,block-start span-inline-end}
+  }
+  @supports not (anchor-name:--x){ .sect-dossier{position:fixed;right:16px;bottom:16px} }
+  @starting-style{ .sect-dossier:popover-open{opacity:0;translate:0 7px} }
+  .sect-dossier:popover-open{opacity:1;translate:0 0;
+    transition:opacity .19s,translate .19s,display .19s allow-discrete}
+  .sect-dossier header{display:flex;gap:10px;align-items:center;margin-bottom:9px}
+  .sect-dossier__art{height:46px;aspect-ratio:var(--ar);flex:none;
+    background:var(--sprite) center/contain no-repeat}
+  .sect-dossier h4{font-family:var(--han);font-size:15px}
+  .sect-dossier h4 small{font-family:var(--font);font-size:10px;color:var(--ink-3);font-weight:400}
+  .sect-dossier header p{margin:2px 0 0;font-size:11px;color:var(--ink-3)}
+  .sect-dossier dl{display:grid;gap:6px;margin:0 0 9px}
+  .sect-dossier dl div{display:flex;justify-content:space-between;gap:10px;font-size:11.5px}
+  .sect-dossier dt{color:var(--ink-3)} .sect-dossier dd{margin:0;text-align:right}
+  .sect-dossier .sect-qi-text{color:var(--qi-col);font-weight:600}
+  .sect-dossier__note{margin:0;font-size:10.5px;line-height:1.55;color:var(--ink-3);
+    border-top:1px solid color-mix(in oklch,var(--bone) 10%,transparent);padding-top:8px}
+  #zhangmen-0 { anchor-name: --an-zhangmen-0; }
+  #zhenfa-0 { anchor-name: --an-zhenfa-0; }
+  #zhenfa-1 { anchor-name: --an-zhenfa-1; }
+  #xiulian-0 { anchor-name: --an-xiulian-0; }
+  #xiulian-1 { anchor-name: --an-xiulian-1; }
+  #xiulian-2 { anchor-name: --an-xiulian-2; }
+  #shanmen-0 { anchor-name: --an-shanmen-0; }
+  #shanmen-1 { anchor-name: --an-shanmen-1; }
+
+}
+
+/* ───────────────── the rail is a 竹簡 bamboo-slip scroll ──────────────── */
+@layer rail {
+  .sect-rail{display:grid;gap:12px;align-content:start}
+  .sect-slip{position:relative;padding:13px 14px;border-radius:var(--r-m);
+    background:
+      repeating-linear-gradient(90deg,
+        color-mix(in oklch,var(--bamboo) 70%,transparent) 0 26px,
+        color-mix(in oklch,var(--bamboo) 55%,transparent) 26px 27px),
+      color-mix(in oklch,var(--s1) 86%,transparent);
+    border:1px solid color-mix(in oklch,var(--gold) 17%,transparent);
+    box-shadow:0 14px 38px -26px oklch(0% 0 0/.9)}
+  /* the silk cord binding the slips */
+  .sect-slip::before,.sect-slip::after{content:'';position:absolute;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent,color-mix(in oklch,var(--gold) 38%,transparent),transparent)}
+  .sect-slip::before{top:7px} .sect-slip::after{bottom:7px}
+  .sect-slip > h3{font-size:11.5px;letter-spacing:.07em;color:var(--ink-3);margin-bottom:11px;
+    display:flex;justify-content:space-between;align-items:baseline}
+  .sect-slip > h3 b{font-family:var(--han);font-size:14px;color:var(--bone);letter-spacing:.1em;font-weight:600}
+
+  /* 陣法 — the formation ring. Reads as a cultivation array, works as a gauge. */
+  .sect-array{display:grid;grid-template-columns:118px 1fr;gap:13px;align-items:center}
+  .sect-ring{position:relative;width:118px;aspect-ratio:1;display:grid;place-items:center}
+  .sect-ring__disc{position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from -90deg,
+      var(--qi-col) calc(var(--qi) / 4 * 360deg), color-mix(in oklch,var(--s3) 80%,transparent) 0);
+    mask:radial-gradient(closest-side,transparent 70%,#000 71%);
+    transition:background .45s}
+  .sect-ring__glyphs{position:absolute;inset:9px;border-radius:50%;
+    border:1px dashed color-mix(in oklch,var(--gold) 30%,transparent);
+    animation:spin 34s linear infinite}
+  .sect-ring__glyphs::before{content:'';position:absolute;inset:11px;border-radius:50%;
+    border:1px solid color-mix(in oklch,var(--jade) 22%,transparent)}
+  .sect-ring__halo{position:absolute;inset:-6px;border-radius:50%;
+    background:radial-gradient(closest-side,transparent 62%,
+      color-mix(in oklch,var(--qi-col) 30%,transparent) 78%,transparent 90%);
+    filter:blur(5px);opacity:calc(.25 + var(--qi) * .18)}
+  @keyframes spin{to{rotate:360deg}}
+  .sect-ring__read{position:relative;display:grid;justify-items:center;gap:0}
+  .sect-ring__read b{font-size:24px;font-weight:680;letter-spacing:-.03em;color:var(--qi-col);
+    font-variant-numeric:tabular-nums;text-shadow:0 0 22px color-mix(in oklch,var(--qi-col) 50%,transparent)}
+  .sect-ring__read small{font-size:9.5px;color:var(--ink-3);letter-spacing:.08em}
+  .sect-array__meta{display:grid;gap:7px}
+  .sect-array__state{font-family:var(--han);font-size:15px;color:var(--qi-col)}
+  .sect-array__sub{font-size:10.5px;color:var(--ink-3);line-height:1.5}
+  input[type=range]{width:100%;accent-color:var(--qi-col)}
+
+  .sect-roster{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+  .sect-rrow{display:grid;grid-template-columns:28px 1fr auto 8px;align-items:center;gap:9px;
+    padding:5px 6px;border-radius:8px;cursor:pointer;transition:background .15s}
+  .sect-rrow:hover,.sect-rrow:focus-visible{background:color-mix(in oklch,var(--s3) 62%,transparent);outline:none}
+  .sect-rrow__art{height:26px;aspect-ratio:var(--ar);justify-self:center;
+    background:var(--sprite) center/contain no-repeat}
+  .sect-rrow__name b{font-family:var(--han);font-size:12.5px;font-weight:600;color:var(--ink)}
+  .sect-rrow__name small{display:block;font-size:9.5px;color:var(--ink-3)}
+  .sect-rrow__hall{font-family:var(--han);font-size:10.5px;color:var(--ink-3)}
+  .sect-rrow__qi{width:8px;height:8px;border-radius:50%;background:var(--qi-col);
+    box-shadow:0 0 9px var(--qi-col)}
+
+  /* 功過簿 merit-and-demerit register. Scroll-driven: the bar IS the scroll. */
+  .sect-slip:has(.sect-lscroll){ timeline-scope:--led }
+  .sect-ltrack{height:3px;border-radius:99px;background:var(--s3);overflow:hidden;margin-bottom:8px}
+  .sect-lfill{height:100%;transform-origin:left;transform:scaleX(0);
+    background:linear-gradient(90deg,var(--jade),var(--gold));
+    animation:scrub linear both;animation-timeline:--led}
+  @keyframes scrub{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  .sect-lscroll{max-height:150px;overflow-y:auto;scroll-timeline:--led block;display:grid;gap:1px;
+    scrollbar-width:thin}
+  .sect-lrow{display:grid;grid-template-columns:48px 1fr auto;gap:8px;font-size:10.5px;
+    padding:5px 6px;border-radius:6px;color:var(--ink-2);border-left:2px solid var(--qi-col)}
+  .sect-lrow:nth-child(odd){background:color-mix(in oklch,var(--s0) 42%,transparent)}
+  .sect-lrow code{color:var(--ink-3);font-size:9.5px}
+  .sect-lrow b{font-weight:540;color:var(--ink)}
+
+  .sect-caps{display:grid;gap:4px;margin:0;padding:0}
+  .sect-caps li{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--ink-2);list-style:none}
+  .sect-caps .mark{width:14px;height:14px;border-radius:4px;display:grid;place-items:center;
+    font-size:8.5px;font-weight:800;flex:none}
+  .sect-caps .yes{background:color-mix(in oklch,var(--jade) 24%,transparent);color:var(--jade)}
+  .sect-caps .no{background:color-mix(in oklch,var(--cinnabar) 20%,transparent);color:var(--cinnabar)}
+}
+
+@layer motion {
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001ms !important;transition-duration:.001ms !important}
+  }
+  /* ink-wash wipe between halls */
+  ::view-transition-old(stage){animation:ink-out .3s ease both}
+  ::view-transition-new(stage){animation:ink-in .5s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes ink-out{to{opacity:0;filter:blur(9px) saturate(.5);scale:1.012}}
+  @keyframes ink-in{from{opacity:0;filter:blur(13px);clip-path:inset(0 0 100% 0)}
+                    to{opacity:1;filter:blur(0);clip-path:inset(0 0 0 0)}}
+}
+
+footer.sect-note{font-size:10.5px;color:var(--ink-3);padding:3px 6px 9px;line-height:1.65}
+footer.sect-note b{color:var(--ink-2);font-weight:600}
+/* Screen-reader only untuk teks kunci aula terkunci */
+.sect-rung__sr {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Tangga proto memakai grid ke bawah; .sect-ladder2 sudah grid, pastikan */
+.sect-ladder2 {
+  position: relative;
+  display: grid;
+  gap: 0;
+  padding: 14px 8px;
+  align-content: start;
+}
+
+/* Aula terkunci: sembunyikan agen */
+.sect-stage[data-locked] .sect-agent { display: none; }
