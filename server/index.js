@@ -1019,6 +1019,7 @@ if (existsSync(DIST)) {
   // Hashed Vite bundles are immutable; art is long-lived but replaceable.
   app.use(
     express.static(DIST, {
+      fallthrough: true,
       setHeaders(res, path) {
         if (path.includes(`${sep}assets${sep}`)) {
           res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
@@ -1033,11 +1034,11 @@ if (existsSync(DIST)) {
 
   // SPA catch-all. Asset namespaces are excluded so a missing sprite returns a
   // real 404 instead of 200 + index.html (which silently breaks <img> debugging).
+  // app.use is used instead of app.get("*splat") because Express 5's
+  // path-to-regexp 8 changed catch-all semantics.
   const ASSET_NS = /^\/(sprites|rooms|assets)\//;
-  // Express 5 dropped RegExp routes and its sendFile() no longer resolves a
-  // bare absolute path (NotFoundError on an existing file). "*splat" is the
-  // path-to-regexp 8 catch-all; { root } is the form that still works.
-  app.get("*splat", (req, res) => {
+  app.use((req, res, next) => {
+    if (req.method !== "GET") return next();
     if (ASSET_NS.test(req.path)) return res.status(404).type("txt").send("Tidak ditemukan");
     res.setHeader("Cache-Control", "no-cache");
     res.sendFile("index.html", { root: DIST });
