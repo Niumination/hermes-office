@@ -56,7 +56,7 @@ jobs:
       matrix:
         node: ['22', '24']
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -106,6 +106,35 @@ jobs:
       - name: CI workflow matches its canonical source
         run: bash scripts/check-ci.sh
 
+      # A hash chain is the kind of structure that passes a single-threaded
+      # benchmark and comes apart under concurrency, because every append
+      # depends on the previous one's hash. This boots the real server, puts
+      # 400 concurrent decisions through it, and asserts the chain is still
+      # contiguous and verifiable. Integrity only — the throughput it prints
+      # is a property of the runner and nothing depends on it.
+      - name: Ledger survives concurrent clients
+        run: node scripts/bench-ledger.mjs --check
+
+      # The SBOM is rebuilt from the lockfiles and compared byte-for-byte, so
+      # a dependency change that forgets to regenerate it turns the build red
+      # instead of leaving an authoritative-looking file describing a tree
+      # that no longer exists. The generator writes no timestamp, which is
+      # what makes a comparison possible at all.
+      - name: SBOM matches the lockfiles
+        if: matrix.node == '22'
+        run: python3 scripts/make-sbom.py --check
+
+      # Uploaded on every run, not only on tags: an enterprise reviewer asking
+      # "what is in this build" should be able to answer it for the commit in
+      # front of them, not only for whatever was last released.
+      - name: Publish SBOM
+        if: matrix.node == '22'
+        uses: actions/upload-artifact@v5
+        with:
+          name: sbom-cyclonedx
+          path: sbom.cdx.json
+          if-no-files-found: error
+
       # check-plates.py and check-sprites.py both need Pillow. Without this
       # step they fail on a fresh runner with ModuleNotFoundError — the asset
       # gates were added without it and would have been red on arrival, the
@@ -114,7 +143,7 @@ jobs:
       # both legs, so they run once. check-docs is NOT gated this way: it
       # executes the test runners, and running it on both legs is what
       # catches a runtime that changes their output.
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         if: matrix.node == '22'
         with:
           python-version: "3.12"
@@ -163,7 +192,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -197,7 +226,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v6
         with:
@@ -230,7 +259,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # The repo once defaulted to one developer's Tailscale addresses and
       # GitHub account, so a fresh install would quietly talk to machines the

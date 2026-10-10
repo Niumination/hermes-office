@@ -24,15 +24,18 @@ THE THREE POPULATIONS
   unsourced — no original recorded. These have never been through the pipeline.
               Only their hashes protect them, exactly like room plates.
 
-That last group is not a rounding error: 150 of 250 shipped sprites are in it,
-including every character. The script's own docstring described styling "108
-sprites: 27 characters x 4 facings" — office/characters holds exactly 108 files
-and not one of them has ever passed through the filter. The backup ledger makes
-this airtight: the pipeline copies every file it touches before touching it,
-and it has never copied a character. A manifest that quietly lumped those in
-with the reproducible ones would be the same kind of unexecuted claim this
-repo keeps tripping over, so the three groups are counted separately and the
-unsourced ones are named as such.
+That last group used to be the embarrassing one: 150 of 282 shipped sprites
+were unsourced, including every character of the legacy cast. They were deleted
+on 2026-10-10 — 108 under office/characters were recognisable likenesses from a
+television series, 42 more under characters/, and nothing in frontend/src had
+rendered any of them since the donghua archetypes landed.
+
+So `unsourced` is now zero, and that is the point of still counting it. The
+category stays in the manifest and in the provenance table precisely because a
+future sprite dropped into public/ without an original would land there, and a
+zero is the only number a reader can check at a glance. Every one of the 132
+sprites this repo ships can be rebuilt from a committed source: 100 derived
+from art/originals/sprites, 32 built from the 16 renders in art/donghua-cast.
 
 USAGE
     python3 scripts/check-sprites.py              # verify hashes + provenance

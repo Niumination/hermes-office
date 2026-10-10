@@ -24,7 +24,18 @@ PUBLIC="frontend/public"
 
 [ -f "$MANIFEST" ] || { echo "FAIL: $MANIFEST missing"; exit 1; }
 
+# An asset can leave this repo for exactly two reasons, and they must not look
+# alike. Dropped by a pipeline = the defect this script exists to catch.
+# Deleted on purpose = a decision, which belongs in the manifest with its
+# reasoning, the way `corrections` already records deliberate edits.
+#
+# So `removals` entries are expected to be absent, and the expectation is
+# symmetric: if a removed asset reappears, that is a failure too. The 150
+# legacy cast sprites were deleted for IP exposure on 2026-10-10, and a file
+# restored from git history would otherwise slip back in silently — it matches
+# its own hash, so no other gate would notice.
 missing=0
+returned=0
 while IFS= read -r rel; do
   stem="${rel%.*}"
   # Accept the asset under any image extension.
@@ -35,12 +46,37 @@ while IFS= read -r rel; do
 done < <(python3 -c "
 import json,sys
 m=json.load(open('$MANIFEST'))
-for a in m['assets']: print(a['path'])
+gone={p for r in m.get('removals',[]) for p in r['paths']}
+for a in m['assets']:
+    if a['path'] not in gone: print(a['path'])
+")
+
+while IFS= read -r rel; do
+  stem="${rel%.*}"
+  if compgen -G "$PUBLIC/$stem".* > /dev/null; then
+    echo "  RETURNED: $rel — recorded as deliberately removed, but present"
+    returned=$((returned + 1))
+  fi
+done < <(python3 -c "
+import json,sys
+m=json.load(open('$MANIFEST'))
+for r in m.get('removals',[]):
+    for p in r['paths']: print(p)
 ")
 
 total=$(python3 -c "import json;print(json.load(open('$MANIFEST'))['count'])")
-if [ "$missing" -gt 0 ]; then
-  echo "FAIL: $missing of $total upstream assets are not present in $PUBLIC"
+gone=$(python3 -c "
+import json
+m=json.load(open('$MANIFEST'))
+print(sum(len(r['paths']) for r in m.get('removals',[])))
+")
+expected=$((total - gone))
+
+if [ "$missing" -gt 0 ] || [ "$returned" -gt 0 ]; then
+  [ "$missing" -gt 0 ] && \
+    echo "FAIL: $missing of $expected expected upstream assets are not present in $PUBLIC"
+  [ "$returned" -gt 0 ] && \
+    echo "FAIL: $returned deliberately removed asset(s) are back in $PUBLIC — see 'removals' in $MANIFEST for why they went"
   exit 1
 fi
-echo "PASS: all $total upstream assets accounted for"
+echo "PASS: all $expected expected upstream assets accounted for ($gone deliberately removed, recorded in $MANIFEST)"

@@ -21,8 +21,8 @@ export interface AgentRow {
 const CAST_META: Record<string, { icon: string; label: string }> = {
   'cloud': { icon: '☁️', label: 'Hermes Cloud' },
   'mac': { icon: '💻', label: 'Hermes Mac' },
-  'boss': { icon: '👑', label: 'Boss' },
-  'cron-runner': { icon: '⏰', label: 'Cron Runner' },
+  'boss': { icon: '👑', label: 'Bos' },
+  'cron-runner': { icon: '⏰', label: 'Jalan Cron' },
   'octo': { icon: '🐙', label: 'Octo' },
 }
 
@@ -122,7 +122,7 @@ export const AgentsPanel: React.FC<Props> = ({ events }) => {
 
   return (
     <div className="agents-panel" data-testid="agents-panel">
-      <div className="agents-panel-title">AGENTS</div>
+      <div className="agents-panel-title">AGEN</div>
       <div className="agents-list">
         {roster.map(row => (
           <div
@@ -142,11 +142,11 @@ export const AgentsPanel: React.FC<Props> = ({ events }) => {
           <div className="agents-detail-sub">
             status: {roster.find(r => r.name === selected)?.state ?? 'idle'}
             {roster.find(r => r.name === selected)?.uptimeH != null &&
-              ` · uptime ${roster.find(r => r.name === selected)!.uptimeH!.toFixed(1)}h`}
+              ` · aktif ${roster.find(r => r.name === selected)!.uptimeH!.toFixed(1)}j`}
           </div>
           <div className="agents-detail-events">
             {selectedEvents.length === 0
-              ? <div className="agents-detail-empty">no recent events</div>
+              ? <div className="agents-detail-empty">belum ada aktivitas</div>
               : selectedEvents.map((e, i) => (
                   <div key={i} className="agents-detail-event">
                     <span className="agents-detail-type">{e.type}</span>

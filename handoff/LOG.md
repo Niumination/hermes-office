@@ -878,3 +878,481 @@ bundel                             →  216,57 kB JS / 46,98 kB CSS
 Urutan: **003 → 005 → 006 → 007 → [tarball 008] → 008 → [tarball 009] → 009
 → 010**. Jangan 004. Patch 010 murni teks, tidak ada tarball.
 Balas sebagai entri **003** — masih saya sisakan.
+
+---
+
+## 010 — Arena — angka utama di README meleset 38%, dan tidak ada yang memeriksanya
+
+Entri ini dibuka dengan pengakuan. Diagnosis saya sebelumnya — *"pekerjaan
+ada di `dev`, deploy menarik dari `main`, jadi situs tak mungkin
+berubah"* — **salah**. Rapi, masuk akal, dan salah. Begitu saya periksa
+bundel yang benar-benar dikirim ke browser, patch 003–010 sudah ada di
+sana. Pelajarannya saya catat supaya tidak terulang: ketika gejalanya
+"kode sudah diterapkan tapi tak muncul", **periksa artefak yang
+dilayani**, jangan menyimpulkan dari topologi branch.
+
+Pekerjaan Anda di `dev` juga melampaui serah-terima: i18n penuh,
+`SectLadder` terpasang, dan `957582f` yang memperbaiki rail untuk guest
+menutup item yang saya tinggalkan terbuka. `main` kini sumber kebenaran,
+CI berjalan di tiga branch, dan `DEPLOYMENT.md` bukan cuma diperbaiki
+tapi diberi alasan. Tidak ada yang perlu dibela di sana.
+
+### Yang saya temukan
+
+Dua hal, dan yang kedua lebih serius daripada yang pertama.
+
+**1. `frontend/dist` di server dibangun dari pohon tak ter-commit.**
+Bundel publik memuat class `sect-ladder2` dan `sect-glass`. Keduanya nol
+kemunculan di `main`, di `dev`, dan di salinan kerja saya. Bundel itu juga
+kehilangan `.sect-ladder__note`, tidak memuat string `policy` sama sekali
+padahal `policyClient.ts:113` memanggil `fetch('/policy')`, dan menyajikan
+`<title>Hermes Office</title>` padahal sumbernya `Kantor Hermes`. Artinya
+perbaikan guest `957582f` belum benar-benar hidup. Prosedurnya ada di
+`RUNBOOK-server-dist-kotor.md`; **FASE 0 menyelamatkan dulu, baru
+menimpa** — `sect-glass` mungkin pekerjaan nyata yang belum di-commit.
+
+**2. README menjanjikan bundel 216 kB; build bersih `4c8b4ca`
+menghasilkan 298,9 kB.** Meleset **+38%**, dan `check-docs.py` tidak
+memeriksanya — itulah sebabnya 92 klaim tetap hijau sementara angka
+paling menonjol di tabel justru salah.
+
+Ini bukan soal kosmetik. Ukuran bundel **adalah** keseluruhan ADR D3: kita
+menolak React Three Fiber dengan alasan ia memakan ~250 kB sementara kita
+mengirim +7,8 kB. Angka 216 kB yang tak diperiksa membuat argumen itu
+tetap bisa dikutip lama setelah ia berhenti benar. Untuk produk yang
+menjual keterverifikasian, klaim yang tidak diverifikasi di baris paling
+dibaca adalah kerusakan terburuk yang bisa terjadi.
+
+Uji mutasi juga memperlihatkan bahwa klaim CSS **43,7 kB sudah meleset 8%
+bahkan sebelum** enam major itu masuk. Jadi angka itu tidak pernah benar;
+ia hanya tidak pernah ditanya.
+
+### Yang saya kerjakan (patch 011)
+
+- **Gerbang baru di `check-docs.py`**: ukuran bundel dibaca dari
+  `frontend/dist/assets`, dibandingkan dengan kedua README, toleransi 3%
+  (cukup menyerap ketidakstabilan minifier, tidak cukup menyerap lompatan
+  major). Klaim 92 → **94**; angka swa-rujuk di lima berkas ikut naik.
+- **Dokumen diselaraskan dengan kode**, bukan sebaliknya: React 19 dicabut
+  dari daftar non-goal PRD §3.2 karena ia sudah masuk; R3F **tetap**
+  non-goal, dan ADR D3 kini menyandarkan diri pada alasan ukuran yang
+  memang tidak pernah bergantung pada versi React. `ARCHITECTURE.md` §7
+  mencatat terus-terang bahwa penghalang versinya gugur. Express 4 → 5 di
+  tiga berkas, React 18 → 19 di `CONTRIBUTING.md`.
+- `docs/LEGACY-README.md` **sengaja tidak disentuh** — ia arsip, dan
+  mengubahnya memalsukan sejarah. Begitu pula `CHANGELOG-v2.md` dan entri
+  lama di berkas ini.
+
+Kesalahan kedua yang layak dicatat: rancangan pertama gerbang ini
+mem-*skip* diri saat `frontend/dist` tidak ada. Itu akan menjatuhkan
+hitungan ke 92 sementara README mengklaim 94, dan larian mati dengan
+pesan *"this run checked 92"* — merah yang menyebut masalah yang salah,
+persis cacat yang file ini ada untuk mencegah. Sekarang ia menghitung
+tetap dan gagal dengan instruksi build.
+
+Diuji mutasi lima cara: angka JS dipalsukan (merah, menyebut +38%), baris
+dibuat tak terbaca (merah), `dist` dihapus (merah, tetap 94, menyebut
+perintahnya), CSS melenceng 8% (merah), lalu pulih (hijau 94).
+`verify.sh` **14/14**. Backend 305, frontend 170.
+
+### Permintaan
+
+1. Terapkan **patch 011** (`patch -p1`, murni teks, tanpa tarball).
+2. Jalankan `RUNBOOK-server-dist-kotor.md` — FASE 0 dulu.
+3. Pertimbangkan FASE 4 runbook: endpoint `/health` yang mengumumkan commit
+   SHA, dan penolakan deploy dari working tree kotor. Hari ini satu-satunya
+   bukti bahwa situs cocok dengan repo adalah menebak dari nama class di
+   bundel terminifikasi. Itu terlalu mahal untuk produk ini.
+4. Dua keputusan di `HANDOFF.md` §4 sudah diputuskan pemilik: **hapus 150
+   sprite cast lama** (risiko HKI) dan **pertahankan `art/`**. Saya kerjakan
+   berikutnya kecuali Anda sudah memulainya — beri tahu lewat entri 003.
+
+Entri **003** masih saya sisakan untuk Anda.
+
+---
+
+## 011 — Arena — 150 sprite dihapus, dan dua gerbang belajar membedakan "hilang" dari "dibuang"
+
+Pemilik memutuskan kedua item yang menggantung di `HANDOFF.md` §4:
+**hapus 150 sprite cast lama**, **pertahankan `art/`**. Keduanya sudah
+diterapkan. §4 ditulis ulang dari "dua keputusan yang sengaja tidak saya
+ambil" menjadi catatan keputusan yang sudah diambil.
+
+### Yang dihapus, dan kenapa itu bukan soal ukuran
+
+`frontend/public/sprites/office/characters` (108) dan
+`frontend/public/sprites/characters` (42). Ukuran memang turun — 7,9 MB →
+3,2 MB, 282 → 132 webp — tapi itu efek samping. Alasannya: 108 berkas itu
+rupa yang dapat dikenali dari sebuah serial televisi, di dalam produk
+berharga $2.000+. Nol dirujuk `frontend/src`; aplikasi memakai 8 arketipe
+donghua. Jalur mundur satu baris di `Character.tsx` memang nyata, tapi
+menahan paparan HKI sebagai harga sebuah opsi yang tak akan ditebus adalah
+pertukaran yang buruk.
+
+Hasil sampingan yang justru paling berharga untuk penjualan: **`unsourced`
+sekarang nol**. Seluruh 132 sprite yang dikirim bisa dibangun ulang dari
+sumber yang ter-commit — 100 `derived` dari `art/originals/sprites`, 32
+`built` dari 16 render di `art/donghua-cast`. Itu klaim yang jauh lebih
+kuat daripada "282 sprite, 132 di antaranya reproducible".
+
+### Dua gerbang tidak diturunkan angkanya — mereka diperkuat
+
+Menurunkan 282 → 132 dan 150 → 0 saja akan melewatkan intinya. Yang
+berubah adalah bentuk klaimnya.
+
+`check-docs.py` dulu memverifikasi bahwa **setiap** karakter tidak
+bersumber — ia menjaga agar prosa tentang sebuah celah tidak hidup lebih
+lama dari celahnya. Penggantinya: **nol sprite boleh tanpa sumber**, plus
+satu cek bahwa kedua direktori itu tidak muncul kembali. Jumlah klaim tetap
+**94** — sebelas cek masuk, sebelas keluar.
+
+`check-assets.sh` menolak kehilangan aset upstream. Tapi aset bisa pergi
+karena dua sebab yang tidak boleh terlihat sama: **jatuh dari pipeline**
+(cacat yang skrip ini ada untuk menangkap) dan **dibuang sengaja**
+(keputusan). `ASSET-MANIFEST.json` kini punya blok `removals` dengan
+alasan, efek yang diketahui, apa yang **tidak** ikut dihapus, dan apa yang
+**belum tuntas** — mengikuti pola `corrections` yang sudah ada. Harapannya
+simetris: aset yang tercatat dibuang dan ternyata **ada** juga merah.
+Berkas yang dipulihkan dari riwayat Git cocok dengan hash-nya sendiri, jadi
+tak satu pun gerbang lain akan menyadarinya.
+
+Diuji mutasi dua arah: menghapus aset upstream yang sah → `MISSING`;
+mengembalikan `andy-bernard-front-left` → `RETURNED`. Percobaan pertama
+saya keliru memilih korban dari `sprites/donghua/`, yang memang bukan aset
+upstream — tesnya yang salah sasaran, bukan gerbangnya.
+
+### Yang belum tuntas, dan harus dikatakan
+
+Repo ini **publik**. `git rm` tidak menghapus apa pun dari riwayat: ke-108
+rupa itu masih dapat diambil dari commit mana pun sebelum `4c8b4ca`. Ini
+menghentikan distribusi ke depan — **bukan** remediasi HKI yang selesai.
+Remediasi penuh menuntut `git filter-repo` dan paksa-dorong, yang memutus
+setiap klon dan setiap SHA yang pernah dikutip, termasuk di
+`MANIFEST.sha256`. Pertukaran itu milik pemilik, bukan milik saya.
+
+Satu sisa sengaja dibiarkan:
+`art/originals/sprites/office/props/schrute-buck.webp` dan sprite props
+turunannya. Serial yang sama, tapi benda, bukan rupa orang — dan ia punya
+sumber. Kalau standarnya diperketat ke "nol rujukan HKI", itu yang
+berikutnya.
+
+### Tiga klaim basi yang ikut ketahuan
+
+Bukan bagian dari tugas; ditemukan karena angkanya disentuh.
+
+- `AGENTS.md` menulis `art/` **5,2 MB**; sebenarnya **13 MB**.
+- `HANDOFF.md` menulis **87** doc claims; sebenarnya **94**.
+- `README` menulis bundel **216 kB**; sebenarnya **298,9 kB** (patch 011).
+
+Ketiganya tidak pernah diperiksa gerbang mana pun. Dua yang pertama kini
+dikoreksi; yang ketiga kini punya gerbang.
+
+`verify.sh` **14/14**. Backend 305, frontend 170. Pohon: 589 → **439**
+berkas.
+
+### Permintaan
+
+Patch 012 **tidak** memuat penghapusan berkas biner — `diff` tidak bisa
+membawanya. Terapkan dalam urutan ini:
+
+```bash
+git rm -r frontend/public/sprites/office/characters frontend/public/sprites/characters
+patch -p1 < 012-hapus-cast-lama.patch
+bash scripts/verify.sh          # harus 14/14
+```
+
+Kalau `verify.sh` merah di `handoff integrity`, jalankan
+`bash scripts/check-handoff.sh --write` **hanya setelah** 13 gerbang lain
+hijau — itu urutan yang dipaksakan skripnya sendiri, dan ada alasannya.
+
+---
+
+## 012 — verification as the product (patch 013)
+
+**Apply after 012. Order matters only in that 013 touches `scripts/verify.sh`
+and `package.json`, both of which 011/012 also touch.**
+
+```bash
+patch -p1 < 013-verifikasi-yang-bisa-dijual.patch
+bash scripts/verify.sh          # expect 14/14
+```
+
+Stage 3.1 of RENCANA-v3 asks for one thing: a buyer should be able to clone
+this repo, run a single command, and watch the claims prove themselves. That
+is now true, and it was not before.
+
+**What changed**
+
+- `package.json` gains `verify` and `verify:fast`. The gates existed; they
+  were reachable only as `bash scripts/verify.sh`, which is not a thing you
+  put on a pricing page.
+- `README.md` / `README.id.md` gain a **Verify it yourself** section: the
+  four commands, the measured runtime, and a table of all 14 gates with what
+  each one proves.
+- `docs/PRICING.md` / `.id.md` gain **Every number on this page is
+  executable**, placed immediately after the $2,000+ argument, because that
+  argument is the one that needs the evidence.
+- `scripts/verify.sh` gains a Node floor check before the install step.
+- `scripts/check-docs.py` gains 8 checks (94 → 102) binding the new sales
+  copy to the code.
+
+**The measurement, and the trap inside it**
+
+Measured from a clean tree, no `node_modules`, no `dist`, on 2 cores:
+`npm ci` 5 s, `npm run verify` 201 s — **206 s, about 3.5 minutes.** Inside
+the plan's five-minute budget.
+
+The first attempt at that measurement came back **5 of 14 red**: zero frontend
+tests, 56 backend failures, doc claims failing 7 of 94. I nearly wrote it up
+as a product defect — the headline claim failing on a clean clone. It was not.
+`/tmp` had been wiped mid-session, the Node 22 I had put there was gone, and
+the run had silently fallen back to the system Node 20. better-sqlite3 13 is
+a native addon built against a newer ABI; on Node 20 the backend suite does
+not fail, it **crashes**, and the surrounding gates then report numbers that
+are pure fiction.
+
+**That is why the Node floor check is in this patch.** A buyer on Node 20 was
+going to see exactly what I saw: a wall of red that looks like broken code
+and is actually a wrong runtime. Nobody reading that output would have filed
+a bug; they would have closed the tab. The check reads the floor from
+`engines.node` rather than hard-coding 22, so it cannot drift from the field
+it enforces, and it runs before `npm ci` so nothing expensive happens first.
+
+**Binding the new claims (the 8 checks)**
+
+A pricing page that boasts about executable claims and then misstates its own
+gate list is worse than one that never boasted, so the boast is itself under
+test:
+
+| Checks | What rots without it |
+|---|---|
+| 2 | `verify` / `verify:fast` renamed out of `package.json`, leaving every doc pointing at a command that does not exist |
+| 4 | the advertised gate count drifting from what `verify.sh` runs (4 docs) |
+| 2 | the README gate table going stale — compared **row for row and in order** against `verify.sh` |
+
+Mutation-tested four ways, all caught, all restored:
+
+1. delete `verify:fast` from `package.json` → *"the docs tell buyers to run
+   `npm run verify:fast`, but package.json has no "verify:fast" script"*
+2. delete a row from the README table → *"missing 'sprites (+rebuild)'"*
+3. add a gate to `verify.sh`, touch no docs → *"README.md advertises 14
+   gates; verify.sh runs 15"* (×2 files)
+4. swap two table rows → *"same gates in a different order"*
+
+Mutation 3 is the one worth keeping. The failure mode it covers is not a
+typo, it is the normal, well-intentioned act of adding a gate — the exact
+moment the sales copy silently stops being true.
+
+**Still not done**
+
+No CI badge. The plan asks for one and the workflow supports it, but a badge
+is a picture of a claim rather than a claim, and the section reads honestly
+without it. Worth adding when someone is next in `.github/`.
+
+---
+
+## 013 — enterprise review readiness (patch 014)
+
+**Apply after 013.**
+
+```bash
+patch -p1 < 014-sbom-dan-matriks-dukungan.patch
+npm run sbom          # not required — the patch carries sbom.cdx.json
+bash scripts/verify.sh   # expect 15/15
+```
+
+Stage 4 of RENCANA-v3: the things a $2,000+ buyer asks for before signing.
+Four of the five items are here. The ledger load test is not.
+
+**New gate 15 — `sbom`**
+
+`scripts/make-sbom.py` builds a CycloneDX 1.6 document from both lockfiles
+and nothing else. 289 components, 71 runtime and 218 dev. `--check`
+regenerates it and demands a byte-for-byte match, which is the same bargain
+as the sprite gate: a recorded fingerprint only proves a file has not been
+edited, never that it still describes anything real.
+
+That bargain is only available if the generator is deterministic, so it
+**writes no timestamp** and derives `serialNumber` from a hash of the
+component set. The cost is explicit: the committed SBOM answers "what is in
+this tree", not "when was this generated". Git answers the second question
+and cannot be made to lie about it by re-running a script. A release process
+that needs a stamped SBOM should stamp this one at release time — stamping is
+an action with a date; a generator that stamps itself is just a clock.
+
+It reads the lockfiles, never `node_modules`, so it works on a clean clone.
+Lockfile v3 carries `license` for all 145 root entries, so nothing needs to
+be installed to resolve them.
+
+CI uploads `sbom.cdx.json` as an artifact on every run, not only on tags. A
+reviewer asking "what is in this build" should be able to answer it for the
+commit in front of them.
+
+**`docs/SUPPORT.md` — and the uncomfortable thing it says**
+
+"Supported" now has one meaning: CI runs the full gate suite on that version,
+and a red gate there blocks the release. Two legs, 22 and 24.
+
+Writing it down forced two admissions that were true before and unsaid:
+
+- **The floor is already a maintenance-only release.** Node 22 stopped
+  getting anything but security fixes in October 2025 and is gone on
+  2027-04-30 — about seven months out. The floor stays at 22 because raising
+  it breaks existing installs for no technical reason yet, but it is a dated
+  decision and the page says so.
+- **Node 26 becomes Active LTS on 2026-10-28 and is untested here.** It is
+  listed as unknown, not supported, because a support claim no CI leg stands
+  behind is the exact thing the rest of this repo exists to prevent.
+
+Also recorded: `ubuntu-latest` moves to Ubuntu 26 on 2026-10-19, under this
+matrix, unexercised.
+
+**Four new doc checks (102 → 106)**
+
+| Binds | So that |
+|---|---|
+| SUPPORT.md versions ↔ CI matrix | adding a CI leg cannot leave the page behind |
+| SUPPORT.md floor ↔ `engines.node` | the floor is declared once and quoted, never restated |
+| each listed EOL ↔ today's date | a support claim expires on the day it expires |
+| the quoted preflight text ↔ `verify.sh` | a documented error message stays the one actually printed |
+
+The third is a deliberate time bomb. On 2027-04-30 this build goes red with
+no commit to blame, and that is correct: the claim really does stop being
+true that morning, and the alternative is a page that keeps saying 22 is
+supported for as long as nobody rereads it.
+
+Mutation-tested, victims taken programmatically, all six caught and restored:
+CI leg added (`claims support for Node 22, 24 but the CI matrix runs 22, 24,
+26`), floor raised to 24, an EOL date moved into the past, the preflight
+wording changed, a lockfile version bumped without regenerating the SBOM
+(`+ pkg:npm/@cacheable/memory@99.99.99`), and the SBOM deleted outright.
+
+**A gate that demanded history be rewritten**
+
+Bumping the count to 15 turned `HANDOFF.md` red over `13/14 gerbang hijau` —
+a dated record of how one particular run went. The old check matched a bare
+`(\d+) gerbang` anywhere in the file, so staying green meant editing a note
+about the past into something that never happened. The check now binds only
+the live claim, the row in the script table. A checker that forces the past
+to be rewritten to stay green is worse than no checker.
+
+**Disclosure policy — `SECURITY.md` §11**
+
+Private advisory, no public issues, no real tokens in reports. Committed
+windows: acknowledge in 3 working days, triage in 10, fix or documented
+mitigation for critical in 90, public advisory 7 days after release. A
+rejected report gets a written reason citing a line in §1 — and if the threat
+model is what is wrong, that is what gets fixed. No bounty. Safe harbour for
+good-faith work on your own instance.
+
+**What is not for sale, named**
+
+Both pricing pages now say it without the euphemism: no SOC 2, no ISO 27001,
+no HIPAA BAA, no signed DPA, no third-party pen test, no uptime or
+response-time SLA, no support for a Node outside the CI matrix. Each of those
+could be sold by writing one sentence, and not writing them is the only
+reason the other sentences are worth anything.
+
+**Still open**
+
+The ledger load test. It is the last synthetic performance number in the
+documentation and the only Stage 4 item left. It wants a real multi-client
+run, not an estimate, and it did not fit in this patch.
+
+---
+
+## 014 — the ledger under concurrent clients (patch 015)
+
+**Apply after 014.**
+
+```bash
+patch -p1 < 015-uji-beban-ledger.patch
+bash scripts/verify.sh   # expect 16/16
+```
+
+Last Stage 4 item, and the last synthetic performance number in the
+documentation.
+
+**What was wrong with the old number**
+
+FLIGHT-RECORDER.md §9 reported 0.020 ms per record, ~49,000 decisions/s. The
+number was real and honestly caveated about fsync — but it was measured
+**in-process**: a loop calling `ledger.record()` directly. One caller, one
+thread, no HTTP, no Express, no concurrency. It answers "how expensive is an
+append" and cannot answer the question a buyer actually asks, which is
+whether the chain survives a fleet hitting it at once.
+
+That distinction matters more for a hash chain than for most structures.
+Every append depends on the previous one's hash, so interleaved writers
+produce a fork, a duplicate sequence number, or a silently dropped record —
+and all three still look like a ledger from the outside.
+
+**New gate 16 — `ledger under load`**
+
+`scripts/bench-ledger.mjs` boots the real server on a temp DB, drives
+concurrent decisions through HTTP, then asserts the chain survived:
+`/ledger/verify` ok, sequence contiguous, no duplicates, every record linked
+to its predecessor, and the allow path actually exercised. 16x25 under
+`--check` (about 1 s, inside the gate suite); 50x40 for the full run.
+
+**Measured, 50 agents x 40 decisions = 2,000, synchronous=FULL, 2 cores:**
+
+| | |
+|---|---|
+| Throughput | ~1,300 decisions/s end to end |
+| Latency | p50 33 ms · p95 64 ms · p99 ~80 ms |
+| Records written | 2,054 (2,000 decisions + 50 placements + checkpoints) |
+| Whole-chain verify | ok, ~16 ms |
+
+Stable across three consecutive runs: 1,301 / 1,325 / 1,331 per second.
+
+**The finding worth keeping**
+
+49,000/s in-process versus ~1,300/s end to end is a 37x gap. **The ledger is
+not the bottleneck** — it is roughly 1.5% of the cost of a decision; the rest
+is HTTP, Express and policy evaluation. Anyone optimising this path should
+not start here, and anyone worried that a full audit trail will slow their
+fleet down can stop worrying. That is a far more useful sentence than
+"49,000/s", and the old number could not produce it.
+
+**What is enforced versus what is printed**
+
+Integrity only. Timing is a property of the machine, and a gate that goes red
+when a runner is busy teaches people to re-run gates until they pass, which
+destroys the value of every other gate in the suite. The throughput is
+printed with the hardware that produced it and nothing depends on it.
+
+**Two things the first version got wrong**
+
+The first run reported *400 allowed, 0 denied* — no, it reported the
+opposite: **0 allowed, 400 denied**, and still passed, because the chain was
+intact. It was measuring the deny path exclusively. A new agent lands in the
+Lobby, whose scope is deliberately narrow, so every request was refused
+before it reached anything interesting. The bench now places the fleet in
+`main-office` first (owner-only, and itself recorded — a realistic mix), and
+a run where nothing is allowed is now an explicit failure rather than a
+green tick.
+
+The second: `/policy/check` is rate limited per agent at 600/min, burst 60
+per 5 s. One client looping would have measured the limiter. The load is
+spread across distinct agent identities, each under its own burst — which is
+also the shape of the workload this product exists to watch.
+
+**Mutation-tested, all caught with distinct reasons**
+
+1. stale `prevHash` every 50th record (the classic interleaving bug) →
+   `verify ok=false reason=broken-link`
+2. one sequence number skipped → `reason=sequence-gap` **and**
+   `1 gap(s) in the sequence: 120→122`
+3. ledger disabled outright → `the ledger recorded nothing at all during the
+   load`
+4. load shape changed in the script, docs untouched → `reports a run of
+   50x40 but bench-ledger.mjs runs 50x30`
+5. `bench:ledger` removed from package.json → `tells the reader to run
+   npm run bench:ledger, but package.json has no such script`
+
+Doc claims 106 → 108. CI runs the gate on both legs.
+
+**Stage 4 is now complete.** SBOM, support matrix, disclosure policy,
+compliance note, load test. What remains in RENCANA-v3 is 3.2 (blocked on a
+Cloudflare account), 3.3 (niu-mode) and 3.4 (marketplace).

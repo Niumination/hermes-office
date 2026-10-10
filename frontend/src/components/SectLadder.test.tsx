@@ -57,7 +57,7 @@ describe('SectLadder', () => {
   it('says why a hall is locked in words, not only in colour', () => {
     // Colour alone fails every colour-blind reader and every screen reader.
     render(<SectLadder rungs={RUNGS} viewerTier={-1} />)
-    expect(screen.getAllByText(/beyond your realm/).length).toBe(RUNGS.length)
+    expect(screen.getAllByText(/di luar jangkauanmu/).length).toBe(RUNGS.length)
   })
 
   it('marks the current hall for assistive tech', () => {

@@ -54,7 +54,7 @@ why it was allowed to.
 | **Standup** | A ranked morning read, deterministic, with no LLM call. A quiet night produces one line. |
 | **Compliance dossier** | The artifact an assessor reads, carrying its own verification verdict inside it. |
 
-And yes — it looks good. A donghua-styled 3D isometric office, 12 rooms, 282
+And yes — it looks good. A donghua-styled 3D isometric office, 12 rooms, 132
 sprites. That is not decoration: the entire reason the floor plan is the
 policy is so a non-technical person can read your fleet's posture from across
 the room.
@@ -103,7 +103,7 @@ argument behind the numbers.
 ```
 Agents / bridges ──OTLP──┐
 Hermes Cloud ────────────┼──► office-server ──► Browser (React isometric office)
-Hermes Mac ──────────────┘    Express 4 + ws        /kiosk   → wall display
+Hermes Mac ──────────────┘    Express 5 + ws        /kiosk   → wall display
                                     │               /standup → morning read
                             policy ─┤               /replay  → time machine
                          burn-rate ─┤               /dossier → evidence
@@ -123,9 +123,9 @@ the normalisation is real work and it is already done here.
 | | |
 |---|---|
 | Backend tests | **305** |
-| Frontend tests | **160** |
-| Machine-verified doc claims | **92** (`scripts/check-docs.py`) |
-| Bundle | 216 kB JS · 43.7 kB CSS |
+| Frontend tests | **170** |
+| Machine-verified doc claims | **108** (`scripts/check-docs.py`) |
+| Bundle | 298.9 kB JS · 47.2 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
 
 `check-docs.py` executes the documentation against the repo — route counts,
@@ -138,6 +138,62 @@ English and Indonesian versions quote the same prices, the same test counts,
 and still carry the same promises. A translation is a second place for a
 claim to rot.
 
+## Verify it yourself
+
+Nothing above asks to be taken on trust. Every number on this page is produced
+by a command, and the command ships with the repository:
+
+```bash
+git clone https://github.com/Niumination/hermes-office
+cd hermes-office
+npm ci
+npm run verify
+```
+
+**16 gates, about 4 minutes** on a 2-core machine. `npm run verify:fast`
+skips the two rebuild gates and finishes in roughly a minute. Exit code 0
+means every gate passed — and no gate prints a green line it did not earn,
+because each verdict comes from that gate's own exit status, never from
+grepping its output. An earlier version decided pass/fail by searching for the
+word PASS, and cheerfully reported "lint clean" over two real errors.
+
+| Gate | What it proves |
+|---|---|
+| handoff integrity | every file matches `MANIFEST.sha256` byte-for-byte; no extras |
+| eslint | no lint errors in `server/` and `tests/` |
+| frontend build | `tsc && vite build` — a type error fails here |
+| backend tests | 305 tests |
+| frontend tests | 170 tests |
+| clean shutdown | the process exits with a live WebSocket attached |
+| ledger under load | the hash chain survives 400 concurrent decisions: contiguous, no duplicates, verify ok |
+| upstream assets | nothing was dropped silently; deliberate removals are recorded with their reasons |
+| ci workflow | the committed workflow still matches its canonical source |
+| dependency pins | no floating or URL versions |
+| sbom | `sbom.cdx.json` rebuilt from the lockfiles and matched byte-for-byte |
+| deployable | no hard-coded host or tailnet address in shipped code |
+| room plates | 26 plates match their hashes **and** the house style rules |
+| theme contrast | 13 token pairs measured in APCA Lc, computed from `oklch()` |
+| doc claims | 94 documented claims executed against the repo |
+| sprites (+rebuild) | all 132 sprites rebuilt from source and matched byte-for-byte |
+
+Three of those are worth singling out, because they are the ones that catch
+what hashes cannot:
+
+- **sprites (+rebuild)** does not compare files to recorded fingerprints. It
+  re-runs the deterministic filter over `art/originals/` and demands the same
+  bytes back. A drifted filter constant leaves every file on disk matching its
+  own hash perfectly; only a rebuild notices.
+- **doc claims** executes the prose. Route counts, line counts, asset counts,
+  bundle size, and guard phrases like *"never reads prompt content"* are read
+  out of the documents and checked against the repo. A document that lies
+  about the code fails CI.
+- **upstream assets** distinguishes an asset that fell out of a pipeline from
+  one that was deleted on purpose — and fails in both directions, so a file
+  restored from git history cannot quietly return.
+
+If a gate is red on a clean clone, that is a defect and we want the report.
+The repository is the evidence; this section is just the index to it.
+
 ## Documentation
 
 | File | Contents |
@@ -145,7 +201,8 @@ claim to rot.
 | [`PRICING.md`](docs/PRICING.md) | Packaging, and the argument for the price |
 | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modules, routes, decisions |
 | [`PRD.md`](docs/PRD.md) | Product pillars, non-goals, roadmap |
-| [`SECURITY.md`](docs/SECURITY.md) | Token model, auto-guest, redaction pipeline |
+| [`SECURITY.md`](docs/SECURITY.md) | Token model, auto-guest, redaction pipeline, coordinated disclosure |
+| [`SUPPORT.md`](docs/SUPPORT.md) | Which Node versions are supported, until when, and what support means here |
 | [`POLICY.md`](docs/POLICY.md) | Floor plan as policy |
 | [`BURN-RATE.md`](docs/BURN-RATE.md) | States, actions, budgets |
 | [`FLIGHT-RECORDER.md`](docs/FLIGHT-RECORDER.md) | Hash chain, anchoring, verification |

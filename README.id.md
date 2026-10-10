@@ -57,7 +57,7 @@ mengapa ia diizinkan.
 | **Dossier kepatuhan** | Artefak yang dibaca asesor, dengan vonis verifikasinya sendiri di dalamnya. |
 
 Dan ya — tampilannya bagus. Kantor isometrik bergaya donghua 3D, 12 ruangan,
-282 sprite. Itu bukan dekorasi: seluruh alasan denah lantai dipakai sebagai
+132 sprite. Itu bukan dekorasi: seluruh alasan denah lantai dipakai sebagai
 kebijakan adalah supaya orang non-teknis bisa melihat postur armada Anda dari
 seberang ruangan.
 
@@ -106,7 +106,7 @@ balik angka-angkanya.
 ```
 Agen / bridge ──OTLP──┐
 Hermes Cloud ─────────┼──► office-server ──► Browser (React, kantor isometrik)
-Hermes Mac ───────────┘    Express 4 + ws        /kiosk  → layar dinding
+Hermes Mac ───────────┘    Express 5 + ws        /kiosk  → layar dinding
                                  │               /standup → bacaan pagi
                     kebijakan ───┤               /replay  → time machine
                     burn-rate ───┤               /dossier → bukti
@@ -126,15 +126,73 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 | | |
 |---|---|
 | Test backend | **305** |
-| Test frontend | **160** |
-| Klaim dokumen yang diverifikasi mesin | **92** (`scripts/check-docs.py`) |
-| Bundel | 216 kB JS · 43,7 kB CSS |
+| Test frontend | **170** |
+| Klaim dokumen yang diverifikasi mesin | **108** (`scripts/check-docs.py`) |
+| Bundel | 298,9 kB JS · 47,2 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 
 `check-docs.py` memeriksa dokumentasi terhadap repo — jumlah rute, jumlah
 baris, jumlah aset, frasa pagar seperti *"Tidak pernah membaca isi prompt"*.
 Dokumen yang berbohong tentang kode gagal di CI. Itu ada karena dokumen ini
 adalah bagian dari apa yang dijual.
+
+## Verifikasi sendiri
+
+Tidak ada satu pun di atas yang meminta dipercaya begitu saja. Setiap angka di
+halaman ini dihasilkan oleh sebuah perintah, dan perintahnya ikut dikirim
+bersama repo:
+
+```bash
+git clone https://github.com/Niumination/hermes-office
+cd hermes-office
+npm ci
+npm run verify
+```
+
+**16 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
+melewati dua gerbang pembangunan ulang dan selesai sekitar satu menit. Exit
+code 0 berarti semua gerbang lolos — dan tidak ada gerbang yang mencetak baris
+hijau yang tidak ia dapatkan, karena setiap vonis berasal dari exit status
+gerbang itu sendiri, bukan dari mencari kata di keluarannya. Versi lama
+memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
+"lint bersih" di atas dua error nyata.
+
+| Gerbang | Yang dibuktikan |
+|---|---|
+| handoff integrity | setiap berkas cocok `MANIFEST.sha256` byte-for-byte; tanpa berkas liar |
+| eslint | nol error lint di `server/` dan `tests/` |
+| frontend build | `tsc && vite build` — error tipe gagal di sini |
+| backend tests | 305 test |
+| frontend tests | 170 test |
+| clean shutdown | proses keluar bersih dengan WebSocket masih tersambung |
+| ledger under load | rantai hash selamat dari 400 keputusan serentak: rapat, tanpa duplikat, verify ok |
+| upstream assets | tak ada aset jatuh diam-diam; penghapusan sengaja tercatat beserta alasannya |
+| ci workflow | workflow yang di-commit masih cocok dengan sumber kanoniknya |
+| dependency pins | nol versi mengambang atau versi URL |
+| sbom | `sbom.cdx.json` dibangun ulang dari lockfile dan cocok byte-for-byte |
+| deployable | nol host atau alamat tailnet yang ditanam di kode |
+| room plates | 26 pelat cocok hash **dan** aturan gaya rumah |
+| theme contrast | 13 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
+| doc claims | 94 klaim dokumen dieksekusi terhadap repo |
+| sprites (+rebuild) | seluruh 132 sprite dibangun ulang dari sumber, cocok byte-for-byte |
+
+Tiga di antaranya layak disebut khusus, karena merekalah yang menangkap apa
+yang tidak bisa ditangkap hash:
+
+- **sprites (+rebuild)** tidak membandingkan berkas dengan sidik jari yang
+  direkam. Ia menjalankan ulang filter deterministik atas `art/originals/` dan
+  menuntut byte yang sama kembali. Konstanta filter yang bergeser meninggalkan
+  setiap berkas di disk tetap cocok dengan hash-nya sendiri; hanya pembangunan
+  ulang yang menyadarinya.
+- **doc claims** mengeksekusi prosa. Jumlah rute, jumlah baris, jumlah aset,
+  ukuran bundel, dan frasa pagar seperti *"tidak pernah membaca isi prompt"*
+  dibaca dari dokumen lalu dicocokkan ke repo.
+- **upstream assets** membedakan aset yang jatuh dari pipeline dari aset yang
+  sengaja dibuang — dan merah di kedua arah, jadi berkas yang dipulihkan dari
+  riwayat Git tidak bisa kembali diam-diam.
+
+Kalau ada gerbang merah pada klon bersih, itu cacat dan kami ingin laporannya.
+Repo-nya adalah buktinya; bagian ini hanya daftar isinya.
 
 ## Dokumentasi
 
@@ -143,7 +201,8 @@ adalah bagian dari apa yang dijual.
 | [`PRICING.id.md`](docs/PRICING.id.md) | Paket, dan argumen harganya |
 | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modul, rute, keputusan |
 | [`PRD.md`](docs/PRD.md) | Pilar produk, non-goal, roadmap |
-| [`SECURITY.md`](docs/SECURITY.md) | Model token, auto-guest, pipeline redaksi |
+| [`SECURITY.md`](docs/SECURITY.md) | Model token, auto-guest, pipeline redaksi, coordinated disclosure |
+| [`SUPPORT.md`](docs/SUPPORT.md) | Versi Node yang didukung, sampai kapan, dan apa arti "didukung" di sini |
 | [`POLICY.md`](docs/POLICY.md) | Denah lantai sebagai kebijakan |
 | [`BURN-RATE.md`](docs/BURN-RATE.md) | State, aksi, anggaran |
 | [`FLIGHT-RECORDER.md`](docs/FLIGHT-RECORDER.md) | Rantai hash, penambatan, verifikasi |

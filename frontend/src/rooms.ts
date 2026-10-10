@@ -79,7 +79,7 @@ export interface Room {
 export const ROOMS: Record<RoomId, Room> = {
   'main-office': {
     id: 'main-office',
-    name: 'Main Office',
+    name: 'Kantor Utama',
     description: 'Open plan workspace where agents code, debug, and ship',
     background: {
       day: '/rooms/office-day.webp',
@@ -102,9 +102,9 @@ export const ROOMS: Record<RoomId, Room> = {
       { id: 'desk-3c', type: 'desk-standing', sprite: 'desk-standing-right-front', x: 55.4, y: 78.7 },
       { id: 'desk-3d', type: 'desk-standing', sprite: 'desk-standing-right-rear', x: 66.6, y: 71.1 },
       // Coffee machine on counter
-      { id: 'coffee', type: 'coffee-machine', sprite: 'coffee-off', x: 78.5, y: 50.2, interactive: true, state: 'off', label: 'Coffee Machine' },
+      { id: 'coffee', type: 'coffee-machine', sprite: 'coffee-off', x: 78.5, y: 50.2, interactive: true, state: 'off', label: 'Mesin Kopi' },
       // Filing cabinet
-      { id: 'filing-1', type: 'filing-cabinet', sprite: 'filing-closed', x: 45, y: 56.5, state: 'closed', label: 'Filing Cabinet' },
+      { id: 'filing-1', type: 'filing-cabinet', sprite: 'filing-closed', x: 45, y: 56.5, state: 'closed', label: 'Lemari Arsip' },
       // Plants
       { id: 'plant-1', type: 'plant-monstera', sprite: 'plant-monstera', x: 91.9, y: 64.7 },
       { id: 'plant-2', type: 'plant-snake', sprite: 'plant-snake', x: 43.2, y: 37.9 },
@@ -114,17 +114,17 @@ export const ROOMS: Record<RoomId, Room> = {
       // Printer (swaps between working/broken on printer jam event)
       { id: 'printer-1', type: 'printer', sprite: 'printer-working', x: 85.4, y: 56.8, state: 'working', label: 'Printer' },
       // Background hotspots — baked into the room image, no sprite, just clickable zones
-      { id: 'fire-extinguisher', type: 'hotspot', sprite: 'hotspot', x: 8, y: 60, interactive: true, label: 'Fire Extinguisher' },
-      { id: 'water-cooler', type: 'hotspot', sprite: 'hotspot', x: 53, y: 45, interactive: true, label: 'Water Cooler' },
-      { id: 'bell', type: 'hotspot', sprite: 'hotspot', x: 63, y: 39, interactive: true, label: 'Bell' },
-      { id: 'kanban-board', type: 'hotspot', sprite: 'hotspot', x: 80, y: 42, interactive: true, label: 'Kanban Board' },
-      { id: 'ship-it-poster', type: 'hotspot', sprite: 'hotspot', x: 8, y: 45, interactive: true, label: 'Ship It Poster' },
-      { id: 'tv-monitor', type: 'hotspot', sprite: 'hotspot', x: 90, y: 42, interactive: true, label: 'Dashboard' },
+      { id: 'fire-extinguisher', type: 'hotspot', sprite: 'hotspot', x: 8, y: 60, interactive: true, label: 'Alat Pemadam' },
+      { id: 'water-cooler', type: 'hotspot', sprite: 'hotspot', x: 53, y: 45, interactive: true, label: 'Galon Air' },
+      { id: 'bell', type: 'hotspot', sprite: 'hotspot', x: 63, y: 39, interactive: true, label: 'Lonceng' },
+      { id: 'kanban-board', type: 'hotspot', sprite: 'hotspot', x: 80, y: 42, interactive: true, label: 'Papan Kanban' },
+      { id: 'ship-it-poster', type: 'hotspot', sprite: 'hotspot', x: 8, y: 45, interactive: true, label: 'Poster Ship It' },
+      { id: 'tv-monitor', type: 'hotspot', sprite: 'hotspot', x: 90, y: 42, interactive: true, label: 'Dasbor' },
     ],
     connections: [
-      { toRoom: 'manager-office', position: { x: 67.5, y: 48.9 }, label: "Manager's Office", exitFacing: 'rear-right', entryFacing: 'front-right' },
+      { toRoom: 'manager-office', position: { x: 67.5, y: 48.9 }, label: 'Ruang Manajer', exitFacing: 'rear-right', entryFacing: 'front-right' },
       // DUAL-SPACE-DESIGN M-A: corridor doors to the two thematic rooms.
-      { toRoom: 'server-room', position: { x: 67.5, y: 48.9 }, label: 'Server Room ☁️', exitFacing: 'rear-right', entryFacing: 'front-right' },
+      { toRoom: 'server-room', position: { x: 67.5, y: 48.9 }, label: 'Ruang Server ☁️', exitFacing: 'rear-right', entryFacing: 'front-right' },
       { toRoom: 'mac-studio', position: { x: 67.5, y: 48.9 }, label: 'Mac Studio 💻', exitFacing: 'rear-right', entryFacing: 'front-right' },
     ],
     agentSpots: [
@@ -245,7 +245,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'manager-office': {
     id: 'manager-office',
-    name: "Manager's Office",
+    name: 'Ruang Manajer',
     description: 'Where the manager briefs agents and reviews work. Connected to main Claude terminal.',
     background: {
       day: '/rooms/ceo-office.webp',
@@ -255,7 +255,7 @@ export const ROOMS: Record<RoomId, Room> = {
     height: 450,
     furniture: [],
     connections: [
-      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
+      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Kantor Utama' },
     ],
     agentSpots: [
       { id: 'mgr-spot', type: 'desk', x: 50, y: 40, facing: 'down' },
@@ -267,7 +267,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'ceo-office': {
     id: 'ceo-office',
-    name: 'CEO Office',
+    name: 'Ruang CEO',
     description: 'Corner office with city views. Bloomberg terminal and whiskey shelf.',
     background: {
       day: '/rooms/ceo-office.webp',
@@ -278,7 +278,7 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
+      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Kantor Utama' },
     ],
     agentSpots: [
       { id: 'ceo-spot', type: 'desk', x: 50, y: 45, facing: 'down' },
@@ -288,7 +288,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'meeting-room': {
     id: 'meeting-room',
-    name: 'Meeting Room',
+    name: 'Ruang Rapat',
     description: 'Glass-walled room for standups, planning, and heated architecture debates.',
     background: {
       day: '/rooms/meeting-room.webp',
@@ -299,7 +299,7 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'main-office', position: { x: 95, y: 50 }, label: 'Main Office' },
+      { toRoom: 'main-office', position: { x: 95, y: 50 }, label: 'Kantor Utama' },
     ],
     agentSpots: [
       { id: 'seat-1', type: 'meeting-seat', x: 30, y: 40, facing: 'right' },
@@ -313,7 +313,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'kitchen': {
     id: 'kitchen',
-    name: 'Kitchen',
+    name: 'Dapur',
     description: 'Espresso machine, kombucha on tap, and a fridge full of La Croix.',
     background: {
       day: '/rooms/kitchen-cafeteria.webp',
@@ -324,8 +324,8 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'main-office', position: { x: 5, y: 50 }, label: 'Main Office' },
-      { toRoom: 'rooftop', position: { x: 50, y: 5 }, label: 'Rooftop' },
+      { toRoom: 'main-office', position: { x: 5, y: 50 }, label: 'Kantor Utama' },
+      { toRoom: 'rooftop', position: { x: 50, y: 5 }, label: 'Atap' },
     ],
     agentSpots: [
       { id: 'coffee-spot', type: 'standing', x: 30, y: 35, facing: 'up' },
@@ -338,7 +338,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'server-room': {
     id: 'server-room',
-    name: 'Server Room ☁️',
+    name: 'Ruang Server ☁️',
     description: 'Cold. Loud. Blinking lights. Where deployments happen.',
     background: {
       day: '/rooms/server-room-day.webp',
@@ -348,7 +348,7 @@ export const ROOMS: Record<RoomId, Room> = {
     height: 600,
     furniture: [],
     connections: [
-      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
+      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Kantor Utama' },
     ],
     agentSpots: [
       { id: 'server-spot-1', type: 'standing', x: 35, y: 60, facing: 'up' },
@@ -371,7 +371,7 @@ export const ROOMS: Record<RoomId, Room> = {
     height: 600,
     furniture: [],
     connections: [
-      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
+      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Kantor Utama' },
     ],
     agentSpots: [
       { id: 'mac-spot-1', type: 'desk', x: 35, y: 70, facing: 'down' },
@@ -382,7 +382,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'lobby': {
     id: 'lobby',
-    name: 'Lobby',
+    name: 'Lobi',
     description: 'Where new hires arrive. Swag wall. Pile of Amazon packages.',
     background: {
       day: '/rooms/lobby-reception.webp',
@@ -393,8 +393,8 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'main-office', position: { x: 50, y: 5 }, label: 'Main Office' },
-      { toRoom: 'parking', position: { x: 50, y: 95 }, label: 'Parking' },
+      { toRoom: 'main-office', position: { x: 50, y: 5 }, label: 'Kantor Utama' },
+      { toRoom: 'parking', position: { x: 50, y: 95 }, label: 'Parkir' },
     ],
     agentSpots: [
       { id: 'reception-spot', type: 'desk', x: 50, y: 40, facing: 'down' },
@@ -406,7 +406,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'nap-room': {
     id: 'nap-room',
-    name: 'Wellness Room',
+    name: 'Ruang Wellness',
     description: 'Sleep pods, meditation cushions, and a Himalayan salt lamp.',
     background: {
       day: '/rooms/nap-wellness-room.webp',
@@ -417,7 +417,7 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
+      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Kantor Utama' },
     ],
     agentSpots: [
       { id: 'nap-1', type: 'lounge', x: 25, y: 40, facing: 'down' },
@@ -429,7 +429,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'rooftop': {
     id: 'rooftop',
-    name: 'Rooftop Terrace',
+    name: 'Atap',
     description: 'Friday drinks, BBQ, and pretending to have work-life balance.',
     background: {
       day: '/rooms/rooftop-terrace.webp',
@@ -440,7 +440,7 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'kitchen', position: { x: 50, y: 95 }, label: 'Kitchen' },
+      { toRoom: 'kitchen', position: { x: 50, y: 95 }, label: 'Dapur' },
     ],
     agentSpots: [
       { id: 'roof-1', type: 'lounge', x: 25, y: 50, facing: 'down' },
@@ -452,7 +452,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'gym': {
     id: 'gym',
-    name: 'Gym',
+    name: 'Tempat Gym',
     description: 'A Peloton, some dumbbells, and a mirror for flexing your PRs.',
     background: {
       day: '/rooms/gym-fitness-room.webp',
@@ -463,7 +463,7 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Main Office' },
+      { toRoom: 'main-office', position: { x: 50, y: 95 }, label: 'Kantor Utama' },
     ],
     agentSpots: [
       { id: 'gym-1', type: 'standing', x: 25, y: 45, facing: 'down' },
@@ -474,7 +474,7 @@ export const ROOMS: Record<RoomId, Room> = {
 
   'parking': {
     id: 'parking',
-    name: 'Parking Garage',
+    name: 'Garasi Parkir',
     description: 'Teslas, e-scooters, and reserved spots nobody respects.',
     background: {
       day: '/rooms/parking-garage.webp',
@@ -485,7 +485,7 @@ export const ROOMS: Record<RoomId, Room> = {
     furniture: [
     ],
     connections: [
-      { toRoom: 'lobby', position: { x: 50, y: 5 }, label: 'Lobby' },
+      { toRoom: 'lobby', position: { x: 50, y: 5 }, label: 'Lobi' },
     ],
     agentSpots: [],
     entryPoint: { x: 50, y: 10 },

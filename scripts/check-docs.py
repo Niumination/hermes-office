@@ -240,6 +240,30 @@ def _self_test_parsers() -> None:
                 "FAIL: the TAP parser cannot read '# %s' from coloured output" % key)
 
 
+def pkg_scripts(root: str) -> dict:
+    """The root package.json scripts block, or an empty dict."""
+    try:
+        return json.load(open(os.path.join(root, "package.json"),
+                              encoding="utf-8")).get("scripts", {})
+    except Exception:
+        return {}
+
+
+def pkg_engines_major(root: str):
+    """The supported Node floor, as a single integer, or None.
+
+    Declared in exactly one place — package.json → engines.node — so that
+    verify.sh's preflight, SUPPORT.md's prose and this checker cannot each
+    hold a different opinion about what the floor is.
+    """
+    try:
+        pkg = json.load(open(os.path.join(root, "package.json"),
+                             encoding="utf-8"))
+        return int(re.sub(r"[^0-9.]", "", pkg["engines"]["node"]).split(".")[0])
+    except Exception:
+        return None
+
+
 def check(label: str, claimed, actual) -> None:
     global checks
     checks += 1
@@ -552,13 +576,17 @@ def main() -> int:
                       f"{m.group(1)},{m.group(2)}", f"{got.group(1)},{got.group(2)}")
 
         # The AuditBadge sentence is a compliance claim rendered to users.
+        # The UI is Bahasa Indonesia (README.id.md promise), so the rendered
+        # sentence is the Indonesian one; the English UI-SPEC quotes it
+        # verbatim for the design record so the check stays meaningful.
         badge = os.path.join(ROOT, "frontend/src/components/AuditBadge.tsx")
-        if "Tamper-evident, not tamper-proof" in ui and os.path.exists(badge):
+        RENDERED = "Tahan-rusak, bukan anti-rusak"
+        if RENDERED in ui and os.path.exists(badge):
             checks += 1
-            if "Tamper-evident, not tamper-proof" not in open(badge, encoding="utf-8").read():
+            if RENDERED not in open(badge, encoding="utf-8").read():
                 failures.append(
-                    "UI-SPEC claims AuditBadge renders 'Tamper-evident, not "
-                    "tamper-proof.' but the component no longer contains it")
+                    "UI-SPEC claims AuditBadge renders 'Tahan-rusak, bukan "
+                    "anti-rusak.' but the component no longer contains it")
 
 
     # --- README.md / README.id.md / PRICING.md / PRICING.id.md -----------
@@ -584,6 +612,12 @@ def main() -> int:
     _agents = os.path.join(ROOT, "AGENTS.md")
     text["AGENTS.md"] = (open(_agents, encoding="utf-8").read()
                          if os.path.exists(_agents) else None)
+    _fr = os.path.join(ROOT, "docs", "FLIGHT-RECORDER.md")
+    text["docs/FLIGHT-RECORDER.md"] = (open(_fr, encoding="utf-8").read()
+                                       if os.path.exists(_fr) else None)
+    _support = os.path.join(ROOT, "docs", "SUPPORT.md")
+    text["docs/SUPPORT.md"] = (open(_support, encoding="utf-8").read()
+                               if os.path.exists(_support) else None)
 
     readme_path = os.path.join(ROOT, READMES["en"])
     rd = text[READMES["en"]]
@@ -647,8 +681,16 @@ def main() -> int:
         with open(verify_sh, encoding="utf-8") as fh:
             names = re.findall(r'^\s*gate\s+"([^"]+)"', fh.read(), re.M)
         actual = len({re.sub(r"\s*\(.*", "", n) for n in names})
+        # HANDOFF.md's pattern used to be a bare `(\d+) gerbang`, which swept
+        # up every number in the file that looked like a gate count —
+        # including "13/14 gerbang hijau", a dated record of how a particular
+        # run went. Adding a gate then demanded that the historical note be
+        # edited to say something that never happened. A checker that forces
+        # the past to be rewritten to stay green is worse than no checker, so
+        # it now binds only the live claim: the row in the script table.
         for rel, pattern in (("AGENTS.md", r"all (\d+) gates"),
-                             ("HANDOFF.md", r"(\d+) gerbang")):
+                             ("HANDOFF.md",
+                              r"\|\s*`scripts/verify\.sh`\s*\|[^|]*?(\d+) gerbang")):
             path = os.path.join(ROOT, rel)
             if not os.path.exists(path):
                 continue
@@ -850,9 +892,9 @@ def main() -> int:
         with open(sp_manifest, encoding="utf-8") as fh:
             spm = _json2.load(fh)
         by = spm["byProvenance"]
-        check("docs/SPRITES.md total sprites", "282", str(spm["count"]))
+        check("docs/SPRITES.md total sprites", "132", str(spm["count"]))
         for kind, claimed in (("derived", "100"), ("built", "32"),
-                              ("unsourced", "150")):
+                              ("unsourced", "0")):
             check(f"docs/SPRITES.md {kind} count", claimed, str(by.get(kind, 0)))
             # Substring matching is not enough here: a bare "32" is also
             # inside "132", so deleting the number from the table used to
@@ -863,18 +905,36 @@ def main() -> int:
                 failures.append(
                     f"docs/SPRITES.md provenance table does not state "
                     f"{kind} = {claimed}")
-        # The claim that every character is unsourced is the whole point of
-        # that document. If someone runs the pipeline over the characters, the
-        # prose becomes a lie and must be rewritten, not silently outlived.
-        chars = [e for e in spm["sprites"]
-                 if e["file"].startswith(("characters/", "office/characters/"))]
-        unsourced_chars = [e for e in chars if e["provenance"] == "unsourced"]
+        # Until 2026-10-10 this file checked that *every* character sprite was
+        # unsourced — it was documenting a known gap and making sure the prose
+        # did not outlive it. The gap is now closed the other way: the 150
+        # legacy cast sprites were deleted, 108 of them recognisable likenesses
+        # from a television series, shipped inside a product priced at $2,000+
+        # and rendered by nothing.
+        #
+        # What replaces that check is a stronger claim than the one it retires:
+        # every sprite this repo ships can be rebuilt from a committed source.
+        # One unsourced file breaks it, so it is counted, not described.
         checks += 1
-        if len(chars) != len(unsourced_chars):
+        unsourced = [e for e in spm["sprites"]
+                     if e["provenance"] == "unsourced"]
+        if unsourced:
             failures.append(
-                f"docs/SPRITES.md says no character has been through the "
-                f"pipeline, but {len(chars) - len(unsourced_chars)} of "
-                f"{len(chars)} now have originals — rewrite the doc")
+                f"{len(unsourced)} sprite(s) ship with no source (e.g. "
+                f"{unsourced[0]['file']}), but docs/SPRITES.md claims every "
+                f"shipped sprite is reproducible. Give it an original and run "
+                f"the pipeline, or do not ship it")
+        # The directories must stay gone. Restoring one from git history is how
+        # a deleted liability returns unnoticed: every other gate only looks at
+        # what is present, and a restored file matches its own hash perfectly.
+        checks += 1
+        back = [d for d in ("frontend/public/sprites/characters",
+                            "frontend/public/sprites/office/characters")
+                if os.path.isdir(os.path.join(ROOT, d))]
+        if back:
+            failures.append(
+                f"the deleted legacy cast is back on disk ({', '.join(back)}); "
+                f"it was removed for IP exposure, not to save bytes")
         checks += 1
         if "art/donghua-cast" not in sd:
             failures.append(
@@ -894,9 +954,7 @@ def main() -> int:
             failures.append(
                 f"docs/SPRITES.md says the old cast is rendered by nothing, "
                 f"but frontend/src still references {', '.join(refs)}")
-        check("docs/SPRITES.md office/characters count", "108",
-              str(len([e for e in chars
-                       if e["file"].startswith("office/characters/")])))
+
 
     # stylize-donghua.py must never again point its originals tree at a path
     # that exists on one machine. This is the defect that silently destroyed
@@ -926,6 +984,257 @@ def main() -> int:
     # the one guaranteed to rot: every future check added here invalidates
     # it. Evaluated last, and counts itself, so the number the README quotes
     # is the number this run actually verified.
+    # --- bundle size ------------------------------------------------------
+    # The READMEs print a bundle size in the same table as the test counts,
+    # which makes it read like the same machine measured both. It did not.
+    # Nothing checked this number, and on 2026-10-09 six major versions landed
+    # in forty minutes (React 19, TypeScript 7, Vite 8, Express 5,
+    # better-sqlite3 13, ESLint 10). The real bundle moved 216 kB -> 299 kB
+    # while both READMEs still said 216 kB.
+    #
+    # A 38% miss matters more here than anywhere else in this file, because
+    # bundle size is the whole of ADR D3: we refuse React Three Fiber on the
+    # grounds that it costs ~250 kB and we ship +7,8 kB. An unchecked 216 kB
+    # lets that argument stay quotable long after it stopped being true.
+    #
+    # Measured from the built asset, so it cannot flatter itself.
+    #
+    # An absent frontend/dist is a failure here, not a skip. Skipping would
+    # drop the check count below the self-count the READMEs publish, and the
+    # run would die on "README.md claims 94 ... this run checked 92" — a red
+    # that names the wrong problem, which is the exact defect this file
+    # exists to prevent. Both CI (it builds dist for the static-serving test)
+    # and verify.sh (the frontend-build gate runs first) reach this point
+    # with dist present, so the failure only fires on an unbuilt tree, and it
+    # says what to run.
+    dist_assets = os.path.join(ROOT, "frontend", "dist", "assets")
+    have_dist = os.path.isdir(dist_assets)
+    if have_dist:
+        def _total(ext):
+            return sum(os.path.getsize(os.path.join(dist_assets, f))
+                       for f in os.listdir(dist_assets) if f.endswith(ext))
+        real = {"JS": _total(".js") / 1000.0, "CSS": _total(".css") / 1000.0}
+    # Minifier output is not byte-stable across machines or minor tool
+    # versions. 3% absorbs that; it does not absorb a major-version jump.
+    TOL = 0.03
+    BUNDLE = {
+        "README.md": r"\| Bundle \| ([\d.,]+) kB JS · ([\d.,]+) kB CSS \|",
+        "README.id.md": r"\| Bundel \| ([\d.,]+) kB JS · ([\d.,]+) kB CSS \|",
+    }
+    for rel, pattern in BUNDLE.items():
+        if text.get(rel) is None:
+            continue
+        checks += 1
+        if not have_dist:
+            failures.append(
+                f"{rel} states a bundle size but frontend/dist is absent, so "
+                f"the claim cannot be checked. Run "
+                f"`cd frontend && npm ci && npm run build` first — or use "
+                f"`bash scripts/verify.sh`, which builds before it asks.")
+            continue
+        m = re.search(pattern, text[rel])
+        if not m:
+            failures.append(
+                f"{rel} no longer states a bundle size this checker can "
+                f"read; the claim must not be allowed to become unreadable "
+                f"instead of wrong")
+            continue
+        claimed = {"JS": float(m.group(1).replace(",", ".")),
+                   "CSS": float(m.group(2).replace(",", "."))}
+        for label in ("JS", "CSS"):
+            want_kb, got_kb = claimed[label], real[label]
+            if abs(want_kb - got_kb) > max(got_kb * TOL, 1.0):
+                failures.append(
+                    f"{rel} claims {want_kb:g} kB {label}; the built "
+                    f"bundle is {got_kb:.1f} kB "
+                    f"({(got_kb - want_kb) / want_kb * 100:+.0f}%)")
+
+    # --- the ledger load test ---------------------------------------------
+    # FLIGHT-RECORDER.md §9a prints a concurrency figure — 50 agents x 40
+    # decisions — and a throughput that was measured at exactly that shape.
+    # Change the shape in the script and the documented numbers stop
+    # describing the run that produced them, which is a subtler lie than a
+    # wrong number: both the figure and the method look plausible, and only
+    # together are they wrong.
+    #
+    # The throughput itself is deliberately NOT checked. It is a property of
+    # the machine, and a gate that fails on a busy runner teaches people to
+    # re-run gates until they pass.
+    fr = text.get("docs/FLIGHT-RECORDER.md")
+    bench_path = os.path.join(ROOT, "scripts", "bench-ledger.mjs")
+    bench = (open(bench_path, encoding="utf-8").read()
+             if os.path.exists(bench_path) else "")
+
+    def _const(name):
+        m = re.search(rf"const {name} = CHECK \? \d+ : (\d+);", bench)
+        return int(m.group(1)) if m else None
+
+    agents, per_agent = _const("AGENTS"), _const("PER_AGENT")
+    m = re.search(r"(\d+) agen serentak . (\d+) keputusan", fr or "")
+    if not bench:
+        failures.append("scripts/bench-ledger.mjs is missing, but "
+                        "FLIGHT-RECORDER.md documents its results")
+    elif not m:
+        failures.append("docs/FLIGHT-RECORDER.md no longer states the load "
+                        "shape its throughput figure was measured at")
+    elif (int(m.group(1)), int(m.group(2))) != (agents, per_agent):
+        failures.append(
+            f"docs/FLIGHT-RECORDER.md reports a run of {m.group(1)}x{m.group(2)} "
+            f"but bench-ledger.mjs runs {agents}x{per_agent}")
+    checks += 1
+
+    if "npm run bench:ledger" in (fr or "") and \
+            "bench:ledger" not in pkg_scripts(ROOT):
+        failures.append("docs/FLIGHT-RECORDER.md tells the reader to run "
+                        "`npm run bench:ledger`, but package.json has no "
+                        "such script")
+    checks += 1
+
+    # --- the runtime support matrix ---------------------------------------
+    # SUPPORT.md tells an enterprise reviewer which Node versions are
+    # supported and until when. That is the single most expensive sentence in
+    # the documentation to get wrong, because it is the one a buyer plans a
+    # deployment around, and it rots in three independent ways: the CI matrix
+    # changes, the floor in `engines` changes, or a date simply arrives.
+    #
+    # All three are bound here. The dates are not fetched — nothing in this
+    # checker reaches the network — they are read out of the table and
+    # compared against the clock, so an EOL that has passed turns the build
+    # red on the day it passes rather than whenever someone next reads the
+    # page.
+    import datetime
+
+    sup = text.get("docs/SUPPORT.md")
+    wf = os.path.join(ROOT, "ci", "workflow.yml")
+    wf_text = open(wf, encoding="utf-8").read() if os.path.exists(wf) else ""
+
+    if sup is None:
+        failures.append("docs/SUPPORT.md is missing — the support matrix "
+                        "cannot be verified")
+        checks += 4
+    else:
+        rows = re.findall(r"^\|\s*(\d+)\.x[^|]*\|[^|]*\|\s*(\d{4}-\d{2}-\d{2})\s*\|",
+                          sup, re.M)
+        listed = sorted(v for v, _ in rows)
+
+        m = re.search(r"node:\s*\[([^\]]*)\]", wf_text)
+        ci_versions = sorted(re.findall(r"\d+", m.group(1))) if m else []
+        if not rows:
+            failures.append("docs/SUPPORT.md has no readable support matrix")
+        elif listed != ci_versions:
+            failures.append(
+                f"docs/SUPPORT.md claims support for Node {', '.join(listed)} "
+                f"but the CI matrix runs {', '.join(ci_versions) or '(none found)'}")
+        checks += 1
+
+        # The floor is declared in package.json and quoted in the prose. One
+        # of those is authoritative; this makes sure it is the same one.
+        engines = pkg_engines_major(ROOT)
+        m = re.search(r"Node\s*>=\s*(\d+)", sup)
+        if not m:
+            failures.append("docs/SUPPORT.md no longer states the Node floor "
+                            "in a form this checker can read")
+        elif engines is None:
+            failures.append("package.json has no readable engines.node, so "
+                            "the floor SUPPORT.md quotes cannot be checked")
+        elif int(m.group(1)) != engines:
+            failures.append(
+                f"docs/SUPPORT.md quotes a floor of Node >= {m.group(1)}; "
+                f"package.json engines.node says >= {engines}")
+        checks += 1
+
+        today = datetime.date.today()
+        expired = [(v, d) for v, d in rows
+                   if datetime.date.fromisoformat(d) < today]
+        for v, d in expired:
+            failures.append(
+                f"docs/SUPPORT.md still lists Node {v}.x as supported, but "
+                f"its stated EOL ({d}) has passed. Drop it from the CI "
+                f"matrix and this table, or correct the date.")
+        checks += 1
+
+        # The page quotes the preflight's own output. A quoted error message
+        # is a claim like any other, and this one goes stale the moment the
+        # wording in verify.sh changes.
+        quoted = re.search(r"^FAIL: (this repo requires Node >= )",
+                           sup, re.M)
+        vsh_text = open(os.path.join(ROOT, "scripts", "verify.sh"),
+                        encoding="utf-8").read()
+        if not quoted:
+            failures.append("docs/SUPPORT.md no longer quotes the Node "
+                            "preflight message it describes")
+        elif quoted.group(1) not in vsh_text:
+            failures.append(
+                "docs/SUPPORT.md quotes a preflight message that verify.sh "
+                "does not print any more")
+        checks += 1
+
+    # --- the one command we invite buyers to run --------------------------
+    # The README and both pricing pages now sell a command: clone, npm ci,
+    # npm run verify, 14 gates, about 3.5 minutes. That is a sales claim, and
+    # it has three ways to rot. The script can be renamed out of
+    # package.json, leaving the pages pointing at a command that does not
+    # exist. A gate can be added, renamed or dropped in verify.sh while the
+    # README table keeps the old list. And the count in the prose can drift
+    # away from the list directly beneath it. A pricing page that boasts
+    # about executable claims and then misstates its own gate list is worse
+    # than one that never boasted, so all three are bolted down here.
+    vsh = open(os.path.join(ROOT, "scripts", "verify.sh"), encoding="utf-8").read()
+    # The sprite gate appears twice in verify.sh: the rebuild in a full run,
+    # the hash-only variant under --fast. The documented list is the full run.
+    gates = [g for g in re.findall(r'^\s*gate\s+"([^"]+)"', vsh, re.M)
+             if g != "sprites (hash only)"]
+
+    pkg = json.loads(open(os.path.join(ROOT, "package.json"), encoding="utf-8").read())
+    for script_name in ("verify", "verify:fast"):
+        if script_name not in pkg.get("scripts", {}):
+            failures.append(
+                f"the docs tell buyers to run `npm run {script_name}`, but "
+                f"package.json has no \"{script_name}\" script")
+        checks += 1
+
+    GATE_COUNT = {
+        "README.md": r"\*\*(\d+) gates, about",
+        "README.id.md": r"\*\*(\d+) gerbang, sekitar",
+        "docs/PRICING.md": r"(\d+) gates, about \d",
+        "docs/PRICING.id.md": r"(\d+) gerbang, sekitar \d",
+    }
+    for rel, pattern in GATE_COUNT.items():
+        m = want("its gate count", pattern, text.get(rel) or "", rel)
+        if m and int(m.group(1)) != len(gates):
+            failures.append(
+                f"{rel} advertises {m.group(1)} gates; verify.sh runs "
+                f"{len(gates)}")
+        checks += 1
+
+    # The table is the part a buyer reads before deciding to trust the repo,
+    # so it is compared row for row and in order, not merely counted.
+    for rel in ("README.md", "README.id.md"):
+        body = text.get(rel) or ""
+        tbl = re.search(r"^\|\s*(?:Gate|Gerbang)\s*\|[^\n]*\n\|[-| :]+\|\n"
+                        r"((?:\|[^\n]*\n)+)", body, re.M)
+        if not tbl:
+            failures.append(
+                f"{rel} no longer has a gate table this checker can read, so "
+                f"its gate list cannot be held to verify.sh")
+        else:
+            listed = [row.split("|")[1].strip()
+                      for row in tbl.group(1).strip().splitlines()]
+            if listed != gates:
+                missing = [g for g in gates if g not in listed]
+                extra = [g for g in listed if g not in gates]
+                detail = []
+                if missing:
+                    detail.append("missing " + ", ".join(repr(g) for g in missing))
+                if extra:
+                    detail.append("lists unknown " + ", ".join(repr(g) for g in extra))
+                if not detail:
+                    detail.append("same gates in a different order")
+                failures.append(
+                    f"{rel}'s gate table does not match verify.sh: "
+                    + "; ".join(detail))
+        checks += 1
+
     SELF = {
         "README.md": r"\| Machine-verified doc claims \| \*\*(\d+)\*\*",
         "README.id.md": r"\| Klaim dokumen yang diverifikasi mesin \| \*\*(\d+)\*\*",

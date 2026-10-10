@@ -114,7 +114,7 @@ fi
 declare -A EXPECT=(
   ["art/originals/sprites|*.webp"]=100
   ["art/donghua-cast|*.webp"]=16
-  ["frontend/public/sprites|*.webp"]=282
+  ["frontend/public/sprites|*.webp"]=132   # 282 sampai 2026-10-10; 150 sprite cast lama dihapus (paparan HKI)
   ["frontend/public/rooms|*.webp"]=26   # 18 tema bawaan + 8 tema 宗門 di rooms/sect/
 )
 for key in "${!EXPECT[@]}"; do

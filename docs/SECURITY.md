@@ -154,3 +154,46 @@ Pelajaran yang sudah dikodekan: **setiap endpoint baru wajib punya baris di tabe
 - [ ] Redaction test: tempel token fake di task summary → muncul [REDACTED]
 - [ ] WS origin: koneksi dari origin asing ditolak
 - [ ] Guest tidak bisa POST /chat (401)
+
+## 11. Coordinated disclosure
+
+Bagian ini ada karena tinjauan enterprise selalu menanyakannya, dan karena
+proyek tanpa alamat pelaporan memaksa penemu memilih antara diam atau
+membuka ke publik. Keduanya hasil yang buruk.
+
+**Cara melapor.** Buka advisory privat lewat GitHub Security Advisories di
+`Niumination/hermes-office` ("Report a vulnerability"). Jangan buka issue
+publik untuk kerentanan. Jangan kirim bukti yang memuat token asli — lihat
+§6; kalau Anda perlu menunjukkan token bocor, kirim prefiks dan hash-nya.
+
+**Jendela tanggapan yang dijanjikan.** Ini komitmen waktu, bukan janji
+perbaikan:
+
+| Tahap | Dalam |
+|---|---|
+| Penerimaan laporan dikonfirmasi | 3 hari kerja |
+| Penilaian awal: diterima, ditolak, atau butuh info | 10 hari kerja |
+| Perbaikan atau mitigasi terdokumentasi untuk isu kritis | 90 hari |
+| Advisory publik setelah perbaikan dirilis | 7 hari |
+
+Kalau sebuah laporan ditolak, alasannya dikirim tertulis. Laporan yang
+ditolak dengan alasan "di luar model ancaman" akan merujuk baris spesifik di
+§1, dan kalau model ancamannya yang salah, itu yang diperbaiki.
+
+**Yang dianggap kerentanan di sini.** Bypass filter guest (§3), kebocoran
+token lewat jalur mana pun termasuk pipeline redaksi (§6), pemalsuan rantai
+ledger yang lolos `verify()`, RCE, dan eskalasi dari `guest` atau `bridge` ke
+`owner`.
+
+**Yang bukan.** Temuan scanner otomatis tanpa jalur eksploitasi. Denial of
+service lewat habisnya sumber daya pada instance yang Anda hosting sendiri —
+rate limit ada, tapi ini bukan layanan multi-tenant. Dependensi dengan CVE
+yang tidak bisa dicapai kode ini; `sbom.cdx.json` menyebutkan setiap paket
+beserta versinya supaya Anda bisa menilai sendiri, bukan supaya kami
+berpura-pura setiap CVE di pohon itu relevan.
+
+**Safe harbour.** Penelitian dengan itikad baik terhadap instance Anda
+sendiri tidak akan dilaporkan. Jangan uji instance orang lain.
+
+**Tidak ada bug bounty.** Tidak ada uang. Kredit di advisory, kalau Anda
+mau namanya disebut.

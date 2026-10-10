@@ -194,6 +194,58 @@ Diukur di sandbox ini, 2.000 rekaman per mode:
 | `NORMAL` | 0,019 ms | ~52.000 |
 | `OFF` | 0,018 ms | ~57.000 |
 
+### 9a. Di bawah beban banyak klien (terukur, bukan perkiraan)
+
+Tabel di atas mengukur `ledger.record()` langsung: satu pemanggil, satu utas,
+tanpa HTTP. Itu menjawab "berapa mahal satu append", dan **tidak pernah bisa**
+menjawab pertanyaan yang sebenarnya ditanyakan pembeli: kalau satu armada agen
+menghantam ini bersamaan, apakah rantainya selamat?
+
+Rantai hash justru struktur yang tampak baik-baik saja di benchmark satu utas
+lalu berantakan di bawah konkurensi, karena setiap append bergantung pada hash
+append sebelumnya. Selipkan dua penulis dan Anda dapat fork, nomor urut
+ganda, atau catatan yang hilang diam-diam — dan ketiganya **masih terlihat
+seperti ledger**.
+
+`scripts/bench-ledger.mjs` menjalankan beban sungguhan lewat server nyata:
+
+```bash
+npm run bench:ledger
+```
+
+50 agen serentak × 40 keputusan = 2.000, lewat HTTP ke `/policy/check`,
+`synchronous=FULL`, di sandbox 2 inti:
+
+| | |
+|---|---|
+| Throughput ujung-ke-ujung | **~1.300 keputusan/detik** |
+| Latensi | p50 33 ms · p95 64 ms · p99 ~80 ms |
+| Catatan tertulis | 2.054 (2.000 keputusan + 50 penempatan agen + checkpoint) |
+| `/ledger/verify` seluruh rantai | ok, ~16 ms |
+
+Stabil pada tiga larian berturut (1.301 / 1.325 / 1.331 per detik).
+
+**Yang diajarkan angka ini.** 49.000/detik in-process versus ~1.300/detik
+ujung-ke-ujung adalah selisih 37×. Artinya **ledger bukan leher botolnya** —
+ia menyumbang sekitar 1,5% dari biaya satu keputusan. Sisanya HTTP, Express,
+dan evaluasi kebijakan. Siapa pun yang hendak mempercepat jalur ini sebaiknya
+tidak memulai dari sini, dan siapa pun yang khawatir audit trail penuh akan
+memperlambat armadanya boleh berhenti khawatir.
+
+**Yang ditegakkan versus yang dilaporkan.** Gerbang `ledger under load`
+menegakkan **keutuhan saja**: `/ledger/verify` ok, nomor urut rapat tanpa
+celah dan tanpa duplikat, setiap catatan tertaut ke pendahulunya, dan jalur
+"izinkan" benar-benar terpakai. Angka waktu **dilaporkan, tidak pernah
+ditegakkan** — waktu adalah properti mesin, bukan properti kode, dan gerbang
+yang merah saat runner sedang sibuk mengajari orang menjalankan ulang gerbang
+sampai hijau, yang menghancurkan nilai setiap gerbang lain di suite ini.
+
+**Mengapa armada agen, bukan satu pemukul.** `/policy/check` dibatasi
+per-agen (600/menit, burst 60 per 5 detik). Satu klien yang berulang hanya
+akan mengukur limiter, bukan ledger. Beban disebar ke banyak identitas agen
+yang masing-masing tetap di bawah burst-nya — yang kebetulan juga bentuk
+beban nyata yang produk ini ada untuk mengawasinya.
+
 Durabilitas penuh praktis gratis di sini — **tetapi** perlu kehati-hatian:
 sandbox kontainer sering punya `fsync` yang jauh lebih murah daripada diska
 jaringan sungguhan. Pada penyimpanan nyata selisih `FULL` vs `NORMAL` akan

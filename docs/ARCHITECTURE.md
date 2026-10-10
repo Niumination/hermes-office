@@ -36,7 +36,7 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1263   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1268   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     585   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   412   validasi, clamp, REDAKSI, rate limit, ring buffer
@@ -203,25 +203,30 @@ Keputusan arsitektur: **aset pre-render + satu lapisan atmosfer WebGL**, bukan
 
 | Jalur | Bundle | React | Dipilih |
 |---|---|---|---|
-| Pre-render + shader | **+7,8 kB** | 18 | ✅ |
-| Hybrid kamera 3D | ~+250 kB | wajib 19 | ✗ |
-| Full 3D (GLB) | ~+250 kB + aset | wajib 19 | ✗ |
+| Pre-render + shader | **+7,8 kB** | 19 | ✅ |
+| Hybrid kamera 3D | ~+250 kB | 19 | ✗ |
+| Full 3D (GLB) | ~+250 kB + aset | 19 | ✗ |
 
-R3F v9 hanya berpasangan dengan React 19 sementara repo ini React 18.3.1. Lebih
-menentukan: yang menjual kesan 3D pada donghua adalah **cahaya**, bukan
-geometri — dan cahaya adalah fenomena per-frame yang tetap bisa dijalankan di
-atas pelat statis.
+Catatan jujur: saat keputusan ini diambil, alasan pertamanya adalah R3F v9 hanya
+berpasangan dengan React 19 sementara repo ini masih React 18.3.1. Penghalang itu
+**sudah gugur** — React 19 masuk pada 2026-10-09 lewat pembaruan dependensi. Kami
+mempertahankan keputusannya karena alasan keduanya ternyata yang sebenarnya
+menentukan, dan alasan itu tidak bergantung pada versi React sama sekali: yang
+menjual kesan 3D pada donghua adalah **cahaya**, bukan geometri — dan cahaya
+adalah fenomena per-frame yang tetap bisa dijalankan di atas pelat statis. Biaya
+~250 kB tetap ~250 kB di React versi mana pun.
 
 - **18 pelat ruangan** (12 ruangan, varian siang/malam, @2x) — semua seni
   nyata, nol placeholder.
-- **282 sprite** dikirim, 132 di antaranya bisa dibangun ulang byte-for-byte
+- **132 sprite** dikirim, dan **semuanya** bisa dibangun ulang byte-for-byte
   (lihat `docs/SPRITES.md`). **100 `derived`** lewat
   `scripts/stylize-donghua.py` — rim light searah god ray pelat, AO,
   specular, grade hangat, keyline; semua alpha-aware, idempoten, selalu
   membaca dari `art/originals/sprites/` dan tidak pernah dari keluarannya
   sendiri. **32 `built`** adalah cast donghua: 8 arketipe × 4 arah, diukur
-  ulang dan dicerminkan dari 16 render di `art/donghua-cast/`. Sisa **150
-  `unsourced`** adalah cast lama yang kini tidak dirender oleh apa pun.
+  ulang dan dicerminkan dari 16 render di `art/donghua-cast/`. **`unsourced`
+  = 0**: 150 sprite cast lama dihapus pada 2026-10-10 (108 di antaranya rupa
+  yang dapat dikenali dari sebuah serial televisi, dan nol dirujuk kode).
 - **`AtmosphereLayer.tsx`** membaca **burn state Fase 2**, jadi kantor berubah
   suhu seiring belanja naik. Lapisan tata kelola dan arah seni adalah hal yang
   sama.
@@ -237,7 +242,7 @@ terdegradasi teruji secara gratis).
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
 | Backend | **305** | `npm test` |
-| Frontend | **160** | `cd frontend && npm test` |
+| Frontend | **170** | `cd frontend && npm test` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

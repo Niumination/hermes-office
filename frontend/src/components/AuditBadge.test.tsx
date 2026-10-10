@@ -81,10 +81,10 @@ describe('AuditBadge — chain state', () => {
     await screen.findByText(/AUDIT · 128/)
 
     await userEvent.click(screen.getByRole('button'))               // open panel
-    await userEvent.click(screen.getByRole('button', { name: /verify chain/i }))
+    await userEvent.click(screen.getByRole('button', { name: /verifikasi rantai/i }))
 
     await waitFor(() => expect(badge(container)).toHaveClass('audit-verified'))
-    expect(screen.getByText(/Verified 128 records in 7 ms/)).toBeInTheDocument()
+    expect(screen.getByText(/Terverifikasi 128 catatan dalam 7 ms/)).toBeInTheDocument()
   })
 
   it('surfaces a broken chain loudly, naming the reason and the record', async () => {
@@ -98,12 +98,12 @@ describe('AuditBadge — chain state', () => {
     await screen.findByText(/AUDIT · 128/)
 
     await userEvent.click(screen.getByRole('button'))
-    await userEvent.click(screen.getByRole('button', { name: /verify chain/i }))
+    await userEvent.click(screen.getByRole('button', { name: /verifikasi rantai/i }))
 
     // A tamper signal that is merely logged is a tamper signal nobody sees.
     await waitFor(() => expect(badge(container)).toHaveClass('audit-broken'))
-    expect(screen.getByText(/FAILED: content-altered at #57/)).toBeInTheDocument()
-    expect(screen.getByText('CHAIN BROKEN')).toBeInTheDocument()
+    expect(screen.getByText(/GAGAL: content-altered di #57/)).toBeInTheDocument()
+    expect(screen.getByText('RANTAI PUTUS')).toBeInTheDocument()
   })
 
   it('keeps the honest caveat visible next to the verdict', async () => {
@@ -115,7 +115,7 @@ describe('AuditBadge — chain state', () => {
     // Tail truncation and wholesale regeneration are NOT detectable without
     // an external anchor. Overstating this is the one thing that would make
     // the whole compliance story dishonest, so the wording is pinned.
-    expect(screen.getByText(/Tamper-evident, not tamper-proof/)).toBeInTheDocument()
+    expect(screen.getByText(/Tahan-rusak, bukan anti-rusak/)).toBeInTheDocument()
   })
 
   it('offers the dossier export as a real link, not a scripted download', async () => {
@@ -124,7 +124,7 @@ describe('AuditBadge — chain state', () => {
     await screen.findByText(/AUDIT · 128/)
     await userEvent.click(screen.getByRole('button'))
 
-    const link = screen.getByRole('link', { name: /export dossier/i })
+    const link = screen.getByRole('link', { name: /ekspor dossier/i })
     // The server already sets Content-Disposition; a plain link keeps the
     // export working even when JS state is stale.
     expect(link).toHaveAttribute('href', '/dossier')

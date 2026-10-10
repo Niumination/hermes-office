@@ -1,4 +1,4 @@
-# Sprite — asal, reproduksi, dan satu hal yang belum selesai
+# Sprite — asal, reproduksi, dan liabilitas yang ditutup
 
 Dokumen pendamping [`ROOM-PLATES.md`](ROOM-PLATES.md). Keduanya menjawab
 pertanyaan yang sama — "apakah aset ini yang kami kira?" — tapi sprite bisa
@@ -26,7 +26,7 @@ karena saat itu setiap berkas di disk masih cocok dengan hash-nya.
 | `derived` | 100 | punya original di `art/originals/sprites`, dan berkas yang dikirim persis `stylize(original)` |
 | `built` | 32 | cast donghua: persis `build-cast-sprites(art/donghua-cast/)` — ukur ulang + cermin, keduanya deterministik |
 | `opaque` | 0 | punya original tanpa alpha, sengaja dilewati filter |
-| `unsourced` | 150 | **tidak ada sumber. Belum pernah melewati pipeline apa pun.** |
+| `unsourced` | 0 | **tidak ada sumber.** Nol sejak 2026-10-10 — lihat di bawah |
 
 Tercatat di `frontend/public/sprites/SPRITES.json`.
 
@@ -39,10 +39,23 @@ deterministik. Jadi reproducibility cast berhenti satu lapis lebih awal:
 persis seperti plate ruangan. Hilangkan direktori itu dan castnya jadi
 `unsourced` — yang memang terjadi, dan memang gagal (lihat tabel mutasi).
 
-## Yang belum selesai: 150 sprite itu adalah seluruh cast lama
+## Keputusan yang diambil: 150 sprite cast lama dihapus
 
-Ini bukan selisih pembulatan. Seluruh 150 sprite tanpa sumber adalah
-**setiap karakter dari cast lama** — 108 di `office/characters`, 42 di `characters/`.
+**2026-10-10 — dihapus.** Sampai tanggal itu, 150 dari 282 sprite yang
+dikirim tidak punya sumber, dan seluruh 150 itu adalah **setiap karakter dari
+cast lama**: 108 di `office/characters`, 42 di `characters/`. Keduanya kini
+tidak ada lagi di pohon ini, dan `check-docs.py` menolak kalau salah satunya
+muncul kembali.
+
+Catatan yang jujur dan penting: repo ini **publik**, dan menghapus berkas
+tidak menghapusnya dari riwayat Git. Ke-108 rupa itu masih dapat diambil dari
+commit mana pun sebelum `4c8b4ca`. Penghapusan ini menghentikan **distribusi
+ke depan** — ia bukan remediasi HKI yang tuntas. Itu menuntut penulisan ulang
+riwayat (`git filter-repo`) dan paksa-dorong, yang memutus setiap klon dan
+setiap SHA yang pernah dikutip, termasuk yang ada di `MANIFEST.sha256` dan di
+berkas ini. Pertukaran itu milik pemilik produk, bukan milik dokumen ini.
+
+Alasan di balik keputusannya tercatat di bawah, apa adanya.
 
 Docstring `stylize-donghua.py` membuka dengan kalimat bahwa ia menata "108
 sprites: 27 characters x 4 facings". `office/characters` memuat tepat 108
@@ -66,17 +79,26 @@ sekarang merender 8 arketipe donghua dari `sprites/donghua/`, dan
 maupun `characters/`. Jadi 150 sprite `unsourced` itu kini punya status yang
 lebih tepat daripada "belum difilter": mereka **tidak dirender oleh apa pun**.
 
-Mereka tetap dikirim, dan itu disengaja — swap kembali adalah satu path di
-`Character.tsx`, jadi keputusan seni ini reversibel dalam satu baris selama
-berkasnya masih ada. Tapi dua konsekuensinya dicatat di sini, bukan
-ditemukan nanti:
+Selama beberapa waktu mereka tetap dikirim, dan itu disengaja: swap kembali
+adalah satu path di `Character.tsx`, jadi keputusan seni itu reversibel dalam
+satu baris selama berkasnya masih ada. Dua konsekuensi yang dicatat waktu itu
+adalah yang akhirnya menutup perkaranya:
 
-1. **Bobot mati.** Build memuat 150 berkas yang tak pernah diminta browser.
+1. **Bobot mati.** Build memuat 150 berkas yang tak pernah diminta browser —
+   4,7 MB, dari 7,9 MB menjadi 3,2 MB.
 2. **Liabilitas HKI.** Ke-108 sprite `office/characters` adalah rupa yang
    dapat dikenali dari sebuah serial televisi, di dalam produk berharga
    $2.000+. Cast donghua orisinal ada sebagian besar untuk alasan itu.
-   Menghapus direktori lama menutup paparannya; menyimpannya menjaga jalur
-   mundur. Itu pilihan komersial, dan belum diambil.
+
+Jalur mundur satu baris itu nyata, tapi ia hanya bernilai kalau ada yang
+berniat memakainya, dan tidak ada. Menahan paparan HKI sebagai harga sebuah
+opsi yang tak akan ditebus adalah pertukaran yang buruk. Dihapus.
+
+Satu sisa yang sengaja tidak disentuh: `art/originals/sprites/office/props/
+schrute-buck.webp` dan sprite props turunannya. Itu rujukan ke serial yang
+sama, tapi berupa benda, bukan rupa orang, dan ia **punya sumber** — jadi ia
+tetap masuk hitungan reproducible. Kalau standarnya diperketat ke "nol
+rujukan HKI", berkas itu yang berikutnya.
 
 ## Cacat yang menghancurkan seni pelanggan
 

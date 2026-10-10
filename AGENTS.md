@@ -10,7 +10,7 @@ Every rule below was paid for. None of them is style preference.
 ## 0. One command decides
 
 ```bash
-bash scripts/verify.sh          # ~6 min, all 14 gates
+bash scripts/verify.sh          # ~4 min on 2 cores, all 16 gates
 bash scripts/verify.sh --fast   # ~1 min, skips the byte-exact sprite rebuild
 ```
 
@@ -26,7 +26,7 @@ other failure untrustworthy until settled.
 
 ## 1. Never edit a number to make a gate green
 
-`check-docs.py` compares 92 documented claims against the repo. When it says
+`check-docs.py` compares 108 documented claims against the repo. When it says
 the doc is wrong, the doc is *usually* wrong — but not always. Twice the
 honest fix was in the opposite direction:
 
@@ -133,7 +133,7 @@ clock **and assert the pin cannot collide**.
 ## 8. Committing
 
 `node_modules/`, `dist/`, `data/`, `*.db` are generated — never commit them.
-`art/` **is** committed (5.2 MB): it is the input that makes 132 sprites
+`art/` **is** committed (13 MB): it is the input that makes all 132 shipped sprites
 reproducible, and keeping it outside the repo is the defect that destroyed
 the art once already.
 

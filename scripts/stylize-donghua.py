@@ -5,8 +5,11 @@ without regenerating them.
 
 WHY PROGRAMMATIC AND NOT IMAGE-GEN
 ----------------------------------
-There are 108 character sprites under office/characters (27 characters x 4
-facings) plus 42 more under characters/. Regenerating them would have
+This filter was written for the legacy cast: 108 sprites under
+office/characters (27 characters x 4 facings) plus 42 more under characters/.
+Those files were deleted on 2026-10-10 for IP exposure, so the paths below no
+longer exist; the reasoning is kept because it still governs how the donghua
+archetypes in art/donghua-cast are produced. Regenerating a cast would have
 to hold one identity stable across four viewing angles, 27 times over, and
 image-generation does not hold identity that tightly. Drift would show up as
 a character whose face changes when it turns around — far more noticeable than

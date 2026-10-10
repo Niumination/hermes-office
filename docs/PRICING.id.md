@@ -63,13 +63,40 @@ sebelum paginya.
 **Dibandingkan membangunnya sendiri.** Rantai hash yang benar, redaksi yang
 teruji, kontrak tamu yang tidak bocor di salah satu dari dua tempat, replay
 deterministik yang bisa dipakai sebagai bukti. Itu bukan sprint. Repo ini
-punya 305 test backend dan 92 klaim dokumen yang diverifikasi mesin justru
+punya 305 test backend dan 108 klaim dokumen yang diverifikasi mesin justru
 karena bagian-bagian ini mudah dibuat *hampir* benar.
 
 **Dibandingkan pesaing.** Langfuse Enterprise $2.499/tahun untuk tracing dan
 eval. Angka $2.000 bukan diskon terhadap mereka — ia produk berbeda di
 kategori yang berdekatan, dan ia sengaja tidak lebih murah. Harga yang lebih
 rendah akan memberi sinyal "alat bantu", padahal yang dibeli adalah bukti.
+
+## Setiap angka di halaman ini bisa dieksekusi
+
+Halaman harga adalah tempat klaim membusuk: ditulis sekali, dibaca semua
+orang, diperiksa tidak oleh siapa pun. Yang ini tersambung ke repo.
+
+Jumlah test, jumlah klaim, dan jumlah aset yang dikutip di sini dibaca dari
+berkas ini oleh `scripts/check-docs.py` lalu dicocokkan dengan yang
+benar-benar dilaporkan runner. Kalau halaman ini dan kodenya berbeda, CI
+gagal. Versi Inggris dan Indonesia diikat ke angka yang sama, karena
+terjemahan adalah tempat kedua bagi sebuah klaim untuk membusuk.
+
+Anda juga tidak perlu memercayai itu begitu saja:
+
+```bash
+git clone https://github.com/Niumination/hermes-office
+cd hermes-office && npm ci && npm run verify
+```
+
+16 gerbang, sekitar 4 menit di mesin 2 inti. Daftar gerbang dan apa yang
+dibuktikan masing-masing ada di [README](../README.id.md#verifikasi-sendiri).
+
+Inilah produk yang sebenarnya. Kantor isometrik bisa ditiru dalam seminggu;
+vendor yang mempersilakan Anda mengeksekusi materi pemasarannya tidak bisa
+ditiru sama sekali tanpa mengerjakan hal yang sama. Yang dijual seharga
+$2.000+ bukan gambarnya — melainkan bahwa setiap kalimat yang menempel padanya
+sudah dibuat dapat dibantah, dan dibiarkan begitu.
 
 ## Batas open-core
 
@@ -90,4 +117,20 @@ tidak satu pun diperlukan agar rantai itu benar.
 - **Akses ke data Anda.** Tidak ada telemetri keluar. Satu-satunya panggilan
   keluar adalah webhook jangkar yang Anda konfigurasikan sendiri.
 - **Jaminan kepatuhan.** Kami menghasilkan bukti; asesor Anda menilainya.
+  Disebut eksplisit, supaya tak perlu ditanyakan lewat email: tidak ada
+  laporan SOC 2, tidak ada sertifikasi ISO 27001, tidak ada HIPAA BAA, tidak
+  ada DPA bertanda tangan, tidak ada penetration test pihak ketiga. Yang ada
+  adalah SBOM CycloneDX yang dibangun ulang setiap larian CI
+  (`sbom.cdx.json`), ledger tahan-rusak, dan model ancaman terdokumentasi.
+  Itu masukan bagi sebuah asesmen, bukan penggantinya.
 - **Anti-rusak.** Tahan-rusak. Tertulis di UI-nya.
+- **SLA uptime atau waktu tanggap.** Anda yang meng-hosting. Satu-satunya
+  komitmen waktu di mana pun adalah jendela pengungkapan di
+  [`SECURITY.md`](SECURITY.md#11-coordinated-disclosure), dan itu janji untuk
+  menjawab, bukan janji untuk memperbaiki.
+- **Dukungan untuk versi Node di luar matriks CI.** Himpunan yang didukung
+  tepat dua versi dan terdaftar di [`SUPPORT.md`](SUPPORT.md).
+
+Setiap butir di atas bisa dijual cukup dengan menulis satu kalimat. Tak satu
+pun dijual, dan hanya karena itulah kalimat-kalimat di sisa halaman ini ada
+harganya.

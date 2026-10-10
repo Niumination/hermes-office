@@ -5,7 +5,7 @@
 - Branch: `main` (deployable), feature branches `feat/<name>`, fixes `fix/<name>`
 - Commit style: conventional commits (`feat:`, `fix:`, `docs:`, `chore:` …)
 - Server code: Node 22 ESM, no TypeScript (match Claude-Office server style)
-- Frontend: React 18 + TypeScript + Vite
+- Frontend: React 19 + TypeScript + Vite
 
 ## Contract changes
 

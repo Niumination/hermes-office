@@ -103,7 +103,9 @@ per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
   perilaku yang kami ingin dorong.
 - ❌ **Multi-tenant SaaS.** Single-tenant yang di-self-host adalah fiturnya —
   pembeli kepatuhan tidak mau log mereka di infrastruktur orang lain.
-- ❌ **Migrasi ke React 19 / React Three Fiber.** Lihat §11 D3.
+- ❌ **React Three Fiber.** Lihat §11 D3. (React 19 sendiri **bukan lagi**
+  non-goal: ia masuk pada 2026-10-09 lewat pembaruan dependensi. Yang tetap
+  ditolak adalah R3F, dan alasannya ukuran bundel — bukan versi React.)
 - ❌ **Membaca isi prompt.** Lihat §11 D5. Ini batas permanen, bukan backlog.
 - ❌ Aplikasi native mobile.
 
@@ -246,7 +248,7 @@ ledger **tidak pernah** menolak aksi yang sedang berjalan.
 
 ### F5 · Lapisan Visual Donghua (Fase 5)
 
-12 ruangan, 18 pelat, 282 sprite, nol placeholder. Kesan 3D datang dari
+12 ruangan, 18 pelat, 132 sprite, nol placeholder. Kesan 3D datang dari
 **cahaya**, bukan geometri: satu fragment shader WebGL2 (`AtmosphereLayer`)
 dengan god ray volumetrik, debu di tiga bidang parallax, vignette, dan
 gradasi warna yang **membaca burn state**. Biaya **+7,8 kB**.
@@ -291,7 +293,7 @@ kepatuhan menuntutnya, chat karena pengguna mengharapkannya.
 
 ## 8. Spesifikasi API
 
-26 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
+27 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
 beserta guard tiap rute, dan `scripts/check-docs.py` memverifikasi tabel itu
 dua arah** — rute di `index.js` tanpa baris tabel gagal, rute terdokumentasi
 yang tidak ada juga gagal.
@@ -348,7 +350,7 @@ ada satu daftar.
 |---|---|---|---|
 | **D1** | Denah lantai sebagai penegakan kebijakan, bukan dekorasi | Dashboard dengan tabel aturan | Satu-satunya hal yang tidak dimiliki Langfuse/Phoenix. Metafora spasial membuat kebijakan bisa dibaca sekilas. |
 | **D2** | Mengarahkan sebelum menghentikan | Pemutus keras di 100% | Data TokenOps: mengarahkan memangkas belanja ~78% **dan** menaikkan penyelesaian 67%→96%. Pemutus keras hanya memangkas biaya. |
-| **D3** | Pelat pra-render + satu shader | React Three Fiber | R3F@9 butuh React 19 → migrasi menyentuh 15 komponen; three ~150–200 kB setelah tree-shake + ~50 kB reconciler. Yang kami kirim: **+7,8 kB**. |
+| **D3** | Pelat pra-render + satu shader | React Three Fiber | three ~150–200 kB setelah tree-shake + ~50 kB reconciler. Yang kami kirim: **+7,8 kB**. Alasan lama "R3F@9 butuh React 19 → migrasi menyentuh 15 komponen" **gugur** sejak React 19 masuk (2026-10-09); keputusannya bertahan karena alasan ukuran tidak pernah bergantung pada versi React. |
 | **D4** | Disiplin token OKLCH saja | Migrasi penuh Tailwind v4 + shadcn | 2.475 baris CSS yang berfungsi membuat penulisan ulang jadi biaya murni. Ambil ide warnanya, tinggalkan migrasinya. |
 | **D5** | Tidak pernah membaca isi prompt | Ingest prompt penuh untuk fitur lebih kaya | Pembeli kepatuhan tidak akan memasang alat yang menyedot prompt. Ini pagar permanen. |
 | **D6** | Single-tenant self-hosted | SaaS multi-tenant | Sama: pembeli kepatuhan tidak mau log mereka di tempat lain. |
@@ -399,7 +401,7 @@ pipeline redaksi, kontrak privasi `channel_msg`, dan sanitasi tamu.
 - [x] Batasan ledger dinyatakan di UI dan di dokumen
 - [x] Nol pengikatan ke host/akun mana pun (`check-deployable.sh`)
 - [x] 154 test backend + 119 test frontend hijau
-- [x] Lint bersih, build 216 kB
+- [x] Lint bersih, build 299 kB
 - [x] 5 skrip pemeriksa lolos, semuanya di CI, tanpa `|| true`
 - [x] Klaim ARCHITECTURE.md dieksekusi CI
 - [x] Penambatan ledger — pemotongan ekor dan regenerasi kini terdeteksi (Fase 11)

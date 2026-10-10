@@ -149,17 +149,18 @@ tahanan. Ambiguitas itu disengaja dan berguna.
 
 ## 6. Karakter
 
-282 sprite, 4 arah hadap per karakter. Yang dirender hanya **8 arketipe
-donghua** (32 sprite di `sprites/donghua/`); 150 sprite cast lama masih
-dikirim tapi tidak dirujuk kode mana pun.
+132 sprite, 4 arah hadap per karakter. Satu-satunya cast yang ada adalah
+**8 arketipe donghua** (32 sprite di `sprites/donghua/`). Ke-150 sprite cast
+lama dihapus pada 2026-10-10; tidak ada kode yang merujuknya, dan
+`check-docs.py` menolak kalau direktorinya muncul kembali.
 
 **Jangan pernah meregenerasi satu karakter sebagai 4 generasi terpisah** —
 identitas melayang dan wajahnya berubah saat ia berbalik. Pola yang dipakai
 cast donghua: hasilkan **depan + belakang saja**, lalu cerminkan untuk
 kiri/kanan (`scripts/build-cast-sprites.py`). Ongkosnya diterima sadar —
 atribut asimetris bertukar sisi saat dicerminkan (kepang `physician`, palu
-`forge`) dan itu tidak terlihat pada 96 px. Untuk 150 sprite lama aturannya
-tetap: restyle dari `art/originals/sprites/`, jangan buat ulang.
+`forge`) dan itu tidak terlihat pada 96 px. Untuk sprite non-karakter
+aturannya tetap: restyle dari `art/originals/sprites/`, jangan buat ulang.
 
 | Karakter | Perilaku |
 |---|---|
@@ -201,6 +202,11 @@ untuk tidak membacanya. Hilang sepenuhnya pada 401/403. Memuat kalimat
 Kalimat itu ada di test. Kalau seseorang menghapusnya demi pemasaran, build
 gagal.
 
+> **Catatan 9 Okt 2026:** UI sekarang Bahasa Indonesia, jadi yang dirender
+> adalah terjemahannya: **"Tahan-rusak, bukan anti-rusak."** `check-docs.py`
+> memeriksa versi Indonesia ini terhadap komponen (claim #561). Versi
+> Inggris di atas tetap sebagai catatan desain.
+
 ---
 
 ## 8. Gerak & Aksesibilitas
@@ -241,7 +247,7 @@ tanpa jejak adalah cara dokumen jadi tidak bisa dipercaya.
 | Aset | Jumlah | Catatan |
 |---|---|---|
 | Pelat ruangan | 18 | webp, varian siang/malam + @2x |
-| Sprite | 282 | 4 arah hadap, nol placeholder (132 reproducible) |
+| Sprite | 132 | 4 arah hadap, nol placeholder (semuanya reproducible) |
 | Original sprite | `art/originals/sprites/` 100 | **jangan pernah ditimpa** — sumber idempotensi `derived` |
 | Render cast | `art/donghua-cast/` 16 | sumber reproduksi 32 sprite `built` |
 

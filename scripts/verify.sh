@@ -56,6 +56,31 @@ gate() {
   fi
 }
 
+# Runtime first, before a single dependency is installed.
+#
+# This script is the one command a buyer is invited to run, so its worst
+# possible behaviour is to fail in a way that looks like the product is
+# broken. On Node 20 it did exactly that: better-sqlite3 13 is a native addon
+# built against a newer ABI, the backend suite died with SIGSEGV, and the run
+# printed 56 failing tests and five red gates. Nothing was wrong with the
+# repo — the runtime was simply one the repo no longer supports — but nobody
+# reading that output would have believed it.
+#
+# The supported floor is read from package.json rather than written here, so
+# this check cannot drift away from `engines`.
+need=$(node -p "require('./package.json').engines.node.replace(/[^0-9.]/g,'').split('.')[0]" 2>/dev/null || echo "")
+have=$(node -p "process.versions.node.split('.')[0]" 2>/dev/null || echo "")
+if [[ -n "$need" && -n "$have" && "$have" -lt "$need" ]]; then
+  echo "FAIL: this repo requires Node >= $need; you are running $(node -v)."
+  echo
+  echo "  Nothing below would be trustworthy on this runtime. better-sqlite3 is"
+  echo "  a native addon and the backend suite crashes rather than fails, which"
+  echo "  reads like broken code instead of a wrong Node."
+  echo
+  echo "  Install Node $need or newer, then re-run: npm run verify"
+  exit 1
+fi
+
 echo "=== install ==="
 if [[ ! -d node_modules ]]; then npm ci --silent || exit 1; fi
 if [[ ! -d frontend/node_modules ]]; then (cd frontend && npm ci --silent) || exit 1; fi
@@ -72,9 +97,11 @@ gate "frontend build"      bash -c 'cd frontend && npm run build'
 gate "backend tests"       bash -c 'node --test tests/*.test.js'
 gate "frontend tests"      bash -c 'cd frontend && npx vitest run'
 gate "clean shutdown"      bash scripts/check-shutdown.sh
+gate "ledger under load"   node scripts/bench-ledger.mjs --check
 gate "upstream assets"     bash scripts/check-assets.sh
 gate "ci workflow"         bash scripts/check-ci.sh
 gate "dependency pins"     bash scripts/check-pins.sh
+gate "sbom"                python3 scripts/make-sbom.py --check
 gate "deployable"          bash scripts/check-deployable.sh
 gate "room plates"         python3 scripts/check-plates.py
 gate "theme contrast"      python3 scripts/check-contrast.py

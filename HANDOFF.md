@@ -50,7 +50,7 @@ Patokan yang harus direproduksi (per 2026-10-08):
 |---|---|
 | handoff integrity | 562 berkas cocok |
 | eslint | 0 masalah |
-| frontend build | 216,57 kB JS / 46,98 kB CSS (vite 8) — tema 宗門 menambah ~1,3 kB JS dan ~4,5 kB CSS |
+| frontend build | 298,9 kB JS / 47,2 kB CSS (vite 8, pasca React 19) — tema 宗門 menambah ~1,3 kB JS dan ~4,5 kB CSS |
 | backend tests | **305** lulus, 0 gagal |
 | frontend tests | **160** lulus |
 | clean shutdown | keluar bersih dengan WebSocket hidup |
@@ -59,8 +59,8 @@ Patokan yang harus direproduksi (per 2026-10-08):
 | deployable | tak ada ikatan host/akun |
 | room plates | 26 plate (18 bawaan + 8 sekte), hash + 7 aturan gaya |
 | theme contrast | 12 pasangan token tema 宗門 diukur dalam APCA Lc, termasuk teks di atas rail kaca di atas pelat paling terang |
-| doc claims | **87** klaim cocok |
-| sprites (+rebuild) | **282** sprite, 132 bangun ulang byte-exact |
+| doc claims | **94** klaim cocok |
+| sprites (+rebuild) | **132** sprite, semuanya bangun ulang byte-exact |
 
 `verify.sh` memutuskan lulus/gagal **hanya dari exit code**, tidak pernah
 dari grep keluaran. Versi sebelumnya sempat melaporkan "lint bersih" di atas
@@ -129,35 +129,51 @@ sah setelah dipindah selama isinya tidak berubah.
 
 ---
 
-## 4. Dua keputusan yang sengaja TIDAK saya ambil
+## 4. Dua keputusan yang dulu saya tahan — keduanya kini diambil
 
-Keduanya mengubah produk secara permanen, jadi bukan milik saya.
+Keduanya mengubah produk secara permanen, jadi bukan milik saya. Pemilik
+memutuskan keduanya pada **2026-10-10**, dan keduanya sudah diterapkan.
 
-### 4a. 150 sprite cast lama — hapus atau simpan?
+### 4a. 150 sprite cast lama — DIHAPUS
 
-Status sekarang: **dikirim, tapi tidak dirender oleh apa pun.** `grep` ke
-`frontend/src` mengembalikan nol rujukan ke `office/characters` maupun
-`characters/`. Aplikasi memakai 8 arketipe donghua di `sprites/donghua/`.
+Keputusan: **hapus.** Diterapkan 2026-10-10.
 
-- **Menyimpan** = jalur mundur satu baris (satu path di `Character.tsx`),
-  tapi 150 berkas bobot mati **dan** paparan HKI: 108 di antaranya adalah
-  rupa yang dapat dikenali dari sebuah serial televisi, di dalam produk
-  berharga $2.000+.
-- **Menghapus** = paparan tertutup, build mengecil, keputusan seni terkunci.
+Alasannya bukan ukuran, meski ukurannya ikut turun (7,9 MB → 3,2 MB): 108
+dari 150 berkas itu adalah rupa yang dapat dikenali dari sebuah serial
+televisi, di dalam produk berharga $2.000+. Nol di antaranya dirujuk kode —
+aplikasi memakai 8 arketipe donghua di `sprites/donghua/`. Jalur mundur satu
+baris di `Character.tsx` memang nyata, tapi menahan paparan HKI sebagai harga
+sebuah opsi yang tak akan ditebus adalah pertukaran yang buruk.
 
-Kalau dihapus, yang ikut berubah: `check-sprites.py --write`,
-`docs/SPRITES.md` (tabel provenance + bagian "150 sprite cast lama"),
-`check-docs.py` (ekspektasi `unsourced` 150 dan `office/characters` 108),
-dan angka 282 di 5 dokumen. Semuanya akan **gagal keras** lebih dulu — itu
-memang desainnya.
+Yang ikut berubah, seperti diperkirakan: `SPRITES.json` direkam ulang,
+`docs/SPRITES.md` (tabel provenance + bagian naratifnya), `check-docs.py`,
+docstring `check-sprites.py` dan `stylize-donghua.py`, dan angka 282 di lima
+dokumen. Semuanya **gagal keras lebih dulu** — itu memang desainnya, dan itu
+yang membuat pembaruannya tidak mungkin terlewat.
 
-### 4b. `art/` (5,2 MB) — tetap di repo?
+Ekspektasi `check-docs.py` tidak sekadar diturunkan angkanya. Cek lama
+memverifikasi bahwa *setiap* karakter tidak bersumber — ia menjaga agar prosa
+tentang sebuah celah tidak hidup lebih lama dari celahnya. Penggantinya
+adalah klaim yang lebih kuat: **nol sprite boleh tanpa sumber**, plus satu
+cek bahwa kedua direktori itu tidak muncul kembali dari riwayat Git.
 
-Rekomendasi saya: **ya, tetap.** Itu input yang membuat 132 sprite
-reproducible, dan memindahkannya keluar repo adalah persis cacat yang
+**Belum tuntas, dan harus dikatakan:** repo ini publik. `git rm` tidak
+menghapus apa pun dari riwayat; ke-108 rupa itu masih dapat diambil dari
+commit mana pun sebelum `4c8b4ca`. Ini menghentikan distribusi ke depan, bukan
+remediasi HKI yang selesai. Remediasi penuh menuntut `git filter-repo` dan
+paksa-dorong — yang memutus setiap klon dan setiap SHA yang pernah dikutip.
+
+### 4b. `art/` (13 MB) — TETAP di repo
+
+Keputusan: **tetap.** Itu input yang membuat **seluruh 132** sprite yang
+dikirim reproducible, dan memindahkannya keluar repo adalah persis cacat yang
 pernah menghancurkan seninya (pipeline membaca path absolut yang hanya ada
 di satu mesin, lalu memfilter ulang hasil filternya sendiri sambil mencetak
 `originals preserved`).
+
+Catatan: `art/` sebenarnya **13 MB**, bukan 5,2 MB seperti yang tertulis di
+dokumen ini dan di `AGENTS.md` sebelumnya. Angka itu tidak pernah diperiksa
+gerbang mana pun; ia sudah dikoreksi.
 
 ---
 
@@ -228,7 +244,7 @@ Aturan yang membuatnya berguna, bukan seremonial:
 | `docs/ARCHITECTURE.md` · `PRD.md` · `UI-SPEC.md` | spesifikasi, semuanya diperiksa mesin |
 | `docs/SPRITES.md` · `ROOM-PLATES.md` | provenance aset + apa yang menangkap apa |
 | `docs/PRICING.md` · `.id.md` | halaman harga, angkanya kini ikut diperiksa |
-| `scripts/verify.sh` | satu perintah, 14 gerbang |
+| `scripts/verify.sh` | satu perintah, 16 gerbang |
 | `scripts/check-handoff.sh` | integritas transfer |
 | `MANIFEST.sha256` | 561 berkas, sha256 |
 | `art/originals/sprites/` | 100 original — **jangan pernah ditimpa** |

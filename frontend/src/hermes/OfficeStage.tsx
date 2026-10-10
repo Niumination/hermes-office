@@ -14,6 +14,8 @@ import { AGENT_CONFIGS } from '../types'
 import Character from '../components/Character'
 import { platePath } from '../theme/plates'
 import { useTheme } from '../theme/themeStore'
+import { fetchLadder, type PolicySnapshot } from '../theme/policyClient'
+import SectLadder from '../components/SectLadder'
 import BurnOverlay from '../components/BurnOverlay'
 import ApprovalGate from '../components/ApprovalGate'
 import AuditBadge from '../components/AuditBadge'
@@ -90,8 +92,8 @@ function createBoss(): Agent {
     assignedRoom: 'main-office',
     assignedSpotId: spot.id,
     spriteFacing: spot.spriteFacing,
-    task: 'Running the show',
-    statusText: 'clocked in',
+    task: 'Memimpin jalannya kerja',
+    statusText: 'sudah absen',
     color: BOSS_CONFIG.color,
     emoji: BOSS_CONFIG.emoji,
     hiredAt: Date.now(),
@@ -123,7 +125,7 @@ function createCastMember(id: string): Agent {
     assignedSpotId: spot.id,
     spriteFacing: spot.spriteFacing,
     task: undefined,
-    statusText: 'clocked in',
+    statusText: 'sudah absen',
     color: cfg.color,
     emoji: cfg.emoji,
     hiredAt: Date.now(),
@@ -161,6 +163,19 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
   const [activeRoom, setActiveRoom] = useState<RoomId>('main-office')
   // Recent envelopes for the per-room mini feed (kept in state so it re-renders).
   const [recentEnvelopes, setRecentEnvelopes] = useState<HermesEnvelope[]>([])
+
+  // The sect ladder rail. Only mounted under the 宗門 theme, so the default
+  // office pays no fetch and renders no mountain; the rail is a sect skin
+  // feature, not a second room picker. See theme/policyClient.ts for why the
+  // guest gets a coarser ladder and why a failed fetch removes the rail
+  // instead of white-screening the office.
+  const [ladder, setLadder] = useState<PolicySnapshot | null>(null)
+  useEffect(() => {
+    if (theme !== 'sect') { setLadder(null); return }
+    let alive = true
+    fetchLadder().then(snap => { if (alive) setLadder(snap) })
+    return () => { alive = false }
+  }, [theme])
 
   // Burn state is seeded once and then pushed over the socket; see
   // useBurnState for why this is not a timer. The same hook feeds the HUD, so
@@ -435,6 +450,21 @@ const OfficeStage: React.FC<Props> = ({ phase, nightOpacity, drainPending, pendi
         )}
 
         <RoomMiniFeed room={activeRoom} events={recentEnvelopes} />
+
+        {/* The sect ladder rail — the floor plan drawn as a mountain. Only
+            under the 宗門 theme, and only when /policy actually answered:
+            a ladder with no rungs is a room picker with no rooms, and it is
+            better to render nothing than to promise navigation that does not
+            exist. The cap is hidden for a guest, whose policy is redacted. */}
+        {theme === 'sect' && ladder && ladder.rungs.length > 0 && (
+          <SectLadder
+            rungs={ladder.rungs}
+            viewerTier={ladder.viewerTier}
+            currentRoom={activeRoom}
+            onSelect={(room) => setActiveRoom(room as RoomId)}
+            hideCaps={ladder.redacted}
+          />
+        )}
       </div>
     </div>
   )

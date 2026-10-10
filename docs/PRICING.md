@@ -62,7 +62,7 @@ that loop as a named finding; the budget cap stops it before morning.
 **Compared to building it.** A hash chain done correctly, redaction that is
 actually tested, a guest contract that does not leak in one of the two places
 it lives, a deterministic replay usable as evidence. That is not a sprint.
-This repo carries 305 backend tests and 92 machine-verified documentation
+This repo carries 305 backend tests and 108 machine-verified documentation
 claims precisely because these parts are easy to get *almost* right.
 
 **Compared to competitors.** Langfuse Enterprise is $2,499/year for tracing
@@ -70,6 +70,33 @@ and eval. The $2,000 figure is not a discount against them — it is a
 different product in an adjacent category, and it is deliberately not
 cheaper. A lower price would signal "helper tool", when what is being bought
 is proof.
+
+## Every number on this page is executable
+
+Pricing pages are where claims go to rot: they are written once, read by
+everyone, and checked by no one. This one is wired to the repository.
+
+The test counts, the claim counts and the asset counts quoted here are read
+out of this file by `scripts/check-docs.py` and compared against what the
+runners actually report. If this page and the code disagree, CI fails. The
+English and Indonesian versions are held to the same figures, because a
+translation is a second place for a claim to rot.
+
+You do not have to take that on trust either:
+
+```bash
+git clone https://github.com/Niumination/hermes-office
+cd hermes-office && npm ci && npm run verify
+```
+
+16 gates, about 4 minutes on a 2-core machine. The gate list and what each
+one proves is in the [README](../README.md#verify-it-yourself).
+
+This is the actual product. An isometric office can be copied in a week; a
+vendor who lets you execute their marketing cannot be copied at all without
+doing the same work. What is being sold at $2,000+ is not the picture — it is
+that every sentence attached to it has been made falsifiable, and left that
+way.
 
 ## The open-core boundary
 
@@ -89,4 +116,19 @@ chain; none of it is required for the chain to be correct.
 - **Access to your data.** No outbound telemetry. The only outbound call is
   the anchor webhook you configure yourself.
 - **A compliance guarantee.** We produce evidence; your assessor judges it.
+  Named explicitly, so nobody has to ask by email: there is no SOC 2 report,
+  no ISO 27001 certification, no HIPAA BAA, no signed DPA, no third-party
+  penetration test. What exists is a CycloneDX SBOM rebuilt on every CI run
+  (`sbom.cdx.json`), a tamper-evident ledger, and a documented threat model.
+  Those are inputs to an assessment, not a substitute for one.
 - **Tamper-proof.** Tamper-evident. It says so in the UI.
+- **An uptime or response-time SLA.** You host it. The one timing commitment
+  made anywhere is the disclosure window in
+  [`SECURITY.md`](SECURITY.md#11-coordinated-disclosure), and that is a
+  promise to answer, not a promise to fix.
+- **Support for a Node version that is not in the CI matrix.** The supported
+  set is exactly two versions and is listed in [`SUPPORT.md`](SUPPORT.md).
+
+Every item above could be sold by writing a sentence. None of them is, which
+is the only reason the sentences on the rest of this page are worth
+anything.

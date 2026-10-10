@@ -113,7 +113,7 @@ export const ApprovalGate: React.FC<{ pollMs?: number; canApprove?: boolean }> =
       <div className="approval-gate-head">
         <span className="approval-gate-knock" aria-hidden="true">🚪</span>
         <span className="approval-gate-title">
-          {pending.length === 1 ? 'someone is at the door' : `${pending.length} waiting at the door`}
+          {pending.length === 1 ? 'ada yang di pintu' : `${pending.length} menunggu di pintu`}
         </span>
       </div>
 
@@ -126,16 +126,16 @@ export const ApprovalGate: React.FC<{ pollMs?: number; canApprove?: boolean }> =
               <span className="approval-icon" aria-hidden="true">{TRUST_ICON[a.kind] ?? '❓'}</span>
               <span className="approval-agent">{a.agent}</span>
               <span className="approval-verb">
-                {a.kind === 'entry' ? 'wants to enter' : 'wants to run'}
+                {a.kind === 'entry' ? 'ingin masuk' : 'ingin menjalankan'}
               </span>
               <span className="approval-target">{a.kind === 'entry' ? a.room : a.tool}</span>
             </div>
 
             <div className="approval-meta">
-              {a.kind === 'entry' && a.fromRoom && <span>from {a.fromRoom}</span>}
-              {a.kind === 'tool' && <span>in {a.room}</span>}
-              <span className="approval-timer" title="time until this request expires">
-                expires in {countdown(a.expiresAt, now)}
+              {a.kind === 'entry' && a.fromRoom && <span>dari {a.fromRoom}</span>}
+              {a.kind === 'tool' && <span>di {a.room}</span>}
+              <span className="approval-timer" title="waktu hingga permintaan ini kedaluwarsa">
+                kedaluwarsa dalam {countdown(a.expiresAt, now)}
               </span>
             </div>
 
@@ -147,7 +147,7 @@ export const ApprovalGate: React.FC<{ pollMs?: number; canApprove?: boolean }> =
                   disabled={busy === a.id}
                   onClick={() => resolve(a.id, false)}
                 >
-                  deny
+                  tolak
                 </button>
                 <button
                   type="button"
@@ -155,11 +155,11 @@ export const ApprovalGate: React.FC<{ pollMs?: number; canApprove?: boolean }> =
                   disabled={busy === a.id}
                   onClick={() => resolve(a.id, true)}
                 >
-                  approve
+                  setujui
                 </button>
               </div>
             ) : (
-              <div className="approval-meta approval-readonly">owner decision required</div>
+              <div className="approval-meta approval-readonly">butuh keputusan pemilik</div>
             )}
           </li>
         ))}
