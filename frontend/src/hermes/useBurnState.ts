@@ -32,9 +32,9 @@ import type { HermesEnvelope } from './types'
 // it. Two near-identical definitions had already drifted apart — one made
 // spentDayUsd optional — and TypeScript caught the mismatch only at the call
 // site, which is the wrong place to learn about it.
-export type { BurnState, BurnSnapshot } from '../components/BurnOverlay'
-import type { BurnState } from '../components/BurnOverlay'
-import type { BurnSnapshot } from '../components/BurnOverlay'
+export type { BurnState, BurnSnapshot } from './burnTypes'
+import type { BurnState } from './burnTypes'
+import type { BurnSnapshot } from './burnTypes'
 
 const VALID: ReadonlySet<string> = new Set<BurnState>([
   'normal', 'warm', 'hot', 'critical', 'tripped',

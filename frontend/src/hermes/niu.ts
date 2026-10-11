@@ -25,9 +25,21 @@ function loadLang(): Lang {
 let lang: Lang = loadLang()
 
 function load(): boolean {
-  // `niu_mode` lama mengaktifkan tema+palette Niu; sekarang selalu aktif
-  // (itulah identitas visual LightVela), jadi selalu true.
-  return true
+  // Niu adalah default — itulah identitas visual LightVela, dan pengunjung
+  // tidak punya cara tahu ada tombol yang harus ditekan.
+  //
+  // Dulu baris ini `return true` tanpa syarat, sementara `setNiuMode()`
+  // tetap menulis ke localStorage. Akibatnya tulisan itu tidak pernah
+  // dibaca: pengguna mengetik `/niu-mode`, palet berubah, ia memuat ulang
+  // halaman, dan preferensinya hilang tanpa pesan apa pun. Preferensi yang
+  // disimpan tapi tidak pernah dibaca lebih buruk daripada tidak ada
+  // tombol sama sekali — tombolnya menjanjikan sesuatu yang tidak terjadi.
+  //
+  // Hanya '0' yang mematikan: nilai apa pun yang tidak dikenal, dan
+  // localStorage yang tidak bisa dibaca, jatuh ke default.
+  try {
+    return localStorage.getItem(KEY) !== '0'
+  } catch { return true }
 }
 
 let enabled = load()

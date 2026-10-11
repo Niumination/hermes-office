@@ -1,9 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import HermesOfficeApp from './hermes/HermesOfficeApp'
+import SectApp from './sect/SectApp'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <HermesOfficeApp />
+    <SectApp />
   </React.StrictMode>,
 )

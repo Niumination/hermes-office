@@ -53,8 +53,16 @@ export const config = {
   watchdogCutoffMs: parseInt(process.env.OFFICE_WATCHDOG_CUTOFF_MS || "90000", 10),
   watchdogSweepMs: parseInt(process.env.OFFICE_WATCHDOG_SWEEP_MS || "30000", 10),
   allowedOrigins: new Set(
-    (process.env.ALLOWED_ORIGINS ||
-      "http://localhost:5173,http://localhost:7333,http://127.0.0.1:7333")
+      // 3333 is the port frontend/vite.config.ts actually binds. The default
+      // here said 5173 — Vite's stock port, which this repo has never used —
+      // so with no ALLOWED_ORIGINS set, the dev server's WebSocket upgrade was
+      // refused 403 by the origin check on every single `npm run dev`. REST
+      // still worked (same-origin through the Vite proxy, no Origin header
+      // problem), so the office rendered, stayed on "luring", and looked like
+      // a flaky socket rather than a one-word config bug.
+      (process.env.ALLOWED_ORIGINS ||
+        "http://localhost:3333,http://127.0.0.1:3333,http://localhost:5173," +
+        "http://localhost:7333,http://127.0.0.1:7333")
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean)

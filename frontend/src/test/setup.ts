@@ -4,7 +4,7 @@ import { cleanup } from '@testing-library/react'
 
 // jsdom has no canvas backend, so every getContext call logs a loud
 // "Not implemented" to stderr. That is precisely the degraded path
-// AtmosphereLayer is designed for, so make it explicit and quiet rather than
+// the hall atmosphere is designed for, so make it explicit and quiet rather than
 // letting real failures hide inside the noise.
 beforeAll(() => {
   HTMLCanvasElement.prototype.getContext = (() => null) as unknown as
@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 // jsdom implements neither of these, and both are load-bearing:
-// AtmosphereLayer reads prefers-reduced-motion, and several components key
+// The hall reads prefers-reduced-motion, and several components key
 // animation off it. Returning a real MediaQueryList shape (with the
 // addEventListener pair) is what lets the cleanup paths be tested at all.
 export function stubMatchMedia(reduceMotion = false) {

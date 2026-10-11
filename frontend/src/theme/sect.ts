@@ -1,4 +1,4 @@
-// 宗門 — the sect skin for the office.
+// Perguruan — the sect skin for the office.
 //
 // This is a *theme*, not a second room model. Room ids stay exactly what the
 // server and every client already use ('server-room', not 'zhenfa'), so the
@@ -17,10 +17,22 @@
 import type { RoomId } from '../rooms'
 
 export interface SectHall {
-  /** Hall name in Chinese, e.g. 陣法室 */
-  cn: string
+  /**
+   * Hall name in Bahasa Indonesia, e.g. 'Bilik Rajah'.
+   *
+   * The register is deliberate. These used to be Han glyphs, and the
+   * obvious way to translate them was into plain office Indonesian — "Ruang
+   * Server", "Ruang CEO". That would have deleted the theme rather than
+   * translated it: the whole point of the sect skin is that a room is a place
+   * on a mountain with standing attached, not a meeting room with a label.
+   *
+   * So the vocabulary comes from Indonesian persilatan — balai, bilik,
+   * padepokan, sesepuh, murid — which carries the same weight the Han carried
+   * and needs no footnote for an Indonesian reader.
+   */
+  nameId: string
   /** Plain-English gloss, shown next to it — never instead of it */
-  en: string
+  nameEn: string
   /** Altitude band, flavour text for the ladder rung */
   band: string
 }
@@ -30,14 +42,14 @@ export interface SectHall {
  * number lived here it would be a second copy of the policy, free to drift.
  */
 export const SECT_HALLS: Partial<Record<RoomId, SectHall>> = {
-  lobby: { cn: '山門', en: 'Mountain Gate', band: '雲腳 cloud foot' },
-  'meeting-room': { cn: '議事堂', en: 'Council Hall', band: '前庭 forecourt' },
-  'main-office': { cn: '修煉場', en: 'Cultivation Court', band: '中階 mid terrace' },
-  'mac-studio': { cn: '丹房', en: 'Elixir Room', band: '側峰 side peak' },
-  'server-room': { cn: '陣法室', en: 'Array Chamber', band: '內山 inner peak' },
-  'ceo-office': { cn: '掌門殿', en: 'Sect Master Hall', band: '絕頂 summit' },
-  kitchen: { cn: '齋堂', en: 'Refectory', band: '山腰 hillside' },
-  'nap-room': { cn: '靜室', en: 'Quiet Room', band: '山腰 hillside' },
+  lobby: { nameId: 'Gerbang Gunung', nameEn: 'Mountain Gate', band: 'Kaki Awan' },
+  'meeting-room': { nameId: 'Balai Musyawarah', nameEn: 'Council Hall', band: 'Pelataran' },
+  'main-office': { nameId: 'Gelanggang Latih', nameEn: 'Cultivation Court', band: 'Teras Tengah' },
+  'mac-studio': { nameId: 'Bilik Ramuan', nameEn: 'Elixir Room', band: 'Puncak Sisi' },
+  'server-room': { nameId: 'Bilik Rajah', nameEn: 'Array Chamber', band: 'Gunung Dalam' },
+  'ceo-office': { nameId: 'Balai Sesepuh', nameEn: 'Sect Master Hall', band: 'Puncak' },
+  kitchen: { nameId: 'Balai Santap', nameEn: 'Refectory', band: 'Lereng' },
+  'nap-room': { nameId: 'Bilik Hening', nameEn: 'Quiet Room', band: 'Lereng' },
 }
 
 /** The shape this needs from a policy room. Anything else is ignored. */
@@ -93,28 +105,30 @@ export function canEnter(rung: SectRung, viewerTier: number): boolean {
   return rung.tier <= viewerTier
 }
 
-// ── 氣 qi names for the burn states ────────────────────────────────────
+// ── Tenaga: names for the burn states ──────────────────────────────────
 //
-// The office already has five burn states and AtmosphereLayer already reacts
+// The office already has five burn states and the hall atmosphere already reacts
 // to them. The sect theme must NOT introduce a second scale — two ladders for
 // one quantity is how a UI starts lying. So this renames, and nothing else.
 //
-// Typed as a total Record over AtmosphereState on purpose: add a sixth burn
+// Typed as a total Record over BurnState on purpose: add a sixth burn
 // state and this stops compiling, which is cheaper than shipping a state with
-// no name. The xianxia term is 走火入魔 (qi deviation) — excess qi turning on
-// its owner — which is what a tripped budget is.
+// no name. The xianxia term for the last rung describes qi turning on its
+// owner. Indonesian persilatan already has the phrase for it: 'salah jalan',
+// the cultivator whose own power has gone wrong. That is what a tripped
+// budget is, and it needed translating rather than transliterating.
 
-import type { AtmosphereState } from '../components/AtmosphereLayer'
+import type { BurnState } from '../hermes/burnTypes'
 
 export interface QiName {
-  cn: string
-  en: string
+  nameId: string
+  nameEn: string
 }
 
-export const QI_NAMES: Record<AtmosphereState, QiName> = {
-  normal: { cn: '調息', en: 'regulated' },
-  warm: { cn: '聚氣', en: 'gathering' },
-  hot: { cn: '氣盛', en: 'surging' },
-  critical: { cn: '氣逆', en: 'reversal' },
-  tripped: { cn: '走火入魔', en: 'deviation' },
+export const QI_NAMES: Record<BurnState, QiName> = {
+  normal: { nameId: 'Atur Napas', nameEn: 'regulated' },
+  warm: { nameId: 'Himpun Tenaga', nameEn: 'gathering' },
+  hot: { nameId: 'Tenaga Meluap', nameEn: 'surging' },
+  critical: { nameId: 'Tenaga Berbalik', nameEn: 'reversal' },
+  tripped: { nameId: 'Salah Jalan', nameEn: 'deviation' },
 }

@@ -1,281 +1,1024 @@
-/*
- * 宗門 sect theme — tokens and the ladder.
- *
- * Scoped under [data-theme="sect"]: the default office is untouched, and the
- * theme is one attribute away from off. Nothing here is loaded conditionally,
- * because 4 kB of unused CSS costs less than a second stylesheet request.
- *
- * Three rules this file holds itself to, from the 2026 review:
- *   1. No pure black. The deepest surface is oklch(0.17 …) — #000 flattens
- *      OLED panels and kills the sense of air the atmosphere pass creates.
- *   2. Depth must have a job. Glass appears on floating surfaces only (the
- *      ladder rail), never as a full-page wash. Apple shipped a full-page
- *      wash and added a switch to turn it off seven weeks later.
- *   3. Colour is never the only carrier. Locked halls say 封 and carry
- *      aria-disabled; qi deviation has a word, not just a hue.
- *
- * Contrast of the text pairs below is machine-checked in APCA Lc by
- * scripts/check-contrast.py — gate 14. Editing a token here can fail CI.
- */
+/* ===========================================================================
+   Perguruan — the sect design system.
 
-@layer sect.tokens, sect.surface, sect.ladder, sect.toggle, sect.motion;
+   This file REPLACES the old look. It does not sit on top of it.
 
-@layer sect.tokens {
-  [data-theme='sect'] {
-    /* Four surface levels, per the dark-mode guidance: depth by lightness,
-       not by drop shadow. */
-    --sect-ink-0: oklch(0.17 0.02 265);
-    --sect-ink-1: oklch(0.22 0.025 265);
-    --sect-ink-2: oklch(0.28 0.03 265);
-    --sect-ink-3: oklch(0.35 0.035 265);
+   The previous arrangement loaded five stylesheets in sequence: office.css
+   (35.8 kB, 187 classes, the isometric Claude-Office), rooms.css, hermes.css,
+   donghua.css and a 9 kB sect.css that overrode *zero* of office.css's 187
+   classes. That is not a theme. That is two products rendered on top of each
+   other, which is exactly what it looked like.
 
-    --sect-paper: oklch(0.95 0.012 85);
-    --sect-jade: oklch(0.82 0.13 165);
-    --sect-gold: oklch(0.86 0.13 85);
-    --sect-mist: oklch(0.84 0.022 250);
-    --sect-cinnabar: oklch(0.72 0.17 28);
+   So: one token vocabulary, one component layer, one paradigm. The `--sect-*`
+   names are kept deliberately — gate 14 already measures them in APCA, so the
+   new system inherits a contrast gate on the day it ships instead of waiting
+   for one.
 
-    --sect-rule: color-mix(in oklch, var(--sect-jade) 28%, transparent);
-    --sect-glow: color-mix(in oklch, var(--sect-jade) 45%, transparent);
-  }
+   Structure
+     1. tokens        — colour, type, space, motion
+     2. base          — reset and page
+     3. chrome        — the thin bar across the top
+     4. mountain      — the ladder rail: permission as altitude
+     5. hall          — the cinematic stage
+     6. cultivators   — agents present in a hall
+     7. chronicle     — the event scroll
+     8. veil          — Lenyap di Balik Kabut, the 403
+     9. motion        — keyframes, and the reduced-motion contract
+   =========================================================================== */
 
-  /* Typed custom properties: an untyped var cannot be animated at all, so
-     the aura radius has to be declared to move. */
-  @property --sect-aura {
-    syntax: '<length>';
-    inherits: true;
-    initial-value: 0px;
-  }
-  @property --sect-aura-hue {
-    syntax: '<angle>';
-    inherits: true;
-    initial-value: 165deg;
-  }
+/* --- 1. tokens ----------------------------------------------------------- */
+
+:root {
+  /* Ink ladder. Five surfaces, one hue family, so depth reads as depth and
+     not as five unrelated greys. */
+  --sect-ink-0: oklch(13.5% 0.020 262);
+  --sect-ink-1: oklch(17.5% 0.024 262);
+  --sect-ink-2: oklch(21.5% 0.028 260);
+  --sect-ink-3: oklch(26.5% 0.032 258);
+  --sect-ink-4: oklch(32.5% 0.036 256);
+
+  /* Paper and its two quieter voices. Warm against the cold ink — the whole
+     palette's tension lives in this one opposition. */
+  --sect-paper: oklch(96% 0.014 95);
+  --sect-mist:  oklch(80% 0.020 95);
+  --sect-faint: oklch(58% 0.022 95);
+
+  /* Meaning colours. Each one has exactly one job. */
+  --sect-jade:     oklch(76% 0.145 168);  /* alive, permitted, ok */
+  --sect-gold:     oklch(83% 0.140 86);   /* attention, current, focus */
+  --sect-cinnabar: oklch(70.5% 0.185 28);   /* cost, heat, refusal */
+  --sect-deviate:  oklch(59% 0.235 332);  /* salah jalan — qi deviation, tripped */
+
+  /* Qi ramp: the burn state made continuous. Never used for text. */
+  --sect-qi-0: var(--sect-jade);
+  --sect-qi-1: color-mix(in oklch, var(--sect-jade) 55%, var(--sect-gold));
+  --sect-qi-2: var(--sect-gold);
+  --sect-qi-3: var(--sect-cinnabar);
+  --sect-qi-4: var(--sect-deviate);
+
+  --sect-rule: color-mix(in oklch, var(--sect-gold) 22%, transparent);
+  --sect-rule-strong: color-mix(in oklch, var(--sect-gold) 44%, transparent);
+
+  /* Type. A serif for the display voice, because the sect is old; a grotesque
+     for figures, because the money must be unambiguous. No webfont is fetched
+     — an @import at the top of a stylesheet blocks the first paint on a second
+     round trip, and the old build did exactly that.
+
+     `--sect-face-script` used to be `--sect-face-han` and led with Songti SC,
+     Noto Serif CJK and SimSun. Those were loaded to render the Han names the
+     interface used to carry.
+     With the interface in Bahasa Indonesia nothing in the tree is CJK any
+     more, so a CJK-first stack would hand the whole display voice to whichever
+     Chinese serif a machine happens to have installed — and to a plain
+     fallback on every machine that has none. */
+  --sect-face-script: ui-serif, 'Iowan Old Style', 'Palatino Linotype',
+                      Palatino, Georgia, serif;
+  --sect-face-display: ui-serif, 'Iowan Old Style', 'Palatino Linotype',
+                       Palatino, Georgia, serif;
+  --sect-face-text: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sect-face-figure: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace;
+
+  /* A fifth-based scale. Every size in the UI is one of these. */
+  --sect-t-xs: 10.5px;
+  --sect-t-sm: 12px;
+  --sect-t-md: 13.5px;
+  --sect-t-lg: 16px;
+  --sect-t-xl: 22px;
+  --sect-t-2xl: 32px;
+
+  --sect-sp-1: 4px;
+  --sect-sp-2: 8px;
+  --sect-sp-3: 12px;
+  --sect-sp-4: 18px;
+  --sect-sp-5: 26px;
+  --sect-sp-6: 40px;
+
+  --sect-r-sm: 3px;
+  --sect-r-md: 6px;
+  --sect-r-lg: 12px;
+
+  /* One easing, used everywhere, so the whole UI moves with one hand. */
+  --sect-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --sect-fast: 140ms;
+  --sect-slow: 420ms;
+
+  --sect-glass: color-mix(in oklch, var(--sect-ink-1) 78%, transparent);
+  --sect-shadow: 0 1px 2px oklch(0% 0 0 / 0.5), 0 8px 28px oklch(0% 0 0 / 0.42);
 }
 
-@layer sect.surface {
-  [data-theme='sect'] {
-    background: var(--sect-ink-0);
-    color: var(--sect-paper);
-  }
+/* --- 1b. the niu palette -------------------------------------------------
+   LightVela's own colourway, toggled with `/niu` or the chrome pill.
 
-  /* 氣 — the aura is radius AND hue, so it survives a greyscale print and a
-     colour-blind reader. It reuses the burn states the office already has;
-     there is no second scale. */
-  [data-theme='sect'] [data-qi='normal']   { --sect-aura: 6px;  --sect-aura-hue: 165deg; }
-  [data-theme='sect'] [data-qi='warm']     { --sect-aura: 10px; --sect-aura-hue: 120deg; }
-  [data-theme='sect'] [data-qi='hot']      { --sect-aura: 15px; --sect-aura-hue: 85deg; }
-  [data-theme='sect'] [data-qi='critical'] { --sect-aura: 21px; --sect-aura-hue: 50deg; }
-  [data-theme='sect'] [data-qi='tripped']  { --sect-aura: 28px; --sect-aura-hue: 28deg; }
+   This used to live in hermes.css as a set of `--ho-*` hex overrides on a
+   stylesheet the sect system replaced. When the old chrome was deleted the
+   toggle would have become a class that nothing listened to — `body.niu-mode`
+   applied, no rule matching it, preference saved, nothing visible. Patch 016
+   had just finished fixing exactly that failure (a preference written and
+   never read), so re-introducing it one patch later would have been careless.
 
-  [data-theme='sect'] [data-qi] {
-    filter: drop-shadow(0 0 var(--sect-aura)
-            oklch(0.72 0.16 var(--sect-aura-hue) / 0.55));
-    transition: --sect-aura 600ms ease, --sect-aura-hue 600ms ease;
-  }
+   So the palette was ported, not dropped. Same five-rung ink ladder, rotated
+   from blue-ink to jade-green, with an ember in place of the gold. The
+   lightness steps are deliberately identical to the default ladder: contrast
+   is a function of lightness, so matching the ladder means the niu palette
+   inherits the default's APCA headroom instead of having to re-earn it by
+   luck. Gate 14 measures all thirteen pairs again in this palette anyway.
+   ------------------------------------------------------------------------ */
+
+body.niu-mode {
+  --sect-ink-0: oklch(13.5% 0.022 165);
+  --sect-ink-1: oklch(17.5% 0.026 165);
+  --sect-ink-2: oklch(21.5% 0.030 164);
+  --sect-ink-3: oklch(26.5% 0.034 163);
+  --sect-ink-4: oklch(32.5% 0.038 162);
+
+  --sect-gold: oklch(78% 0.165 66);
 }
 
-@layer sect.ladder {
-  .sect-ladder {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: clamp(150px, 20%, 260px);
-    overflow-y: auto;
-    padding: 0.75rem 0.5rem;
-    border-right: 1px solid var(--sect-rule);
-    background: color-mix(in oklch, var(--sect-ink-1) 86%, transparent);
-    z-index: 5;
-    pointer-events: auto;
-  }
+/* --- 2. base ------------------------------------------------------------- */
 
-  /* Glass on the rail only — it floats over the room art, which is the one
-     place a frosted surface is doing work rather than decorating. */
-  @supports (backdrop-filter: blur(1px)) {
-    .sect-ladder {
-      /* 78%, not the 62% this started at: gate 14 measured the gloss text
-         at Lc 48 over the brightest hall, under the Lc 60 it needs. The
-         frost survives; the unreadable version of it did not. */
-      background: color-mix(in oklch, var(--sect-ink-1) 78%, transparent);
-      backdrop-filter: blur(14px) saturate(1.15);
-    }
-  }
+*, *::before, *::after { box-sizing: border-box; }
 
-  .sect-ladder__list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 0.15rem;
-  }
-
-  .sect-ladder__rung {
-    inline-size: 100%;
-    display: grid;
-    grid-template-columns: 4.2rem 0.75rem 1fr;
-    grid-template-areas: 'cap node cn' 'cap node en';
-    align-items: center;
-    gap: 0 0.5rem;
-    padding: 0.5rem 0.6rem;
-    border: 0;
-    border-radius: 0.4rem;
-    background: transparent;
-    color: var(--sect-paper);
-    font: inherit;
-    text-align: start;
-    cursor: pointer;
-  }
-
-  .sect-ladder__rung:hover:not([data-locked]) {
-    background: var(--sect-ink-2);
-  }
-  .sect-ladder__rung:focus-visible {
-    outline: 2px solid var(--sect-gold);
-    outline-offset: 2px;
-  }
-
-  .sect-ladder__cap {
-    grid-area: cap;
-    color: var(--sect-mist);
-    font-variant-numeric: tabular-nums;
-    text-align: end;
-    font-size: 0.82rem;
-  }
-  .sect-ladder__node {
-    grid-area: node;
-    inline-size: 0.5rem;
-    block-size: 0.5rem;
-    justify-self: center;
-    border-radius: 50%;
-    background: var(--sect-jade);
-    box-shadow: 0 0 0.5rem var(--sect-glow);
-  }
-  .sect-ladder__cn { grid-area: cn; font-size: 0.98rem; letter-spacing: 0.04em; }
-  .sect-ladder__en { grid-area: en; font-size: 0.74rem; color: var(--sect-mist); }
-
-  /* 雲深不知處 — clouds too deep to know where. A locked hall is fogged, not
-     dimmed: dimming reads as "try harder", fog reads as "not for you". The
-     name stays legible so the hierarchy is still learnable. */
-  .sect-ladder__rung[data-locked] {
-    cursor: not-allowed;
-    color: var(--sect-mist);
-  }
-  .sect-ladder__rung[data-locked] .sect-ladder__node {
-    background: var(--sect-ink-3);
-    box-shadow: none;
-  }
-  .sect-ladder__rung[data-locked] .sect-ladder__en { opacity: 0.55; }
-
-  .sect-ladder__lock {
-    grid-area: cn / cn / en / en;
-    justify-self: end;
-    align-self: center;
-    color: var(--sect-mist);
-    font-size: 0.8rem;
-  }
-  .sect-ladder__sr {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-
-  .sect-ladder__rung[aria-current='true'] {
-    background: var(--sect-ink-2);
-    box-shadow: inset 2px 0 0 var(--sect-gold);
-  }
-
-  .sect-ladder__note {
-    margin-top: 0.6rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--sect-rule);
-    font-size: 0.72rem;
-    line-height: 1.4;
-    color: var(--sect-mist);
-    /* Lc 61+ against the rail background — gate 14 measures this file. */
-  }
+html, body, #root {
+  height: 100%;
+  margin: 0;
 }
 
-@layer sect.motion {
-  /* 走火入魔 is the only thing on screen that animates on its own. A budget
-     that has blown through its cap is the one event worth stealing attention
-     for; anything else self-animating is noise. */
-  @keyframes sect-deviation {
-    from { filter: drop-shadow(0 0 14px oklch(0.70 0.17 28 / 0.45)); }
-    to   { filter: drop-shadow(0 0 30px oklch(0.70 0.19 28 / 0.75)); }
-  }
-  [data-theme='sect'] [data-qi='tripped'] {
-    animation: sect-deviation 1.1s ease-in-out infinite alternate;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    [data-theme='sect'] [data-qi='tripped'] { animation: none; }
-    [data-theme='sect'] [data-qi] { transition: none; }
-    /* The state must still be unmistakable without the pulse. */
-    [data-theme='sect'] [data-qi='tripped'] {
-      outline: 2px solid var(--sect-cinnabar);
-      outline-offset: 2px;
-    }
-  }
+body {
+  background: var(--sect-ink-0);
+  color: var(--sect-paper);
+  font-family: var(--sect-face-text);
+  font-size: var(--sect-t-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
 }
 
-@layer sect.toggle {
-  /* The ONLY rules in this file that are not scoped to [data-theme="sect"],
-     and they have to be: this is the control that turns the theme on, so it
-     must be visible while the theme is off. Keeping it here anyway means
-     everything about the theme lives in one file.
+.sect-script {
+  font-family: var(--sect-face-script);
+  font-weight: 500;
+  /* 0.08em was right for Han, where each glyph is its own square. On Latin
+     the same value reads as stretched rather than formal. */
+  letter-spacing: 0.015em;
+}
 
-     The base styling borrows nothing but `currentColor`, so it inherits the
-     host theme instead of introducing a colour pair nobody measured. Under
-     the sect theme it switches to the tokens gate 14 already checks. */
-  .theme-toggle {
-    display: inline-flex;
-    gap: 0;
-    border: 1px solid currentColor;
-    border-radius: 0.4rem;
-    overflow: hidden;
-    opacity: 0.85;
-    font-size: 0.78rem;
-  }
-  .theme-toggle__opt {
-    padding: 0.2rem 0.55rem;
-    border: 0;
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-  }
-  .theme-toggle__opt + .theme-toggle__opt {
-    border-inline-start: 1px solid currentColor;
-  }
-  .theme-toggle__opt[aria-pressed='true'] {
-    background: currentColor;
-  }
-  /* The pressed label cannot be `currentColor` on `currentColor`. Flipping
-     it to the surface colour keeps it legible in either host theme without
-     naming a colour this file does not own. */
-  .theme-toggle__opt[aria-pressed='true'] {
-    color: Canvas;
-  }
-  .theme-toggle__opt:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: -2px;
-  }
-  .theme-toggle__gloss { opacity: 0.75; }
+.caps {
+  font-family: var(--sect-face-text);
+  font-size: var(--sect-t-xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sect-mist);
+}
 
-  [data-theme='sect'] .theme-toggle {
-    border-color: var(--sect-rule);
-    color: var(--sect-paper);
-    opacity: 1;
+.figure {
+  font-family: var(--sect-face-figure);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* The app frame: rail, stage, scroll. One grid, no floats, no absolute
+   positioning for layout — the old office positioned everything by percentage,
+   which is why it could never be responsive. */
+.sect-app {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr) 332px;
+  grid-template-rows: 52px minmax(0, 1fr);
+  grid-template-areas:
+    'bar bar bar'
+    'rail stage scroll';
+  height: 100%;
+  background:
+    radial-gradient(130% 90% at 50% 0%,
+      color-mix(in oklch, var(--sect-ink-2) 60%, transparent), transparent 70%),
+    var(--sect-ink-0);
+}
+
+/* --- 3. chrome ----------------------------------------------------------- */
+
+.sect-bar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: var(--sect-sp-4);
+  padding: 0 var(--sect-sp-4);
+  background: color-mix(in oklch, var(--sect-ink-1) 92%, transparent);
+  border-bottom: 1px solid var(--sect-rule);
+  backdrop-filter: blur(14px) saturate(1.2);
+  z-index: 40;
+}
+
+.sect-seal {
+  display: flex;
+  align-items: center;
+  gap: var(--sect-sp-2);
+  flex: none;
+}
+
+.sect-seal__mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--sect-r-sm);
+  background: linear-gradient(160deg,
+    color-mix(in oklch, var(--sect-cinnabar) 88%, black),
+    color-mix(in oklch, var(--sect-cinnabar) 62%, black));
+  color: var(--sect-paper);
+  font-family: var(--sect-face-script);
+  font-size: 15px;
+  line-height: 1;
+  box-shadow: inset 0 0 0 1px oklch(100% 0 0 / 0.16), 0 2px 8px oklch(0% 0 0 / 0.5);
+}
+
+.sect-seal__name {
+  font-family: var(--sect-face-display);
+  font-size: var(--sect-t-lg);
+  letter-spacing: 0.02em;
+}
+
+.sect-seal__sub {
+  font-size: var(--sect-t-xs);
+  color: var(--sect-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sect-bar__spacer { flex: 1 1 auto; }
+
+.sect-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 var(--sect-sp-3);
+  border-left: 1px solid var(--sect-rule);
+  flex: none;
+}
+
+.sect-stat__v {
+  font-family: var(--sect-face-figure);
+  font-size: var(--sect-t-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.sect-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--sect-rule);
+  background: color-mix(in oklch, var(--sect-ink-2) 70%, transparent);
+  font-size: var(--sect-t-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sect-mist);
+  cursor: pointer;
+  transition: border-color var(--sect-fast) var(--sect-ease),
+              color var(--sect-fast) var(--sect-ease);
+}
+
+.sect-pill:hover { border-color: var(--sect-rule-strong); color: var(--sect-paper); }
+.sect-pill[aria-pressed='true'] {
+  border-color: var(--sect-gold);
+  color: var(--sect-gold);
+}
+
+.sect-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--sect-faint);
+  box-shadow: 0 0 0 0 currentColor;
+}
+.sect-dot--live { background: var(--sect-jade); animation: sect-pulse 2.6s infinite; }
+.sect-dot--dead { background: var(--sect-cinnabar); }
+
+/* --- 4. mountain: the ladder rail ---------------------------------------- */
+/* Permission is altitude. The rail is read bottom-to-top, because that is how
+   a mountain is climbed and because the policy's own budgets order it. */
+
+.sect-rail {
+  grid-area: rail;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--sect-rule);
+  background:
+    linear-gradient(to top,
+      color-mix(in oklch, var(--sect-ink-1) 96%, transparent),
+      color-mix(in oklch, var(--sect-ink-0) 92%, transparent));
+}
+
+.sect-rail__head {
+  padding: var(--sect-sp-4) var(--sect-sp-4) var(--sect-sp-2);
+  border-bottom: 1px solid var(--sect-rule);
+}
+
+.sect-rail__title {
+  font-family: var(--sect-face-script);
+  font-size: var(--sect-t-xl);
+  line-height: 1.1;
+}
+
+.sect-rail__gloss {
+  font-size: var(--sect-t-xs);
+  color: var(--sect-faint);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.sect-rungs {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;   /* summit at the top */
+  justify-content: flex-end;
+  padding: var(--sect-sp-2) 0 var(--sect-sp-4);
+  scrollbar-width: thin;
+  scrollbar-color: var(--sect-ink-4) transparent;
+}
+
+.sect-rung {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sect-sp-2);
+  width: 100%;
+  padding: 9px var(--sect-sp-4) 9px var(--sect-sp-3);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--sect-fast) var(--sect-ease);
+}
+
+.sect-rung:hover { background: color-mix(in oklch, var(--sect-ink-2) 60%, transparent); }
+
+.sect-rung[aria-current='true'] {
+  background: linear-gradient(90deg,
+    color-mix(in oklch, var(--sect-gold) 14%, transparent), transparent 82%);
+}
+
+.sect-rung[aria-current='true']::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 2px;
+  background: var(--sect-gold);
+  box-shadow: 0 0 10px var(--sect-gold);
+}
+
+.sect-rung:disabled { cursor: not-allowed; }
+.sect-rung:disabled .sect-rung__name,
+.sect-rung:disabled .sect-rung__en { color: var(--sect-faint); }
+
+.sect-rung__alt {
+  font-family: var(--sect-face-figure);
+  font-size: var(--sect-t-xs);
+  color: var(--sect-faint);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.sect-rung__name {
+  font-family: var(--sect-face-script);
+  font-size: var(--sect-t-md);
+  color: var(--sect-paper);
+  /* Was nowrap + ellipsis, which was fine for a three-glyph Han name and wrong for
+     'Balai Musyawarah': the truncation landed mid-word and the rung stopped
+     naming anything. Two lines, clamped, keeps the name readable. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sect-rung__en {
+  font-size: var(--sect-t-xs);
+  color: var(--sect-mist);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sect-rung__cap {
+  font-family: var(--sect-face-figure);
+  font-size: var(--sect-t-xs);
+  color: var(--sect-mist);
+  font-variant-numeric: tabular-nums;
+}
+
+.sect-rung__lock { color: var(--sect-faint); font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em; }
+
+/* Occupancy: a dot per cultivator standing in that hall right now. */
+.sect-rung__who {
+  display: flex;
+  gap: 3px;
+  margin-top: 3px;
+}
+.sect-rung__who i {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--sect-jade);
+  box-shadow: 0 0 6px color-mix(in oklch, var(--sect-jade) 70%, transparent);
+}
+
+/* --- 5. hall: the stage -------------------------------------------------- */
+
+.sect-stage {
+  grid-area: stage;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.sect-hall {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 42%;
+  transform: scale(1.04);
+  transition: opacity var(--sect-slow) var(--sect-ease),
+              transform 1.6s var(--sect-ease);
+}
+
+.sect-hall--entering { opacity: 0; transform: scale(1.09); }
+
+/* Cinematic treatment, in layers, so the plate reads as a place and the UI
+   stays legible on top of it. */
+.sect-hall__grade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      color-mix(in oklch, var(--sect-ink-0) 72%, transparent) 0%,
+      transparent 26%,
+      transparent 52%,
+      color-mix(in oklch, var(--sect-ink-0) 86%, transparent) 100%);
+  pointer-events: none;
+}
+
+.sect-hall__vig {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(118% 86% at 50% 44%,
+    transparent 42%, oklch(0% 0 0 / 0.56) 100%);
+  pointer-events: none;
+}
+
+/* Drifting cloud, two layers at different speeds. This is the only ambient
+     animation in the product and it stops dead under reduced-motion. */
+.sect-hall__cloud {
+  position: absolute;
+  inset: -12% -30%;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(42% 28% at 22% 72%, oklch(92% 0.01 240 / 0.3), transparent 70%),
+    radial-gradient(38% 24% at 68% 80%, oklch(92% 0.01 240 / 0.24), transparent 72%);
+  animation: sect-drift 64s linear infinite;
+}
+
+.sect-hall__cloud--far {
+  opacity: 0.3;
+  animation-duration: 104s;
+  animation-direction: reverse;
+  background:
+    radial-gradient(46% 22% at 48% 86%, oklch(92% 0.01 240 / 0.26), transparent 74%);
+}
+
+/* The hall's own title, set into the scene rather than floating over it. */
+.sect-hall__plate {
+  position: absolute;
+  left: var(--sect-sp-5);
+  bottom: var(--sect-sp-5);
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sect-sp-3);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.sect-hall__name {
+  font-family: var(--sect-face-script);
+  font-size: clamp(26px, 3.1vw, 40px);
+  line-height: 1.04;
+  text-wrap: balance;
+  max-width: 11ch;
+  text-shadow: 0 2px 22px oklch(0% 0 0 / 0.85), 0 1px 2px oklch(0% 0 0 / 0.9);
+}
+
+.sect-hall__meta { padding-bottom: 7px; }
+
+.sect-hall__en {
+  font-family: var(--sect-face-display);
+  font-size: var(--sect-t-lg);
+  color: var(--sect-paper);
+  text-shadow: 0 1px 12px oklch(0% 0 0 / 0.9);
+}
+
+.sect-hall__band {
+  font-size: var(--sect-t-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--sect-mist);
+  text-shadow: 0 1px 10px oklch(0% 0 0 / 0.9);
+}
+
+/* Hairline frame — the one piece of deliberate ornament. */
+.sect-hall__frame {
+  position: absolute;
+  inset: 14px;
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 16%, transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+.sect-hall__frame::before,
+.sect-hall__frame::after {
+  content: '';
+  position: absolute;
+  width: 16px; height: 16px;
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 46%, transparent);
+}
+.sect-hall__frame::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.sect-hall__frame::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+/* --- 6. cultivators ------------------------------------------------------ */
+/* Agents do not walk to coordinates any more. They are *present* in a hall,
+   with an aura whose colour is their qi. Presence is the fact; the position is
+   just a layout. */
+
+.sect-court {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--sect-sp-4);
+  padding: 0 var(--sect-sp-5) calc(var(--sect-sp-6) + 30px);
+  z-index: 3;
+}
+
+.sect-cul {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 104px;
+  animation: sect-arrive var(--sect-slow) var(--sect-ease) both;
+}
+
+.sect-cul__aura {
+  position: relative;
+  width: 72px; height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 56%,
+      color-mix(in oklch, var(--qi) 34%, transparent) 0%,
+      transparent 68%);
+}
+
+.sect-cul__aura::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklch, var(--qi) 60%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklch, var(--qi) 40%, transparent),
+              inset 0 0 14px color-mix(in oklch, var(--qi) 20%, transparent);
+  animation: sect-breathe 4.2s var(--sect-ease) infinite;
+}
+
+.sect-cul__glyph {
+  font-family: var(--sect-face-script);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--sect-paper);
+  text-shadow: 0 2px 14px oklch(0% 0 0 / 0.9);
+  z-index: 1;
+}
+
+.sect-cul__name {
+  font-size: var(--sect-t-sm);
+  color: var(--sect-paper);
+  text-shadow: 0 1px 8px oklch(0% 0 0 / 0.95);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sect-cul__task {
+  font-size: var(--sect-t-xs);
+  color: var(--sect-mist);
+  text-align: center;
+  text-shadow: 0 1px 8px oklch(0% 0 0 / 0.95);
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.sect-cul--idle .sect-cul__aura::after { animation-duration: 8s; opacity: 0.5; }
+.sect-cul--away { opacity: 0.42; filter: grayscale(0.5); }
+
+.sect-court__empty {
+  font-family: var(--sect-face-script);
+  font-size: var(--sect-t-lg);
+  color: var(--sect-mist);
+  text-shadow: 0 1px 12px oklch(0% 0 0 / 0.9);
+  padding-bottom: var(--sect-sp-5);
+}
+
+/* --- 7. chronicle -------------------------------------------------------- */
+
+.sect-scroll {
+  grid-area: scroll;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  border-left: 1px solid var(--sect-rule);
+  background: color-mix(in oklch, var(--sect-ink-1) 94%, transparent);
+}
+
+.sect-tabs {
+  display: flex;
+  flex: none;
+  border-bottom: 1px solid var(--sect-rule);
+}
+
+.sect-tab {
+  flex: 1 1 0;
+  padding: 11px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--sect-faint);
+  font-family: var(--sect-face-text);
+  font-size: var(--sect-t-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  transition: color var(--sect-fast) var(--sect-ease);
+}
+
+.sect-tab:hover { color: var(--sect-mist); }
+.sect-tab[aria-selected='true'] { color: var(--sect-gold); }
+.sect-tab[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  left: 18%; right: 18%; bottom: -1px;
+  height: 1px;
+  background: var(--sect-gold);
+  box-shadow: 0 0 8px var(--sect-gold);
+}
+
+.sect-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--sect-sp-2) 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sect-ink-4) transparent;
+}
+
+.sect-entry {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: var(--sect-sp-2);
+  padding: 7px var(--sect-sp-4) 7px var(--sect-sp-3);
+  border-left: 2px solid transparent;
+  animation: sect-enter 260ms var(--sect-ease) both;
+}
+
+.sect-entry:hover { background: color-mix(in oklch, var(--sect-ink-2) 54%, transparent); }
+.sect-entry--qi { border-left-color: color-mix(in oklch, var(--sect-cinnabar) 70%, transparent); }
+.sect-entry--gate { border-left-color: color-mix(in oklch, var(--sect-gold) 70%, transparent); }
+.sect-entry--done { border-left-color: color-mix(in oklch, var(--sect-jade) 60%, transparent); }
+
+.sect-entry__t {
+  font-family: var(--sect-face-figure);
+  font-size: var(--sect-t-xs);
+  color: var(--sect-faint);
+  font-variant-numeric: tabular-nums;
+  padding-top: 1px;
+}
+
+.sect-entry__who {
+  font-size: var(--sect-t-sm);
+  color: var(--sect-gold);
+}
+
+.sect-entry__what {
+  font-size: var(--sect-t-sm);
+  color: var(--sect-mist);
+  overflow-wrap: anywhere;
+}
+
+.sect-log__empty {
+  padding: var(--sect-sp-5) var(--sect-sp-4);
+  text-align: center;
+  color: var(--sect-faint);
+  font-size: var(--sect-t-sm);
+}
+
+/* --- 8. veil: Lenyap di Balik Kabut -------------------------------------------------- */
+/* The 403. A locked hall is not an error dialog; it is cloud too deep to see
+   through. The refusal is the scene. */
+
+.sect-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: var(--sect-sp-5);
+  background: color-mix(in oklch, var(--sect-ink-0) 62%, transparent);
+  backdrop-filter: blur(18px) saturate(0.7);
+  animation: sect-fade var(--sect-slow) var(--sect-ease) both;
+}
+
+.sect-veil__name {
+  font-family: var(--sect-face-script);
+  font-size: clamp(20px, 2.5vw, 31px);
+  letter-spacing: 0.03em;
+  text-wrap: balance;
+  color: var(--sect-paper);
+}
+
+.sect-veil__en {
+  margin-top: var(--sect-sp-2);
+  font-family: var(--sect-face-display);
+  font-size: var(--sect-t-lg);
+  color: var(--sect-mist);
+}
+
+.sect-veil__why {
+  margin-top: var(--sect-sp-3);
+  font-size: var(--sect-t-sm);
+  color: var(--sect-faint);
+  max-width: 42ch;
+}
+
+/* --- 9. motion ----------------------------------------------------------- */
+
+@keyframes sect-drift {
+  from { transform: translate3d(-4%, 0, 0); }
+  to   { transform: translate3d(4%, 0, 0); }
+}
+
+@keyframes sect-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50%      { transform: scale(1.07); opacity: 1; }
+}
+
+@keyframes sect-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--sect-jade) 60%, transparent); }
+  50%      { box-shadow: 0 0 0 4px transparent; }
+}
+
+@keyframes sect-arrive {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes sect-enter {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes sect-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* The contract, learned the hard way in patch 010: reduced-motion FREEZES
+   time, it does not delete the layer. Removing the cloud would change what the
+   scene *is*; holding it still only stops it moving. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
-  [data-theme='sect'] .theme-toggle__opt + .theme-toggle__opt {
-    border-inline-start-color: var(--sect-rule);
+  .sect-hall__cloud, .sect-hall__cloud--far { animation: none; }
+  .sect-cul__aura::after { animation: none; }
+}
+
+/* Focus: one ring, gold, never removed. */
+:where(button, [tabindex], a):focus-visible {
+  outline: 2px solid var(--sect-gold);
+  outline-offset: 2px;
+  border-radius: var(--sect-r-sm);
+}
+
+/* A guest is not an error. The server answers them, it just removes the
+   numbers, so the scene stays and one quiet line says what was withheld. */
+.sect-hall__guest {
+  position: absolute;
+  top: var(--sect-sp-4);
+  right: var(--sect-sp-4);
+  z-index: 4;
+  padding: 5px 11px;
+  border: 1px solid var(--sect-rule);
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--sect-ink-0) 68%, transparent);
+  backdrop-filter: blur(8px);
+  font-size: var(--sect-t-xs);
+  letter-spacing: 0.1em;
+  color: var(--sect-mist);
+}
+
+/* --- 12. Segel the seal, Titah the writ ----------------------------------------
+   The two governance surfaces. They were dropped when the sect UI replaced
+   the old chrome -- the ledger badge and the approval queue both vanished --
+   and are restored here in the sect's own idiom rather than reinstated as
+   foreign widgets.
+
+   Both are deliberately quiet until they have something to say: the seal
+   renders nothing to a viewer the server refuses, and the writ renders
+   nothing when no one is waiting. Chrome that is always present teaches a
+   buyer to stop seeing it.
+   ------------------------------------------------------------------------ */
+
+.sect-chain { position: relative; }
+
+.sect-chain__chip {
+  display: inline-flex; align-items: center; gap: 0.44rem;
+  padding: 0.3rem 0.6rem;
+  background: color-mix(in oklch, var(--sect-ink-2) 70%, transparent);
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 16%, transparent);
+  border-radius: 999px;
+  color: var(--sect-mist);
+  font-size: 0.74rem; letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: border-color 200ms var(--sect-ease), color 200ms var(--sect-ease);
+}
+.sect-chain__chip:hover { color: var(--sect-paper); border-color: var(--sect-rule-strong); }
+
+.sect-chain__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--sect-jade);
+  box-shadow: 0 0 7px var(--sect-jade);
+}
+.sect-chain--broken .sect-chain__dot { background: var(--sect-cinnabar); box-shadow: 0 0 7px var(--sect-cinnabar); }
+.sect-chain--unknown .sect-chain__dot { background: var(--sect-ink-4); box-shadow: none; }
+
+.sect-chain__panel {
+  position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 40;
+  width: min(27rem, 78vw);
+  padding: 0.8rem 0.9rem;
+  display: grid; gap: 0.45rem;
+  background: color-mix(in oklch, var(--sect-ink-1) 92%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-radius: 10px;
+  box-shadow: 0 18px 44px oklch(0% 0 0 / 0.5);
+}
+
+.sect-chain__row {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.8rem;
+  font-size: 0.76rem; color: var(--sect-mist);
+}
+.sect-chain__row strong { color: var(--sect-paper); font-variant-numeric: tabular-nums; }
+
+.sect-chain__hash {
+  /* Full length and selectable on purpose: this value is meant to be copied
+     somewhere this server cannot reach. Truncating it here would remove the
+     only defence against tail truncation. */
+  font-size: 0.64rem; line-height: 1.35;
+  color: var(--sect-paper);
+  word-break: break-all;
+  user-select: all;
+}
+
+.sect-chain__verdict {
+  padding: 0.4rem 0.55rem; border-radius: 7px;
+  font-size: 0.74rem; line-height: 1.45;
+  border-left: 2px solid var(--sect-jade);
+  background: color-mix(in oklch, var(--sect-jade) 8%, transparent);
+  color: var(--sect-paper);
+}
+.sect-chain__verdict.bad {
+  border-left-color: var(--sect-cinnabar);
+  background: color-mix(in oklch, var(--sect-cinnabar) 10%, transparent);
+}
+
+.sect-chain__actions { display: flex; gap: 0.5rem; align-items: center; }
+.sect-chain__actions button,
+.sect-chain__export {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.73rem;
+  color: var(--sect-paper);
+  background: color-mix(in oklch, var(--sect-ink-3) 80%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-radius: 7px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.sect-chain__actions button:disabled { opacity: 0.55; cursor: progress; }
+
+.sect-chain__note {
+  margin: 0; font-size: 0.68rem; line-height: 1.5;
+  color: var(--sect-mist);
+}
+
+.sect-writ {
+  margin: 0 0 0.6rem;
+  padding: 0.6rem 0.7rem;
+  background: color-mix(in oklch, var(--sect-cinnabar) 7%, transparent);
+  border: 1px solid color-mix(in oklch, var(--sect-cinnabar) 32%, transparent);
+  border-radius: 9px;
+}
+
+.sect-writ__head {
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  color: var(--sect-paper);
+}
+.sect-writ__head .sect-script { font-size: 1.05rem; color: var(--sect-cinnabar); }
+.sect-writ__gloss { font-size: 0.74rem; color: var(--sect-mist); }
+
+.sect-writ__error {
+  margin: 0 0 0.4rem; font-size: 0.72rem;
+  color: var(--sect-cinnabar);
+}
+
+.sect-writ__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+
+.sect-writ__item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center; gap: 0.5rem;
+  font-size: 0.75rem; line-height: 1.4;
+  color: var(--sect-paper);
+}
+.sect-writ__kind { color: var(--sect-cinnabar);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap; }
+.sect-writ__what { min-width: 0; }
+.sect-writ__why { color: var(--sect-mist); font-style: italic; }
+.sect-writ__clock {
+  font-variant-numeric: tabular-nums;
+  color: var(--sect-mist); font-size: 0.7rem;
+}
+.sect-writ__acts { display: flex; gap: 0.3rem; }
+.sect-writ__acts button {
+  width: 1.85rem; height: 1.6rem;
+  font-size: 0.8rem;
+  color: var(--sect-paper);
+  background: color-mix(in oklch, var(--sect-ink-3) 86%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.sect-writ__acts button:first-child:hover { border-color: var(--sect-jade); color: var(--sect-jade); }
+.sect-writ__acts button:last-child:hover { border-color: var(--sect-cinnabar); color: var(--sect-cinnabar); }
+.sect-writ__acts button:disabled { opacity: 0.5; cursor: progress; }
+
+
+/* An agent the watchdog has timed out. Dimmed, never hidden: a fleet member
+   that stopped answering is information, and removing the row would be the
+   same lie as showing it as working. */
+.sect-entry--offline { opacity: 0.55; }
+.sect-entry--offline .sect-entry__t { filter: grayscale(1); }
+
+/* --- 13. breakpoints -----------------------------------------------------
+
+   These live at the END of the file on purpose. A media query adds no
+   specificity, so `@media { .sect-rail { display: none } }` written ABOVE
+   `.sect-rail { display: flex }` loses to it on source order alone. That is
+   how this file was written, and it meant the two breakpoints it advertises
+   had never once fired: below 860px the rail and the scroll were both
+   auto-placed into implicit columns and drew on top of each other.
+
+   Keep new component rules ABOVE this comment.
+   -------------------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .sect-app { grid-template-columns: 212px minmax(0, 1fr) 0; }
+  .sect-scroll { display: none; }
+}
+
+@media (max-width: 860px) {
+  .sect-app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'bar' 'stage';
   }
-  [data-theme='sect'] .theme-toggle__opt[aria-pressed='true'] {
-    background: var(--sect-gold);
-    color: var(--sect-ink-0);
-  }
+  .sect-rail { display: none; }
 }

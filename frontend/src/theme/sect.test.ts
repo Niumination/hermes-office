@@ -84,7 +84,7 @@ describe('qi naming', () => {
 
   it('reserves the deviation term for the tripped state', async () => {
     const { QI_NAMES } = await import('./sect')
-    expect(QI_NAMES.tripped.cn).toBe('走火入魔')
-    expect(QI_NAMES.normal.cn).not.toBe(QI_NAMES.tripped.cn)
+    expect(QI_NAMES.tripped.nameId).toBe('Salah Jalan')
+    expect(QI_NAMES.normal.nameId).not.toBe(QI_NAMES.tripped.nameId)
   })
 })
