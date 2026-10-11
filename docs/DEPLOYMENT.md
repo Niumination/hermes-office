@@ -263,3 +263,139 @@ semua tempat yang Anda minta. Jangan perlakukan 207 sebagai sukses.
 `GET /ledger/verify` kini memuat `anchors` dan satu bidang ringkas
 `trustworthy` = konsisten-internal **dan** konsisten-tambatan. Pantau bidang
 itu, bukan `ok` — `ok` tetap `true` pada rantai yang dipotong.
+
+---
+
+## 12. Meluncurkan UI Perguruan (patch 017)
+
+Patch 017 mengganti seluruh frontend: 38 berkas dihapus, satu stylesheet
+tersisa, dan dua permukaan tata kelola (`Segel` ledger, `Titah` persetujuan)
+dipulihkan. Bagian ini adalah urutan penerapannya di server yang sudah hidup.
+
+### 12.1 Sebelum menyentuh server
+
+```bash
+# Di klon kerja, bukan di server. Buktikan dulu bahwa bundel ini sehat.
+npm ci && (cd frontend && npm ci)
+npm run verify          # 16 gerbang, ±240 dtk
+```
+
+Jangan lanjut bila belum 16/16. Khususnya gerbang **14 (theme contrast)** dan
+**15 (doc claims)** — keduanya menyentuh berkas yang diubah patch ini.
+
+### 12.2 Urutan di server
+
+```bash
+cd ~/hermes-office
+git fetch && git checkout dev && git pull
+
+# Frontend DULU, service belakangan. Bundel baru harus sudah ada di disk
+# sebelum proses lama dimatikan, supaya jendela "halaman blank" nol.
+cd frontend && npm ci && npm run build && cd ..
+
+systemctl --user restart hermes-office
+systemctl --user status hermes-office --no-pager
+```
+
+> **Skrip `build` ada di `frontend/`, bukan di akar.** `npm run build` di akar
+> gagal dengan `Missing script: build`. Akar hanya punya
+> `start/dev/test/lint/sbom/verify/verify:fast`.
+
+### 12.3 Verifikasi setelah restart — lima langkah, bukan satu
+
+Memuat halaman lalu melihat kantor tampil **bukan** bukti. REST dan WebSocket
+gagal secara terpisah; UI tetap menggambar dengan socket mati.
+
+```bash
+H=https://<host-anda>
+
+curl -sS -o /dev/null -w '%{http_code}\n' $H/                 # harap 200
+curl -sS -o /dev/null -w '%{http_code}\n' $H/policy           # harap 401 (tanpa sesi)
+curl -sS -c /tmp/c.txt -o /dev/null -w '%{http_code}\n' $H/kiosk   # mencetak sesi tamu
+curl -sS -b /tmp/c.txt -o /dev/null -w '%{http_code}\n' $H/policy  # harap 200, teredaksi
+
+# Yang paling sering terlewat: upgrade WebSocket DENGAN header Origin.
+curl -sS -o /dev/null -w '%{http_code}\n' -b /tmp/c.txt \
+  -H "Origin: $H" -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  $H/ws                                                        # harap 101
+```
+
+Di UI, tiga hal harus benar sekaligus:
+
+- bilah atas berbunyi **`terhubung · v<versi>`**, bukan `luring`;
+- cincin Tenaga menampilkan salah satu dari tiga keadaan yang sah
+  (`Tamu · diredaksi` / `$x · tanpa pagu` / `$x / $y`) — bukan tiga setrip;
+- lencana **Segel** menampilkan jumlah catatan bila Anda pemilik, dan **tidak
+  muncul sama sekali** bila Anda tamu. Segel yang tampil tapi mati justru
+  mengiklankan log audit yang tak boleh dibaca tamu.
+
+### 12.4 `ALLOWED_ORIGINS` — jebakan yang sudah tiga kali memakan korban
+
+Ini penyebab pemadaman paling sering di repo ini, dan selalu menyamar sebagai
+masalah lain.
+
+**Gejalanya:** halaman memuat, kantor tergambar, statusnya menempel di
+`luring`, dan tidak ada error di log server. Tampak seperti socket rewel.
+Sebenarnya REST lolos (same-origin lewat proxy, tanpa header `Origin` yang
+bermasalah) sementara upgrade WebSocket ditolak `403` oleh pemeriksaan origin.
+
+**Aturannya:** setiap origin browser yang akan dipakai harus terdaftar —
+satu per satu, termasuk port. Bukan wildcard, bukan hanya nama host.
+
+```bash
+# .env.office
+ALLOWED_ORIGINS=https://vm-6-34-ubuntu.tailec8707.ts.net,https://office.lightvela.ai,http://127.0.0.1:7333,http://localhost:7333
+```
+
+Tambahkan juga, sesuai kebutuhan:
+
+| situasi | origin yang WAJIB didaftarkan |
+|---|---|
+| dev lokal (`npm run dev`) | `http://localhost:3333`, `http://127.0.0.1:3333` |
+| akses langsung ke server | `http://localhost:7333`, `http://127.0.0.1:7333` |
+| Tailscale Funnel | `https://<host>.ts.net` |
+| domain publik | `https://office.lightvela.ai` |
+| preview sandbox/cloud | `https://<port>-<id>.e2b.app` (host baru = entri baru) |
+
+> **Port dev adalah 3333, bukan 5173.** Default bawaan di `server/config.js`
+> dulu menyebut 5173 — port standar Vite yang repo ini tidak pernah pakai —
+> sehingga setiap `npm run dev` tanpa `ALLOWED_ORIGINS` eksplisit berakhir
+> dengan WS 403. Defaultnya sudah diperbaiki, tetapi di produksi Anda tetap
+> harus mendaftarkan origin sendiri.
+
+**Cara membacanya saat mendiagnosis:**
+
+| kode | artinya |
+|---|---|
+| `403` | origin **ditolak** — tambahkan ke `ALLOWED_ORIGINS`, restart |
+| `401` | origin **lolos**, sesinya yang belum ada — jalankan `GET /kiosk` dulu |
+| `101` | sambungan naik, benar |
+
+`curl` **tanpa** header `Origin` mengembalikan `101` meskipun konfigurasinya
+salah. Pemeriksaan origin hanya berjalan bila headernya ada. Selalu sertakan
+`-H "Origin: $H"` saat menguji, atau Anda akan menguji hal lain.
+
+Setelah menyunting `.env.office`, **restart wajib** — nilainya dibaca sekali
+saat boot:
+
+```bash
+systemctl --user restart hermes-office
+```
+
+### 12.5 Rollback
+
+Patch ini hanya menyentuh `frontend/` dan `scripts/check-*.py`; skema basis
+data, ledger, dan kontrak API tidak berubah. Jadi rollback aman dan tidak
+perlu migrasi mundur:
+
+```bash
+cd ~/hermes-office
+git checkout <commit-sebelum-017>
+cd frontend && npm ci && npm run build && cd ..
+systemctl --user restart hermes-office
+```
+
+Ledger tetap valid melintasi rollback — rantainya milik server, bukan UI.
+Verifikasi dengan `curl -sS -b /tmp/c.txt $H/ledger/verify` sebagai pemilik:
+`trustworthy: true` harus tetap `true`.

@@ -123,9 +123,9 @@ the normalisation is real work and it is already done here.
 | | |
 |---|---|
 | Backend tests | **305** |
-| Frontend tests | **170** |
-| Machine-verified doc claims | **108** (`scripts/check-docs.py`) |
-| Bundle | 298.9 kB JS · 47.2 kB CSS |
+| Frontend tests | **90** |
+| Machine-verified doc claims | **111** (`scripts/check-docs.py`) |
+| Bundle | 259.0 kB JS · 19.7 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
 
 `check-docs.py` executes the documentation against the repo — route counts,
@@ -172,7 +172,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | sbom | `sbom.cdx.json` rebuilt from the lockfiles and matched byte-for-byte |
 | deployable | no hard-coded host or tailnet address in shipped code |
 | room plates | 26 plates match their hashes **and** the house style rules |
-| theme contrast | 13 token pairs measured in APCA Lc, computed from `oklch()` |
+| theme contrast | 26 token pairs measured in APCA Lc, computed from `oklch()` |
 | doc claims | 94 documented claims executed against the repo |
 | sprites (+rebuild) | all 132 sprites rebuilt from source and matched byte-for-byte |
 

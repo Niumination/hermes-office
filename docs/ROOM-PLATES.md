@@ -50,19 +50,19 @@ dihasilkan — itulah sebabnya klaim "asli murni" di atas bisa bertahan lama.
 `frontend/public/rooms/PLATES.json` kini menyatakannya per plate.
 
 Manifest mencatat **26 plate**: 18 tema bawaan di akar `rooms/`, dan 8 tema
-宗門 di `rooms/sect/` — satu untuk setiap ruangan yang diatur `DEFAULT_POLICY`,
+Perguruan di `rooms/sect/` — satu untuk setiap ruangan yang diatur `DEFAULT_POLICY`,
 tidak kurang dan tidak lebih:
 
 | berkas | aula | ruangan | cap/jam |
 |---|---|---|---|
-| `lobby.webp` | 山門 gerbang gunung | `lobby` | $0.25 |
-| `meeting-room.webp` | 議事堂 balai musyawarah | `meeting-room` | $1 |
-| `main-office.webp` | 修煉場 lapangan latihan | `main-office` | $2 |
-| `mac-studio.webp` | 丹房 kamar eliksir | `mac-studio` | $3 |
-| `server-room.webp` | 陣法室 kamar formasi | `server-room` | $5 |
-| `ceo-office.webp` | 掌門殿 aula ketua sekte | `ceo-office` | $10 |
-| `kitchen.webp` | 齋堂 refektori | `kitchen` | $0 |
-| `nap-room.webp` | 靜室 kamar hening | `nap-room` | $0 |
+| `lobby.webp` | Gerbang Gunung gerbang gunung | `lobby` | $0.25 |
+| `meeting-room.webp` | Balai Musyawarah balai musyawarah | `meeting-room` | $1 |
+| `main-office.webp` | Gelanggang Latih lapangan latihan | `main-office` | $2 |
+| `mac-studio.webp` | Bilik Ramuan kamar eliksir | `mac-studio` | $3 |
+| `server-room.webp` | Bilik Rajah kamar formasi | `server-room` | $5 |
+| `ceo-office.webp` | Balai Sesepuh aula ketua sekte | `ceo-office` | $10 |
+| `kitchen.webp` | Balai Santap refektori | `kitchen` | $0 |
+| `nap-room.webp` | Bilik Hening kamar hening | `nap-room` | $0 |
 
 Nama berkas sengaja sama dengan id ruangan, jadi memilih tema adalah pencarian
 direktori (`rooms/sect/<room>.webp`), bukan tabel pemetaan yang harus dirawat.
@@ -72,7 +72,7 @@ mengarang aula untuk ruangan yang tidak diatur berarti mengarang hierarki yang
 tidak dimiliki kebijakan. `frontend/src/theme/plates.ts` yang menanganinya, dan
 satu tes mengunci perilaku jatuh-kembali itu.
 
-`靜室 nap-room` lahir di bawah ambang `LUM_MEAN` (0,179 vs minimum 0,18).
+`Bilik Hening nap-room` lahir di bawah ambang `LUM_MEAN` (0,179 vs minimum 0,18).
 Yang diperbaiki adalah seninya — gamma 1,20 saat enkode, menghasilkan luminans
 0,223 — bukan ambangnya. Tidak ada mekanisme pengecualian untuk luminans, dan
 menciptakannya hanya untuk satu pelat akan melubangi gerbang bagi semua. Keduanya tunduk pada tujuh aturan yang sama — seni tema

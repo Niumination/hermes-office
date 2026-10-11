@@ -126,9 +126,9 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 | | |
 |---|---|
 | Test backend | **305** |
-| Test frontend | **170** |
-| Klaim dokumen yang diverifikasi mesin | **108** (`scripts/check-docs.py`) |
-| Bundel | 298,9 kB JS · 47,2 kB CSS |
+| Test frontend | **90** |
+| Klaim dokumen yang diverifikasi mesin | **111** (`scripts/check-docs.py`) |
+| Bundel | 259,0 kB JS · 19,7 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 
 `check-docs.py` memeriksa dokumentasi terhadap repo — jumlah rute, jumlah
@@ -172,7 +172,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | sbom | `sbom.cdx.json` dibangun ulang dari lockfile dan cocok byte-for-byte |
 | deployable | nol host atau alamat tailnet yang ditanam di kode |
 | room plates | 26 pelat cocok hash **dan** aturan gaya rumah |
-| theme contrast | 13 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
+| theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |
 | sprites (+rebuild) | seluruh 132 sprite dibangun ulang dari sumber, cocok byte-for-byte |
 

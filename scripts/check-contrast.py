@@ -66,6 +66,22 @@ PAIRS = [
 
 LEVELS = {'body': 75.0, 'secondary': 60.0, 'critical': 45.0, 'minimum': 45.0}
 
+# ---------------------------------------------------------------------------
+# The second palette.
+#
+# This block used to measure the `--ho-*` application chrome out of
+# hermes.css. That stylesheet no longer exists -- the sect design system
+# replaced all five of the old stylesheets, so the chrome palette it gated
+# went with them.
+#
+# What replaced it is `body.niu-mode`, which now overrides `--sect-*` tokens
+# inside sect.css itself. The gate follows the thing, not the filename: every
+# pair below is measured twice, once against `:root` and once against the niu
+# overrides resolved over it. A palette a user can reach with one chat command
+# has to be legible, and the only way to know is to measure it rather than to
+# assume the override "looks close enough".
+NIU_SELECTOR = r'body\.niu-mode'
+
 
 # ---------- oklch -> sRGB -------------------------------------------------
 def oklch_to_srgb(L, C, H):
@@ -111,11 +127,67 @@ def apca_lc(txt_rgb, bg_rgb):
     return c * 100.0
 
 
-def parse_tokens(css):
+def _num(tok, pct_is_fraction=False):
+    """Parse one oklch component.
+
+    `oklch(13.5% 0.02 262)` and `oklch(0.135 0.02 262)` are the same colour --
+    CSS accepts lightness either way. This parser accepted only the second and
+    crashed with a ValueError on the first rather than failing as a red gate.
+    A check that explodes on valid input is worse than one that is merely
+    wrong: it stops the whole run and looks like a broken script.
+    """
+    tok = tok.strip()
+    if tok.endswith('%'):
+        v = float(tok[:-1])
+        return v / 100.0 if pct_is_fraction else v
+    return float(tok.rstrip('deg'))
+
+
+def parse_niu_overrides(css):
+    """Return the `--sect-*` tokens that `body.niu-mode` restates.
+
+    None means the block is absent, which is a failure rather than an empty
+    override: the toggle that selects this palette still exists in the UI
+    either way, so a missing palette has to be loud.
+    """
+    m = re.search(NIU_SELECTOR + r'\s*\{([^}]*)\}', css)
+    if m is None:
+        return None
     out = {}
-    for name, body in re.findall(r'(--sect-[a-z0-9-]+)\s*:\s*oklch\(([^)]+)\)', css):
+    for name, body in re.findall(
+        r'(--sect-[a-z0-9-]+)\s*:\s*oklch\(([^)]+)\)', m.group(1)
+    ):
         parts = body.replace('/', ' ').split()
-        out[name] = (float(parts[0]), float(parts[1]), float(parts[2].rstrip('deg')))
+        if len(parts) < 3:
+            continue
+        out[name] = (_num(parts[0], pct_is_fraction=True),
+                     _num(parts[1]), _num(parts[2]))
+    return out
+
+
+def parse_tokens(css):
+    """Read the base palette from `:root` only.
+
+    Scoping matters: this used to scan the whole stylesheet, so when a second
+    palette was added lower down, its restated tokens overwrote the base ones
+    in this dict and the "default" palette was silently measured with the
+    override's colours. Both palettes then reported the same numbers and the
+    base one was never actually checked.
+    """
+    m = re.search(r'(?<![\w-]):root\s*\{(.*?)\}', css, re.S)
+    block = m.group(1) if m else ''
+    out = {}
+    for name, body in re.findall(
+        r'(--sect-[a-z0-9-]+)\s*:\s*oklch\(([^)]+)\)', block
+    ):
+        parts = body.replace('/', ' ').split()
+        if len(parts) < 3:
+            continue
+        out[name] = (
+            _num(parts[0], pct_is_fraction=True),   # L: 0-1, or 0-100%
+            _num(parts[1]),                         # C
+            _num(parts[2]),                         # H, degrees
+        )
     return out
 
 
@@ -141,33 +213,21 @@ def brightest_plate_grey():
     return (v, v, v), who
 
 
-def main():
-    if not os.path.exists(CSS):
-        print('FAIL: %s is missing' % CSS)
-        return 1
-    tokens = parse_tokens(open(CSS, encoding='utf-8').read())
-    missing = {t for p in PAIRS for t in (p[0], p[1] if isinstance(p[1], str) else p[1][1])}
-    missing -= set(tokens)
-    if missing:
-        print('FAIL: sect.css defines no oklch value for: %s' % ', '.join(sorted(missing)))
-        return 1
-
-    backdrop, who = brightest_plate_grey()
-    if backdrop is None:
-        print('FAIL: cannot measure the glass backdrop (%s)' % who)
-        return 1
-
+def measure(name, tokens, backdrop, who):
+    """Measure every PAIR against one resolved palette. Returns (bad, lines)."""
+    lines, bad = [], []
     rgb = {}
-    for name, (L, C, H) in tokens.items():
+    for tok, (L, C, H) in tokens.items():
         srgb, clipped = oklch_to_srgb(L, C, H)
         if clipped:
-            print('FAIL: %s is outside the sRGB gamut; the browser will clip it '
-                  'to a colour this check did not measure' % name)
-            return 1
-        rgb[name] = srgb
+            return 1, ['FAIL: %s is outside the sRGB gamut in the %s palette; '
+                       'the browser will clip it to a colour this check did '
+                       'not measure' % (tok, name)]
+        rgb[tok] = srgb
 
-    bad = 0
-    print('APCA Lc, sect theme  (glass backdrop measured from %s)' % who)
+    lines.append('')
+    lines.append('APCA Lc, %s palette  (glass backdrop measured from %s)' % (name, who))
+    n_bad = 0
     for fg, bgspec, role, what in PAIRS:
         if isinstance(bgspec, str):
             bg, label = rgb[bgspec], bgspec
@@ -179,16 +239,61 @@ def main():
         lc = abs(apca_lc(rgb[fg], bg))
         need = LEVELS[role]
         ok = lc >= need
-        bad += 0 if ok else 1
-        print('  %-4s Lc %6.1f  (need %4.1f, %-9s)  %-14s on %-28s  %s'
-              % ('ok' if ok else 'FAIL', lc, need, role, fg, label, what))
+        n_bad += 0 if ok else 1
+        lines.append('  %-4s Lc %6.1f  (need %4.1f, %-9s)  %-14s on %-28s  %s'
+                     % ('ok' if ok else 'FAIL', lc, need, role, fg, label, what))
+    return n_bad, lines
+
+
+def main():
+    if not os.path.exists(CSS):
+        print('FAIL: %s is missing' % CSS)
+        return 1
+    css = open(CSS, encoding='utf-8').read()
+    tokens = parse_tokens(css)
+    missing = {t for p in PAIRS for t in (p[0], p[1] if isinstance(p[1], str) else p[1][1])}
+    missing -= set(tokens)
+    if missing:
+        print('FAIL: sect.css defines no oklch value for: %s' % ', '.join(sorted(missing)))
+        return 1
+
+    backdrop, who = brightest_plate_grey()
+    if backdrop is None:
+        print('FAIL: cannot measure the glass backdrop (%s)' % who)
+        return 1
+
+    bad = 0
+    n_bad, lines = measure('default', tokens, backdrop, who)
+    bad += n_bad
+    for line in lines:
+        print(line)
+
+    # The niu palette is the default ladder with some rungs restated, so it is
+    # resolved the way the cascade resolves it -- override merged over base --
+    # rather than measured on its own. Measuring only the restated tokens would
+    # silently skip every pair niu inherits, which is most of them.
+    niu = parse_niu_overrides(css)
+    if niu is None:
+        print('')
+        print('FAIL: sect.css has no %s block, but the UI still ships a toggle '
+              'for it' % NIU_SELECTOR)
+        bad += 1
+    else:
+        merged = dict(tokens)
+        merged.update(niu)
+        n_bad, lines = measure('niu', merged, backdrop, who)
+        bad += n_bad
+        for line in lines:
+            print(line)
+
+    total = 2 * len(PAIRS)
     if bad:
         print('\nFAIL: %d pair(s) below their APCA level. Fix the tokens in '
               'sect.css -- do not lower the levels here.' % bad)
         return 1
-    print('\nPASS: %d token pairs meet their APCA level' % len(PAIRS))
+    print('\nPASS: %d token pairs meet their APCA level '
+          '(%d pairs across 2 palettes)' % (total, len(PAIRS)))
     return 0
-
 
 if __name__ == '__main__':
     sys.exit(main())

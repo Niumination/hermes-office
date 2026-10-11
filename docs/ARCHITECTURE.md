@@ -48,29 +48,35 @@ replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
 dossier.js    346   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
-config.js     137   seluruh konfigurasi env, validasi wajib saat boot
+config.js     145   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
 chat-db.js    101   SQLite (WAL) untuk riwayat chat
 pricing.js    100   token → USD, pencocokan prefiks-terpanjang
 auth.js        91   Bearer per-sumber, SHA-256
 ```
 
-### Frontend (`frontend/src/`, ~4.400 baris)
+### Frontend (`frontend/src/`, ~3782 baris non-tes)
 
 ```
-rooms.ts            540   definisi 12 ruangan: furnitur, waypoint, titik berdiri
-hermes/OfficeStage  535   panggung tunggal; pintu mengganti ruangan aktif
-agentManager.ts     395   pathfinding, penempatan, siklus hidup agen
-components/AtmosphereLayer 322   Fase 5 — shader WebGL (god ray, debu, grade)
-hermes/ChatPanel    185   
-components/Character 190   sprite 4-arah + gelembung
-hermes/AgentsPanel  165   seed dari /presence, poll 30 dtk (WS tanpa replay)
-components/BurnOverlay 178 HUD anggaran — kini prop-driven, tanpa fetch
-components/ApprovalGate 171 gerbang persetujuan, sadar-redaksi
+styles/sect.css     979   seluruh sistem desain: token, tata letak, gerak
+rooms.ts            540   definisi ruangan: nama, pelat, metadata
+SectApp.tsx         257   orkestrasi: socket, follow-mode, bootstrap tamu
+sect/Seal.tsx       168   Segel — integritas rantai ledger, hash kepala utuh
 hermes/useOfficeSocket 171 klien WS, reconnect
+sect/Writ.tsx       149   Titah — antrean persetujuan, hanya pemilik memutuskan
 hermes/useBurnState 117   Fase 6 — seed sekali + push WS, NOL polling
-components/AuditBadge 120 Fase 4 — status rantai, ekspor dosier
+sect/Hall.tsx       112   aula, awan, Murid sebagai aura, tabir Lenyap di Balik Kabut
+sect/Chronicle.tsx  108   Babad — catatan; mentoleransi jenis tak dikenal
+sect/QiRing.tsx      95   cincin Tenaga, tiga keadaan (diredaksi/tanpa pagu/berpagu)
+sect/RealmRail.tsx   80   Tataran — tangga izin sebagai ketinggian
+hermes/burnTypes.ts  41   kontrak /burn, terpisah dari komponen render
 ```
+
+> 38 berkas dihapus pada patch 017 — seluruh UI kantor isometrik lama
+> (`OfficeStage`, `HermesOfficeApp`, `agentManager`, `Character`,
+> `FurnitureRenderer`, empat stylesheet, dan komponen panel). Semuanya tidak
+> terjangkau dari `main.tsx`. Dua di antaranya — `AuditBadge` dan
+> `ApprovalGate` — **fungsional** dan dipulihkan sebagai `Seal` dan `Writ`.
 
 ---
 
@@ -160,7 +166,7 @@ kredensial. Server dipublikasikan lewat Tailscale Funnel, sehingga:
 
 Dipasak oleh 4 test integrasi yang menyerang dari sudut pandang browser anonim
 sungguhan (ambil cookie dari `GET /`, lalu gunakan cookie itu), dan oleh 9 test
-frontend pada `ApprovalGate`. Sesi yang sudah lebih kuat **tidak pernah**
+frontend pada `sect/Writ.tsx`. Sesi yang sudah lebih kuat **tidak pernah**
 diturunkan.
 
 Detail lengkap: `SECURITY.md`.
@@ -242,7 +248,7 @@ terdegradasi teruji secara gratis).
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
 | Backend | **305** | `npm test` |
-| Frontend | **170** | `cd frontend && npm test` |
+| Frontend | **90** | `cd frontend && npm test` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

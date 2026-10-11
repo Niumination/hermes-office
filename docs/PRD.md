@@ -165,8 +165,8 @@ per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
  └──────────────────┘ /event │     │        │         │        │ (shader)    │
  ┌──────────────────┐ poll   │     ▼        ▼         │        │             │
  │ GitHub (opsional)├───────►│  policy   burn-rate    │        │ BurnOverlay │
- └──────────────────┘        │     │        │         │        │ ApprovalGate│
-                             │     └────┬───┘         │        │ AuditBadge  │
+ └──────────────────┘        │     │        │         │        │ Titah       │
+                             │     └────┬───┘         │        │ Segel       │
                              │          ▼             │        └─────────────┘
                              │   ledger (SHA-256)     │
                              │          │             │        ┌─────────────┐

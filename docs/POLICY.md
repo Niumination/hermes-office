@@ -130,7 +130,7 @@ be able to move itself into the server room or self-approve.
 
 ## The UI
 
-`ApprovalGate.tsx` renders the pending queue as a panel that visibly blocks the
+`sect/Writ.tsx` (Titah) renders the pending queue as a panel that visibly blocks the
 floor, with a knocking-door glow. Owners get approve/deny buttons; everyone
 else sees "owner decision required". Room state, occupants and spend come from
 `GET /policy`.

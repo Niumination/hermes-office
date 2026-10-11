@@ -1,303 +1,289 @@
-# UI Spec — Hermes Office v2
+# UI Spec — Hermes Office v2 (Perguruan / sect)
 
-**Status:** v2.0 · **Tanggal:** 6 Okt 2026
-
-> **Menggantikan UI-SPEC v1 seluruhnya.** v1 menggambarkan kantor pixel-art
-> yang digambar ke canvas. Keduanya salah sekarang: estetikanya **donghua 3D**
-> dan render-nya **React DOM**, bukan canvas. §11 memuat daftar lengkap
-> koreksinya.
+> Dokumen ini menggambarkan antarmuka yang **benar-benar dikirim**. Versi
+> sebelumnya menggambarkan UI kantor isometrik Barat dengan lima stylesheet
+> dan selusin komponen; semuanya sudah dihapus dari pohon. Spesifikasi yang
+> menggambarkan UI yang tidak lagi ada adalah kewajiban, bukan aset — pembeli
+> membacanya, lalu menemukan produknya berbeda.
+>
+> Angka di dokumen ini diperiksa mesin. `scripts/check-docs.py` membandingkan
+> setiap hitungan baris, jumlah token, dan nama berkas di bawah ini dengan
+> pohon sumber, lalu gagal bila salah satu meleset. Jangan sunting angkanya
+> agar cocok; perbaiki yang mana pun yang salah.
 
 ---
 
 ## 1. Prinsip
 
-1. **Denah lantai adalah kebijakan.** Kalau sesuatu dibatasi, batasan itu
-   harus terlihat spasial. Sebuah ruangan bukan latar belakang — ia amplop
-   aturan yang kebetulan punya lantai.
-2. **Suhu sebelum angka.** Status anggaran sampai lewat warna seluruh ruangan
-   sebelum ada yang perlu membaca digit.
-3. **Kantor adalah bonus, bukan kanal tunggal.** Setiap event juga terbaca
-   sebagai teks di panel. Tak ada informasi yang hanya hidup dalam animasi.
-4. **Degradasi diam-diam.** Tanpa WebGL2, tanpa animasi, tanpa JS
-   sekalipun — yang tersisa harus tetap masuk akal, bukan rusak.
+1. **Tataran = izin.** Ketinggian di layar adalah tingkat kepercayaan. Aula yang
+   lebih tinggi butuh Tataran lebih tinggi. Ini bukan metafora dekoratif: rail
+   diurutkan langsung dari tangga kebijakan server.
+2. **Tenaga = burn.** Belanja adalah energi yang mengalir, bukan angka di pojok.
+   Lima keadaan server (`normal → warm → hot → critical → tripped`) menjadi
+   lima warna qi.
+3. **Lenyap di Balik Kabut = 403.** Aula yang tidak boleh dimasuki tertutup awan. Tabir
+   hanya muncul bila server memang menolak.
+4. **UI tidak boleh mengarang penolakan, dan tidak boleh menyembunyikan angka
+   yang sudah diketahui.** Dua sisi dari satu aturan. Menampilkan "diredaksi"
+   atas data yang dikirim server adalah kebohongan; menampilkan `$0` atas pagu
+   yang diredaksi juga.
+5. **Replay adalah tata kelola.** Kronik dan Segel bukan pelengkap — keduanya
+   adalah argumen produk.
 
 ---
 
-## 2. Layout (desktop ≥1280 px)
+## 2. Tata letak (desktop ≥1180 px)
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│ TOPBAR  Hermes Office   [burn pill]  [audit badge]   ⚙   │
-├───────────────────────────────────────────┬──────────────┤
-│                                           │  AGENTS      │
-│   ╔═══════════════════════════════════╗   │  ──────────  │
-│   ║  .room-background  (pelat webp)   ║   │  ● cloud     │
-│   ║  ─────────────────────────────    ║   │  ○ mac       │
-│   ║  <AtmosphereLayer>  shader WebGL  ║   │  ● boss      │
-│   ║  ─────────────────────────────    ║   ├──────────────┤
-│   ║  furnitur (koordinat persen)      ║   │  CHAT /      │
-│   ║  karakter + gelembung             ║   │  GITHUB      │
-│   ╚═══════════════════════════════════╝   │  (tab)       │
-│   [pita ruangan: trust · anggaran · alat] │              │
-├───────────────────────────────────────────┴──────────────┤
-│  <ApprovalGate>  muncul sebagai overlay saat diminta     │
-└──────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│  bilah: Perguruan · status · Tenaga · Murid · Segel · niu · ID/EN      │
+├──────────────────┬─────────────────────────────────┬───────────────────┤
+│  rail Tataran    │          aula (hall)            │  Titah (writ)     │
+│                  │                                 │  ──────────────   │
+│  Balai Sesepuh ··│  pelat sinematik + 2 awan +     │  Babad (chronicle)│
+│  Bilik Rajah   · │  grade + vignette               │  / roster Murid   │
+│  Bilik Ramuan    │  Murid sebagai aura qi          │                   │
+│  …               │  tabir bila terkunci            │  auto-scroll      │
+│  Gerbang Gunung  │                                 │  hanya di ekor    │
+└──────────────────┴─────────────────────────────────┴───────────────────┘
 ```
 
-**Bukan canvas.** Setiap karakter dan perabot adalah elemen DOM yang
-diposisikan dengan persentase relatif terhadap wadah ruangan. Konsekuensinya
-nyata: bisa dipilih, bisa di-inspect, bisa di-style dengan CSS, dan bisa
-dicapai pembaca layar — tapi berarti jumlah elemen adalah anggaran kinerja.
+Grid tiga kolom. Rail memakai `flex-direction: column-reverse` sehingga aula
+berperingkat tertinggi berada di atas secara harfiah — urutan DOM tetap dari
+rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 
-Mobile (<768 px): tampilan kantor selebar layar, panel menjadi bottom sheet.
-
-### Tumpukan z-index
-
-| z | Lapisan |
-|---|---|
-| 1 | `.room-background` — pelat webp |
-| **2** | `.atmosphere-layer` — shader, `pointer-events:none`, `mix-blend-mode:screen` |
-| 3+ | furnitur, lalu karakter (diurutkan per-baris), lalu gelembung |
-| atas | overlay: `ApprovalGate`, `BurnOverlay` |
-
-Shader duduk di **atas** pelat tapi di **bawah** segalanya yang hidup. Itu
-alasan god ray-nya terasa seperti cahaya ruangan, bukan filter layar.
+**Breakpoint.** 1180 px (rail menyempit), 860 px (kolom bertumpuk).
 
 ---
 
-## 3. Bahasa Visual Donghua
+## 3. Bahasa visual
 
-Kesan 3D tidak datang dari geometri real-time. Ia datang dari **lima isyarat
-cahaya** yang dipanggang ke dalam seni dan satu shader yang menyatukannya:
+Satu stylesheet: `frontend/src/styles/sect.css`.
 
-| Isyarat | Di mana |
-|---|---|
-| **Rim light** — isyarat paling mudah dikenali | dipanggang ke sprite oleh `stylize-donghua.py` |
-| Specular mengkilap | dipanggang ke sprite |
-| Ambient occlusion lembut | dipanggang ke sprite + bayangan kontak CSS |
-| God ray volumetrik | shader |
-| Debu melayang, 3 bidang parallax | shader |
+| berkas | baris | peran |
+|---|---|---|
+| `sect.css` | 1024 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
-Kunci sian datang dari **kiri atas** (`LIGHT_DX, LIGHT_DY = -2, -3`), isian
-emas hangat dari arah berlawanan. Shader menyapu raknya dari sudut yang sama.
-Kalau keduanya tidak sepakat, ilusinya runtuh seketika — ini satu-satunya
-angka di dokumen ini yang tidak boleh diubah sepihak.
+Versi v1 mengimpor lima stylesheet (`office.css`, `rooms.css`, `donghua.css`,
+`hermes.css`, dan satu lagi lewat `@import`), menghasilkan empat generasi token
+yang saling menimpa. Semuanya sudah dihapus. Satu `@import` font di baris
+pertama CSS juga dihapus: ia memblokir render secara berantai.
 
 ### Token warna (OKLCH)
 
-19 token OKLCH di `frontend/src/styles/donghua.css`: triad **jade / emas /
-tinta**, plus satu rona per burn state yang **dipakai bersama shader**.
-Satu definisi, dua konsumen — CSS dan GLSL membaca nilai yang sama.
+**35 token OKLCH** di `sect.css`. OKLCH dipilih karena lightness-nya
+perseptual — menaikkan `L` menaikkan kontras terbaca, yang membuat perbaikan
+APCA bisa dicari secara sistematis alih-alih ditebak.
 
-OKLCH dipilih karena interpolasi burn-state melewati warna perantara yang
-masih enak dilihat; HSL berlumpur di jalur yang sama. Ini satu-satunya hal
-yang diambil dari tumpukan UI 2026 — **tidak** ada migrasi Tailwind/shadcn
-(PRD §11 D4).
+Tangga tinta lima anak tangga (`--sect-ink-0` … `--sect-ink-4`), tiga warna
+teks (`--sect-paper`, `--sect-mist`, `--sect-jade`), satu perhatian
+(`--sect-gold`), satu bahaya (`--sect-cinnabar`), lima qi (`--sect-qi-0` …
+`--sect-qi-4`).
 
-### Urutan impor CSS
+> **Catatan gamut.** `--sect-cinnabar` tidak bisa diperbaiki hanya dengan
+> menaikkan lightness: ia keluar gamut sRGB sebelum mencapai ambang APCA.
+> Nilainya (`oklch(70.5% 0.185 28)`) adalah hasil sapuan dua sumbu L×C yang
+> mencari chroma tertinggi yang masih lulus. Gerbang 14 menolak warna di luar
+> gamut, karena browser akan memotongnya ke warna yang tidak pernah diukur.
 
-`donghua.css` diimpor **terakhir** di `HermesOfficeApp.tsx`, jadi ia menang
-tanpa harus mengganti layout `office.css`. Biayanya **1 `!important`** yang
-masih tersisa — utang yang diketahui, dicatat di ARCHITECTURE.md §11.
+### Dua palet
 
-| Berkas | Baris | Peran |
+`:root` adalah palet default. `body.niu-mode` menyatakan ulang lima anak
+tangga tinta (digeser ke hijau giok) dan satu aksen (ember). Tangga
+lightness-nya **sengaja identik** dengan default: kontras adalah fungsi
+lightness, jadi menyamakan tangga membuat palet niu mewarisi kelonggaran APCA
+default alih-alih harus mendapatkannya lagi secara kebetulan.
+
+Gerbang 14 tetap mengukur ketiga belas pasangan di **kedua** palet — 26
+pengukuran. Palet yang bisa dicapai pengguna dengan satu perintah adalah palet
+yang harus terbaca.
+
+---
+
+## 4. Burn sebagai qi
+
+| keadaan server | Tenaga | warna |
 |---|---|---|
-| `office.css` | 1.582 | layout warisan, tata letak isometrik |
-| `rooms.css` | 491 | per-ruangan |
-| `hermes.css` | 232 | panel, chat |
-| `donghua.css` | 176 | token + lapisan atmosfer + chrome |
+| `normal` | Atur Napas regulated | `--sect-qi-0` |
+| `warm` | Himpun Tenaga gathering | `--sect-qi-1` |
+| `hot` | Tenaga Meluap surging | `--sect-qi-2` |
+| `critical` | Tenaga Berbalik reversal | `--sect-qi-3` |
+| `tripped` | Salah Jalan deviation | `--sect-qi-4` |
+
+Pemetaan ini `Record<BurnState, QiName>` yang total. Menambah keadaan keenam di
+server akan menggagalkan type-check, bukan merender kosong.
+
+Qi tampil di dua tempat: cincin di bilah atas, dan aura tiap Murid di aula.
 
 ---
 
-## 4. Burn State sebagai Warna Ruangan
+## 5. Komponen
 
-`OfficeStage` melakukan polling `/burn` tiap 5 detik dan menaruh
-`data-burn={state}` pada `.office-view`. Satu atribut itu menggerakkan CSS
-**dan** seragam shader.
-
-| State | Rasio | Suasana ruangan |
+| komponen | baris | peran |
 |---|---|---|
-| `normal` | <0,5 | sian tenang, god ray lembut |
-| `warm` | <0,75 | amber merayap masuk |
-| `hot` | <0,9 | oranye, debu memadat |
-| `critical` | <1,0 | merah, kontras meninggi |
-| `tripped` | ≥1,0 | biru dingin, ray padam — kantor "mati" |
+| `SectApp` (330 baris) | orkestrasi, socket, follow-mode, bootstrap tamu |
+| `Hall` (112 baris) | aula, awan, Murid, tabir Lenyap di Balik Kabut |
+| `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
+| `Chronicle` (108 baris) | Babad — catatan peristiwa |
+| `QiRing` (95 baris) | cincin Tenaga, tiga keadaan |
+| `Seal` (168 baris) | Segel — integritas rantai ledger |
+| `Writ` (164 baris) | Titah — antrean persetujuan |
 
-**Tamu melihat warnanya, bukan uangnya.** `state` dan `ratio` memang sengaja
-lolos redaksi tamu; nilai USD tidak. Jadi pengunjung anonim bisa melihat
-kantor memerah tanpa belajar apa pun soal belanja Anda.
+### `QiRing` — tiga keadaan, bukan dua
 
-### Penyetelan per-ruangan
-
-`rayStrength=0.15` untuk `server-room` dan `parking` — keduanya tanpa jendela,
-jadi god ray penuh akan tampak konyol. `moteDensity=1.5` untuk `server-room`
-(debu di berkas cahaya rak server).
-
----
-
-## 5. Ruangan
-
-12 ruangan, 18 pelat (varian siang/malam + @2x). Tiap ruangan menampilkan pita
-yang membaca langsung dari kebijakan: **trust · anggaran/jam · alat yang
-ditolak**. Pita itu bukan dekorasi — kalau `POLICY.md` berubah, pita berubah.
-
-Ruangan dengan anggaran `0` (kitchen, nap-room) dirender sebagai zona idle dan
-**menolak semua alat**. Secara visual tempat istirahat; secara mekanis sel
-tahanan. Ambiguitas itu disengaja dan berguna.
-
----
-
-## 6. Karakter
-
-132 sprite, 4 arah hadap per karakter. Satu-satunya cast yang ada adalah
-**8 arketipe donghua** (32 sprite di `sprites/donghua/`). Ke-150 sprite cast
-lama dihapus pada 2026-10-10; tidak ada kode yang merujuknya, dan
-`check-docs.py` menolak kalau direktorinya muncul kembali.
-
-**Jangan pernah meregenerasi satu karakter sebagai 4 generasi terpisah** —
-identitas melayang dan wajahnya berubah saat ia berbalik. Pola yang dipakai
-cast donghua: hasilkan **depan + belakang saja**, lalu cerminkan untuk
-kiri/kanan (`scripts/build-cast-sprites.py`). Ongkosnya diterima sadar —
-atribut asimetris bertukar sisi saat dicerminkan (kepang `physician`, palu
-`forge`) dan itu tidak terlihat pada 96 px. Untuk sprite non-karakter
-aturannya tetap: restyle dari `art/originals/sprites/`, jangan buat ulang.
-
-| Karakter | Perilaku |
-|---|---|
-| agent (per-role) | jalan dari pintu ke meja, kerja, istirahat kopi/air |
-| boss | dapat Red Bull alih-alih kopi (bahkan saat istirahat minum air — lihat `agentManager.test.ts`) |
-| cron-runner | berjalan ke meja target saat `cron_fired` |
-| octo | muncul sebentar saat `git_push` |
-| guest-ghost | hanya dirender kalau ada tamu online |
-
-Efek di atas kepala dipetakan oleh `getEffect()` — bintang untuk karyawan
-baru, jempol saat selesai, cangkir kopi, gelas air, kaleng energi untuk mode
-ultra-think, dan `sleeping.webp` setelah **lebih dari** 30 detik idle. Semua
-pemetaan itu dipasak 24 test.
-
----
-
-## 7. Komponen Tata Kelola
-
-### `BurnOverlay` (178 baris)
-Pil anggaran persisten. Menampilkan dolar untuk owner, hanya state untuk tamu.
-
-### `ApprovalGate` (171 baris)
-Overlay saat persetujuan diminta: siapa, alat apa, ruangan mana, TTL
-menghitung mundur dari 5 menit. Sekali pakai — setelah di-resolve, menekan
-lagi memberi **409**, dan UI mengatakannya alih-alih diam.
-
-Untuk tamu seluruh kartu diredaksi menjadi `{id, kind, room, status, dates}`
-plus `redacted:true`. Dipasak oleh test yang **menyapu seluruh `innerHTML`**
-untuk kata terlarang — kebocoran lewat atribut, `title`, atau `data-*` lolos
-dari assertion per-field, jadi assertion per-field saja tidak cukup.
-
-### `AuditBadge` (120 baris)
-Mulai di `audit-unknown`, **bukan** `verified` — memegang hash kepala bukan
-berarti rantai terverifikasi, dan lencana yang mulai hijau melatih orang
-untuk tidak membacanya. Hilang sepenuhnya pada 401/403. Memuat kalimat
-**"Tamper-evident, not tamper-proof."** secara harfiah, dan menautkan ke
-`/dossier`.
-
-Kalimat itu ada di test. Kalau seseorang menghapusnya demi pemasaran, build
-gagal.
-
-> **Catatan 9 Okt 2026:** UI sekarang Bahasa Indonesia, jadi yang dirender
-> adalah terjemahannya: **"Tahan-rusak, bukan anti-rusak."** `check-docs.py`
-> memeriksa versi Indonesia ini terhadap komponen (claim #561). Versi
-> Inggris di atas tetap sebagai catatan desain.
-
----
-
-## 8. Gerak & Aksesibilitas
-
-| Kondisi | Perilaku |
-|---|---|
-| Tanpa WebGL2 | `AtmosphereLayer` tidak merender apa pun; ruangan tetap tampil baik |
-| Konteks WebGL hilang | ditangani, tidak crash |
-| `prefers-reduced-motion` | waktu **dibekukan**, bukan dihapus — god ray tetap ada, hanya diam |
-| Tab tersembunyi | `visibilitychange` menghentikan loop |
-| DPR tinggi | dibatasi 1,5 |
-
-Membekukan dan bukan menghapus itu penting: god ray **membawa burn state**.
-Menghapusnya karena pengguna sensitif gerak akan menghapus informasi tata
-kelola. Kami membuang animasinya, mempertahankan sinyalnya.
-
-Sisanya: setiap event terbaca di panel teks; kontras WCAG AA pada panel;
-`prefers-reduced-motion` juga mematikan animasi jalan karakter (pindah
-langsung).
-
----
-
-## 9. Niu-Mode
-
-**Stub, bukan tema.** `frontend/src/hermes/niu.ts` menyediakan palet + string
-Indonesia, persisten di `localStorage` kunci `niu_mode`, di-toggle lewat
-perintah chat `/niu`.
-
-UI-SPEC v1 menjanjikan papan nama, chatter, prop kopi Gayo, poster dinding,
-dan music box gamelan. **Tidak ada satu pun yang dibangun.** Terdaftar di sini
-sebagai belum-dibangun alih-alih dihapus diam-diam, karena menghapus janji
-tanpa jejak adalah cara dokumen jadi tidak bisa dipercaya.
-
----
-
-## 10. Inventaris Aset
-
-| Aset | Jumlah | Catatan |
+| situasi | tampilan | alasan |
 |---|---|---|
-| Pelat ruangan | 18 | webp, varian siang/malam + @2x |
-| Sprite | 132 | 4 arah hadap, nol placeholder (semuanya reproducible) |
-| Original sprite | `art/originals/sprites/` 100 | **jangan pernah ditimpa** — sumber idempotensi `derived` |
-| Render cast | `art/donghua-cast/` 16 | sumber reproduksi 32 sprite `built` |
+| tamu, diredaksi | `Tamu · diredaksi` | server tidak mengirim angka |
+| pagu belum dikonfigurasi | `$1,25 · tanpa pagu` | belanja **diketahui**; hanya pagunya tidak ada |
+| keduanya diketahui | `$2,50 / $10,00` | busur proporsional |
 
-`stylize-donghua.py` selalu membaca ulang dari `art/originals/sprites/` —
-tidak pernah dari keluarannya sendiri — jadi menjalankan ulang tidak
-menumpuk efek; original yang hilang adalah penghentian keras, bukan
-peringatan. `check-assets.sh` memverifikasi semua 258 aset hulu terhitung,
-karena direktori besar pernah hilang antar lingkungan. Kedua pohon sumber di
-atas tidak dicakup skrip itu; keduanya dijaga `check-sprites.py`, yang
-menurunkan sprite dari `derived`/`built` ke `unsourced` begitu sumbernya
-lenyap.
+Versi pertama melipat dua situasi pertama menjadi satu `— — —`. `ratio: null`
+dari `/burn` berarti "pagu belum dikonfigurasi", **bukan** "diredaksi" —
+menyembunyikan belanja yang sudah diukur adalah pelanggaran prinsip 4.
 
-Satu cacat yang diketahui: dinding `mac-studio-day` bergradasi pink→hijau.
-Regenerasi ditawarkan, belum dikerjakan.
+Saat tak berpagu, busurnya `stroke-dasharray: 2 6` pada opacity 0,55: pola
+putus-putus yang secara sengaja tidak menyiratkan proporsi apa pun.
+
+### `Seal` (Segel) dan `Writ` (Titah) — dipulihkan
+
+Keduanya **hilang** selama beberapa patch ketika UI sekte menggantikan chrome
+lama: `AuditBadge` dan `ApprovalGate` ikut terhapus bersama stylesheet-nya,
+dan tidak ada yang menyadarinya karena tidak ada gerbang yang mengukur fitur
+yang lenyap. Keduanya dipulihkan di sini dalam idiom sekte.
+
+**Segel** menampilkan kepala rantai dan hasil verifikasi. Dua perilaku diwarisi
+dengan sengaja:
+
+- **Tidak merender apa pun** begitu probe ditolak. Menampilkan tombol
+  "verifikasi" yang mati kepada tamu justru mengiklankan keberadaan log audit
+  yang tak boleh ia baca.
+- **Hash kepala ditampilkan utuh dan bisa diseleksi** (`user-select: all`).
+  Memotongnya menghapus satu-satunya pertahanan terhadap pemangkasan ekor:
+  operator menyalin hash ke tempat yang tidak dikuasai server ini.
+
+Satu perilaku **tidak** diwarisi. Lencana lama melaporkan `verify.ok`, yaitu
+integritas mata rantai saja. Server juga menghitung
+`trustworthy = rantai ok DAN jangkar ok`, dan keduanya bisa berbeda. Komponen
+ini melaporkan yang lebih lemah dan menyebut mana yang gagal:
+
+> Rantai utuh (42 catatan), tetapi 2 jangkar tidak sepakat — jangan anggap
+> tersegel
+
+Kalimat di Segel yang merupakan klaim kepatuhan dan diperiksa mesin:
+
+> Tahan-rusak, bukan anti-rusak
+
+**Titah** menampilkan permohonan yang menunggu keputusan manusia. Aturannya:
+*mengetahui ada yang menunggu bukan hak istimewa; memutuskannya iya.* Tamu
+melihat antrean tanpa tombol — bukan tombol yang dinonaktifkan, melainkan
+tidak ada tombol. Kepemilikan disimpulkan dari payload itu sendiri (server
+meredaksi `agent` dan `tool` untuk tamu), sehingga tidak ada kontrol yang
+dijamin 403.
+
+Baris hanya dihapus bila server menerima keputusan. Bila server menolak (409
+kedaluwarsa, misalnya), barisnya tetap dan alasannya ditampilkan — menghapus
+baris di situ akan merender keputusan yang tidak pernah terjadi.
+
+### `Chronicle` (Babad)
+
+- Auto-scroll **hanya** bila pembaca sudah di ekor. Menarik gulir dari bawah
+  tangan orang yang sedang membaca riwayat adalah cara log audit berhenti
+  dipakai.
+- Jenis peristiwa tak dikenal **dirender**, bukan dibuang. `docs/EVENTS.md`
+  mewajibkan klien mentoleransinya; mentoleransi bukan berarti menyembunyikan.
+  Pembeli yang melihat peristiwa yang tak bisa dinamai UI belajar sesuatu yang
+  benar tentang sistemnya.
+- `channel_msg` menampilkan platform dan arah, **tidak pernah** isinya. Ini
+  kontrak privasi, diuji langsung.
 
 ---
 
-## 11. Koreksi terhadap v1
+## 6. Aula
 
-| v1 berkata | Kenyataan |
-|---|---|
-| "canvas ~70% width, tile grid" | **React DOM**, posisi persentase, bukan canvas |
-| Pixel art | Donghua 3D (Fase 5) |
-| Day/night sinkron WIB | Pelat siang/malam ada; burn state yang mendorong warna |
-| Niu-mode tema penuh | Stub: palet + string + toggle `/niu` |
-| Confetti saat double-click meja | Tidak dibangun |
-| Music box lo-fi / gamelan | Tidak dibangun |
-| Karakter "melambai + yes boss?" | Tidak dibangun |
-| Printer jam → semua menoleh | Tidak dibangun |
-| `prefers-reduced-motion` → matikan animasi | Diperluas: untuk shader, **bekukan waktu**, jangan hapus lapisannya |
-| Tidak menyebut tata kelola sama sekali | `BurnOverlay`, `ApprovalGate`, `AuditBadge` kini komponen inti |
+Delapan aula, nama dan pagu dari kebijakan server:
 
-### Mengapa tinggal satu `!important`
+| ruang | nama | pagu/jam |
+|---|---|---|
+| `ceo-office` | Balai Sesepuh | $10 |
+| `server-room` | Bilik Rajah | $5 |
+| `mac-studio` | Bilik Ramuan | $3 |
+| `main-office` | Gelanggang Latih | $2 |
+| `meeting-room` | Balai Musyawarah | $1 |
+| `lobby` | Gerbang Gunung | $0,25 |
+| `kitchen` | Balai Santap | $0 |
+| `nap-room` | Bilik Hening | $0 |
 
-Enam dari tujuh dicabut di Fase 15. Semuanya ternyata tidak pernah
-diperlukan: `donghua.css` diimpor terakhir di `HermesOfficeApp.tsx` dan
-selektornya persis sespesifik milik `office.css`, jadi urutan sumber saja
-sudah menang. Flag itu dipasang "untuk jaga-jaga", dan lapisan tema yang
-berteriak `!important` meninggalkan pelanggan yang me-reskin produk tanpa
-tempat eskalasi lagi — persis meniadakan gunanya punya lapisan tema.
+Nama Tionghoa selalu tampil **berdampingan** dengan glosa Inggris, tidak
+menggantikannya.
 
-Yang bertahan satu: `transition: none` di dalam
-`@media (prefers-reduced-motion: reduce)`. Itu beda jenis — jaminan
-aksesibilitas, dan konvensinya memang membuatnya tak bisa ditimpa supaya
-tidak ada aturan baru yang mengembalikan gerak bagi orang yang memintanya
-berhenti. Ia juga satu-satunya yang tidak bisa diuji di sini, karena jsdom
-tidak mengevaluasi `@media`.
+### Pelat ruangan
 
-Dijaga `frontend/src/styles/cascade.test.ts`, yang membangun dua dokumen —
-satu tanpa lapisan tema, satu dengan — lalu menuntut properti chrome tiap
-panel berubah. Itu klaim yang lebih lemah daripada "tampilannya benar", dan
-itu klaim yang jujur: unit test tidak bisa melihat. Yang ia buktikan adalah
-hal yang akan diam-diam rusak — bahwa tema masih sampai ke elemennya.
+Latar dihasilkan `scripts/stylize-donghua.py` dan dijaga `scripts/check-plates.py`
+(tujuh aturan: ukuran kanvas, berat berkas, warna unik, luminans rata-rata,
+persentil 5 dan 95, dan tinjauan magenta di luar palet).
+
+Arah cahaya dipaku dan tidak boleh diubah sepihak — rake shader dan rim light
+yang dipanggang harus sepakat atau ilusi kedalamannya runtuh:
+
+```python
+LIGHT_DX, LIGHT_DY = -2, -3
+```
+
+---
+
+## 7. Gerak dan aksesibilitas
+
+- **Kontras** dijaga gerbang 14 dalam APCA Lc, bukan rasio WCAG 2. Level:
+  `body 75`, `secondary 60`, `critical 45`, `minimum 45`.
+- **`prefers-reduced-motion`** direset dengan **3 `!important`** — ketiganya di
+  dalam blok `@media (prefers-reduced-motion: reduce)` yang menihilkan durasi
+  animasi dan transisi. Ini satu-satunya penggunaan `!important` yang sah di
+  berkas ini, dan merupakan pola kanonik.
+  Resetnya **menahan** awan, bukan menghapusnya: menghilangkan lapisan awan
+  akan mengubah *apa* adegan itu, sedangkan menahannya hanya menghentikan
+  geraknya.
+- Rail adalah `<nav>` dengan label; tiap anak tangga `<button>` dengan
+  `aria-current` dan `disabled` yang sesungguhnya — bukan sekadar bergaya
+  nonaktif.
+- Tabir memakai `role="alert"`.
+
+---
+
+## 8. Niu-mode
+
+Palet LightVela, dinyalakan lewat pil `niu` di bilah atas atau perintah chat.
+Preferensi disimpan di `localStorage` (`niu_mode`, default menyala; hanya
+nilai `'0'` yang mematikan) bersama bahasa (`niu_mode_lang`, default `id`).
+
+Sebelum patch 016 preferensi ini ditulis tetapi tidak pernah dibaca saat
+muat — togglenya tampak bekerja lalu lupa. Satu patch setelah perbaikan itu,
+penghapusan `hermes.css` nyaris mengulang kegagalan yang sama dalam bentuk
+lain: kelas `body.niu-mode` tetap menempel di `<body>` sementara tidak ada
+lagi aturan CSS yang menanggapinya. Karena itu paletnya **dipindahkan**, bukan
+dibuang (lihat §3).
+
+---
+
+## 9. Apa yang dihapus dan mengapa
+
+Penggantian ini menghapus 38 berkas `.ts/.tsx/.css` dari `frontend/src`. Semua
+tidak terjangkau dari `main.tsx` — dibuktikan dengan penelusuran impor, bukan
+dengan perasaan.
+
+**Bundelnya tidak mengecil.** Vite sudah men-*tree-shake* berkas-berkas itu
+sejak awal; CSS justru naik dari 14,9 kB ke 19,3 kB karena palet kedua dan dua
+komponen tata kelola yang dipulihkan. Keuntungannya adalah pemeliharaan dan
+kejujuran: tidak ada lagi 179 tes yang menguji komponen yang tak pernah
+dirender pengguna.
+
+Yang **tidak** boleh ikut terhapus, dan sempat hampir terhapus:
+
+- `AtmosphereLayer.tsx` dan `BurnOverlay.tsx` terlihat "hidup" hanya karena
+  satu impor **tipe**. Tipenya dipindahkan ke `hermes/burnTypes.ts` lebih
+  dulu, barulah komponennya dihapus. Kontrak data tidak boleh tinggal di
+  dalam komponen render — satu tampilan mati akhirnya menahan tiga modul
+  hidup tetap tertambat padanya.
+- `AuditBadge` dan `ApprovalGate` **fungsional** (memanggil `/ledger/verify`
+  dan `/approvals`). Keduanya sempat terhapus dan dipulihkan sebagai Segel dan
+  Titah. Pelajarannya tercatat di `handoff/LOG.md`: tidak ada satu pun dari 16
+  gerbang yang menyadari dua permukaan tata kelola menghilang dari UI.

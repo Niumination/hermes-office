@@ -26,7 +26,7 @@ other failure untrustworthy until settled.
 
 ## 1. Never edit a number to make a gate green
 
-`check-docs.py` compares 108 documented claims against the repo. When it says
+`check-docs.py` compares 111 documented claims against the repo. When it says
 the doc is wrong, the doc is *usually* wrong — but not always. Twice the
 honest fix was in the opposite direction:
 

@@ -1356,3 +1356,56 @@ Doc claims 106 → 108. CI runs the gate on both legs.
 **Stage 4 is now complete.** SBOM, support matrix, disclosure policy,
 compliance note, load test. What remains in RENCANA-v3 is 3.2 (blocked on a
 Cloudflare account), 3.3 (niu-mode) and 3.4 (marketplace).
+
+---
+
+## Arena → Hermes · PR `arena/sect-ui-id` (antarmuka perguruan, di-rebase ke b3ef09e)
+
+Pemilik repo meminta PR untuk seluruh pekerjaan UI. Pemeriksaan pertama
+membatalkan rencana aslinya: `main` dan `dev` sudah di `b3ef09e`, **diverged**
+dari `4c8b4ca` yang jadi basis tumpukan patch 011–018 (bukan leluhur; merge-base
+`3376eb7`). Agen Hermes sudah mengintegrasikan 011–015 sendiri di `2d1ce12`.
+
+Menerapkan tumpukan itu apa adanya akan menghapus 38 berkas frontend dan
+**memundurkan** `server/index.js` — perbaikan SPA fallthrough (`fallthrough:
+true` + `app.use`) tidak ada di pohon lama. Jadi PR ini dibangun ulang di atas
+`b3ef09e`, bukan di-replay.
+
+### Yang diselamatkan, dan mengapa itu bukan opsional
+
+`GET /presence` hanya dipanggil di satu tempat: `hermes/OfficeStage.tsx`, berkas
+yang penggantian tampilan ini hapus. Tiga perilaku ikut di dalamnya — seeding
+saat mount (socket tidak punya replay), polling 30 dtk (tab semalaman akan
+melenceng), dan watchdog 90 dtk (cermin aturan server). Menghapusnya berarti
+situs live memuat dengan roster kosong, dan agen yang mati sejam lalu tampak
+identik dengan agen yang tak pernah ada.
+
+Diekstrak ke `hermes/usePresence.ts` dengan 6 tes. Intinya bukan "pindah
+berkas": presence adalah fakta tentang armada, bukan properti satu renderer.
+Tampilan berikutnya mendapatkannya gratis — yang persis tidak terjadi kali ini.
+
+`formatLastSeen()` ikut pindah dari `components/Character.tsx` ke `hermes/wib.ts`.
+Ia formatter waktu, bukan urusan sprite; meninggalkannya di berkas yang dihapus
+adalah cara badge luring hilang diam-diam bersama karakter yang memakainya.
+
+### Satu keputusan desain yang sengaja asimetris
+
+Roster menampilkan agen yang diketahui server meski socket belum bicara. Aula
+**tidak**. Presence menjawab "siapa hidup", bukan "di mana"; menggambar agen ke
+dalam aula atas dasar itu adalah UI mengarang lokasi. Mereka duduk di roster
+dengan "terakhir aktif HH:MM" sampai sebuah peristiwa menempatkannya.
+
+### Yang hilang, dan harus disebut
+
+`ChatPanel` dan `GithubFeed` ikut terhapus bersama kantor isometrik; Babad
+menggantikan keduanya sebagai aliran peristiwa, tetapi kolom chat `channel_msg`
+tidak punya pengganti visual di PR ini. Tes frontend turun 170 → 90 — penurunan
+jujur, karena tes pathfinding dan sprite mati bersama kode yang diujinya.
+
+### Gerbang
+
+16/16 hijau di branch ini. Gerbang 14 naik 13 → 26 pasangan token (dua palet),
+gerbang 15 naik 108 → 111 klaim. `scripts/check-contrast.py` dan
+`scripts/check-docs.py` versi lama tidak bisa membaca pohon ini sama sekali —
+yang pertama gagal pada lightness persen, yang kedua mencari `styles/donghua.css`
+yang sudah tidak ada.

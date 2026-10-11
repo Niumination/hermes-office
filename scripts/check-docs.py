@@ -531,7 +531,7 @@ def main() -> int:
         # "19 token OKLCH"
         m = want("the OKLCH token count", r"(\d+) token OKLCH", ui, "UI-SPEC.md")
         if m:
-            css = open(os.path.join(ROOT, "frontend/src/styles/donghua.css"),
+            css = open(os.path.join(ROOT, "frontend/src/styles/sect.css"),
                        encoding="utf-8").read()
             check("UI-SPEC OKLCH token count", m.group(1), css.count("oklch("))
 
@@ -542,7 +542,7 @@ def main() -> int:
         m = want("the !important count", r"\*\*(\d+) `!important`\*\*", ui,
                  "UI-SPEC.md")
         if m:
-            css = open(os.path.join(ROOT, "frontend/src/styles/donghua.css"),
+            css = open(os.path.join(ROOT, "frontend/src/styles/sect.css"),
                        encoding="utf-8").read()
             decls = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
             check("UI-SPEC !important count", m.group(1), decls.count("!important"))
@@ -579,7 +579,11 @@ def main() -> int:
         # The UI is Bahasa Indonesia (README.id.md promise), so the rendered
         # sentence is the Indonesian one; the English UI-SPEC quotes it
         # verbatim for the design record so the check stays meaningful.
-        badge = os.path.join(ROOT, "frontend/src/components/AuditBadge.tsx")
+        # The sentence moved with the component: AuditBadge was deleted with
+        # the old chrome and restored as sect/Seal.tsx. The claim is the same
+        # compliance claim, rendered in the same words, in the file that now
+        # ships it.
+        badge = os.path.join(ROOT, "frontend/src/sect/Seal.tsx")
         RENDERED = "Tahan-rusak, bukan anti-rusak"
         if RENDERED in ui and os.path.exists(badge):
             checks += 1
@@ -1048,6 +1052,36 @@ def main() -> int:
                     f"{rel} claims {want_kb:g} kB {label}; the built "
                     f"bundle is {got_kb:.1f} kB "
                     f"({(got_kb - want_kb) / want_kb * 100:+.0f}%)")
+
+    # --- the contrast gate's own advertised size ---------------------------
+    # Both READMEs tell a buyer how many token pairs gate 14 measures. That
+    # number was 13 and unbound: the gate grew to 29 pairs when the app
+    # chrome was brought under it, and nothing would have noticed the README
+    # still promising 13. A claim about how much checking happens is exactly
+    # the claim a sceptical buyer checks first.
+    #
+    # The count is taken by RUNNING the gate rather than by counting entries
+    # in its source, because the source has two lists and one of them is
+    # measured twice (once per palette) — a reader of the source gets it
+    # wrong, and so would a regex.
+    out, err = _run(["python3", os.path.join("scripts", "check-contrast.py")], ROOT)
+    m = re.search(r"PASS: (\d+) token pairs", out + err)
+    if m is None:
+        failures.append(
+            "scripts/check-contrast.py did not report a pair count, so the "
+            "number both READMEs advertise cannot be verified. Run gate 14 "
+            "on its own: python3 scripts/check-contrast.py")
+        checks += 2
+    else:
+        measured = int(m.group(1))
+        for rel, pattern in (("README.md", r"\| theme contrast \| (\d+) token pairs"),
+                             ("README.id.md", r"\| theme contrast \| (\d+) pasangan token")):
+            got = want("its contrast pair count", pattern, text.get(rel) or "", rel)
+            if got and int(got.group(1)) != measured:
+                failures.append(
+                    f"{rel} says gate 14 measures {got.group(1)} token pairs; "
+                    f"it measures {measured}")
+            checks += 1
 
     # --- the ledger load test ---------------------------------------------
     # FLIGHT-RECORDER.md §9a prints a concurrency figure — 50 agents x 40
