@@ -59,3 +59,19 @@ function wibLabel(): string {
   const m = Math.round((wibHourNow() - h) * 60)
   return `WIB ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
+
+/**
+ * "terakhir aktif HH:MM" for an agent the watchdog has timed out.
+ *
+ * Moved here from `components/Character.tsx` when the isometric office was
+ * replaced. It is a time formatter, not a sprite concern, and leaving it in
+ * the deleted file is how the sect interface would have quietly lost the
+ * offline badge along with the character that used to wear it.
+ */
+export function formatLastSeen(ts?: number): string {
+  if (!ts) return 'Tidak diketahui'
+  const d = new Date(ts)
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  return `${hh}:${mm}`
+}
