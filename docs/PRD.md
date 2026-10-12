@@ -248,7 +248,8 @@ ledger **tidak pernah** menolak aksi yang sedang berjalan.
 
 ### F5 · Lapisan Visual Donghua (Fase 5)
 
-12 ruangan, 18 pelat, 132 sprite, nol placeholder. Kesan 3D datang dari
+12 ruangan, 18 pelat, 0 sprite (dipensiunkan 12 Okt 2026), nol placeholder.
+Kesan 3D datang dari
 **cahaya**, bukan geometri: satu fragment shader WebGL2 (`AtmosphereLayer`)
 dengan god ray volumetrik, debu di tiga bidang parallax, vignette, dan
 gradasi warna yang **membaca burn state**. Biaya **+7,8 kB**.
@@ -293,7 +294,7 @@ kepatuhan menuntutnya, chat karena pengguna mengharapkannya.
 
 ## 8. Spesifikasi API
 
-27 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
+26 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
 beserta guard tiap rute, dan `scripts/check-docs.py` memverifikasi tabel itu
 dua arah** — rute di `index.js` tanpa baris tabel gagal, rute terdokumentasi
 yang tidak ada juga gagal.
@@ -306,7 +307,7 @@ Ringkasan per-pilar:
 | Tata kelola | `GET /policy`, `POST /policy/check`, `POST /budget/check`, `GET /burn`, `POST /agents/:agent/room` |
 | Persetujuan | `GET /approvals`, `GET /approvals/:id`, `POST /approvals/:id` |
 | Kepatuhan | `GET /replay`, `GET /ledger`, `GET /ledger/head`, `GET /ledger/verify`, `GET /ledger/anchors`, `POST /ledger/anchor`, `GET /dossier` |
-| Kantor | `GET /`, `GET /roster`, `GET /presence`, `GET /github/feed`, `GET /health`, `GET /debug/events`, `POST /auth/session` |
+| Kantor | `GET /`, `GET /roster`, `GET /presence`, `GET /desks`, `GET /health`, `GET /debug/events`, `POST /auth/session` |
 | Chat | `GET /chat`, `POST /chat`, `POST /chat/completions`, `POST /chat/reply`, `POST /chat/react`, `POST /chat/typing`, `POST /chat/seen` |
 
 ---

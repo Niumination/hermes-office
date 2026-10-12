@@ -114,7 +114,7 @@ fi
 declare -A EXPECT=(
   ["art/originals/sprites|*.webp"]=100
   ["art/donghua-cast|*.webp"]=16
-  ["frontend/public/sprites|*.webp"]=132   # 282 sampai 2026-10-10; 150 sprite cast lama dihapus (paparan HKI)
+  ["frontend/public/sprites|*.webp"]=0   # 282 → 132 pada 2026-10-10 (150 cast lama, paparan HKI); → 0 pada 2026-10-12 (dipensiunkan, tak ada pembaca). Angka ini tetap dijaga: 0 berarti nol, dan sprite yang muncul kembali tanpa pembaca harus membuat gerbang merah.
   ["frontend/public/rooms|*.webp"]=26   # 18 tema bawaan + 8 tema Perguruan di rooms/sect/
 )
 for key in "${!EXPECT[@]}"; do

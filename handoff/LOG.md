@@ -1929,3 +1929,86 @@ redaksi.
 ### Gerbang
 
 16/16 hijau. Tes backend 305 → 329 (+24), frontend 111 → 125 (+14).
+
+---
+
+## 020 — Pensiun sprite + `/github/feed`, dan pin runner CI (12 Okt 2026)
+
+Dua permukaan UI rontok diam-diam saat migrasi UI Sect, dan tidak ada yang
+menyadarinya karena backend keduanya tetap utuh dan seluruh 16 gerbang tetap
+hijau. Entri ini mencatat penemuannya dan keputusan yang diambil.
+
+### Apa yang ditemukan
+
+Catatan lama menyebut "132 sprite tak terpakai". Angkanya benar, artinya
+tidak. Bukti yang dikumpulkan sebelum menyentuh apa pun:
+
+```
+frontend/public/sprites/            133 berkas, 3,1 MB
+rujukan "sprites/" di frontend/src  0
+url() di seluruh CSS                0
+tag <img> di seluruh frontend       0
+ROLE_TO_CHAR (peta peran→arketipe)  diekspor, 0 konsumen
+```
+
+Murid digambar sebagai tanda ber-aura qi lewat `backgroundImage`, bukan
+gambar karakter. Jadi sprite tidak menganggur karena berlebih; mereka
+menganggur karena **pembacanya dihapus**. `/github/feed` sama persis: rutenya
+hidup dan tersanitasi untuk tamu di `server/index.js`, tanpa satu pun tes dan
+tanpa satu pun pembaca.
+
+### Keputusan: pensiun resmi, bukan penghapusan diam-diam
+
+Pemilik memilih mempensiunkan keduanya alih-alih memulihkan. Yang penting di
+sini bukan penghapusannya, melainkan **jejaknya**:
+
+- 100 sprite asal upstream masuk ke `removals` di `ASSET-MANIFEST.json`
+  beserta alasan dan tanggalnya. Berkas itu memang dibuat untuk membedakan
+  "hilang karena pipeline" dari "dihapus karena keputusan"; tanpa entri ini,
+  penghapusan hari ini akan terlihat persis seperti cacat yang berkas itu
+  ada untuk menangkapnya.
+- 32 arketipe donghua adalah karya fork ini sendiri, jadi tidak dicatat di
+  sana — tetapi sumbernya tetap di `art/`.
+- `art/` (13 MB) **tidak** dihapus. Pensiun yang tidak bisa dibatalkan hanya
+  penghapusan dengan kata yang lebih sopan.
+
+### Gerbang sprite tidak dihapus — ia diberi invarian baru
+
+Saat populasi yang dijaga sebuah gerbang jatuh ke nol, pilihan jujurnya hanya
+dua: hapus gerbangnya, atau beri ia invarian yang baru. Menghapusnya berarti
+tidak ada lagi yang sadar ketika 3,1 MB seni tak terbaca muncul kembali —
+persis cara ia menumpuk pertama kali. Jadi `check-sprites.py` kini menjaga:
+
+1. tidak ada berkas menyelinap kembali ke `frontend/public/sprites`, dan
+2. `art/originals/sprites` serta `art/donghua-cast` tidak boleh hilang.
+
+`check-assets.sh` sudah menegakkan poin 1 untuk 100 sprite upstream lewat
+simetri `removals`, tetapi ia **buta** terhadap 32 arketipe buatan sendiri —
+itu celah yang ditutup cabang baru ini. Keduanya diuji mutasi: menaruh satu
+berkas palsu di `public/sprites` dan memindahkan `art/donghua-cast/front-256`
+masing-masing membuat gerbang merah dengan pesan yang menjelaskan sebabnya.
+
+### Dampak angka
+
+Klaim dokumen terverifikasi mesin **112 → 101**: sebelas cek lenyap bersama
+populasi sprite. Angka yang turun karena subjeknya hilang bukan kemunduran
+mutu, tetapi harus terlihat, bukan disembunyikan. Jumlah tes **tidak**
+berubah (329/125) — yang membuktikan sekali lagi bahwa `/github/feed` tak
+pernah diuji sama sekali.
+
+`MANIFEST.sha256` 434 → 301 berkas, 31M → 25M.
+
+### Yang sengaja TIDAK disentuh
+
+`docs/LEGACY-README.md` masih menyebut `/github/feed`. Itu dokumen sejarah
+yang menggambarkan keadaan warisan; memperbaruinya adalah memalsukan catatan.
+Koreksi hidup di entri ini, sesuai aturan rumah.
+
+### Pin runner CI (bagian commit sebelumnya, dicatat di sini karena bertenggat)
+
+`ubuntu-latest` pindah ke Ubuntu 26.04 bertahap 19 Okt – 19 Nov 2026. Dua job
+memanggil `python3` tanpa `setup-python`, jadi mereka mewarisi apa pun yang
+ada di image (3.12 → 3.14). Keempat runner di-pin ke `ubuntu-24.04` **dan**
+ketergantungan Python dinyatakan eksplisit. Yang kedua itu yang membuat pin
+bisa dicabut; tanggal pencabutannya (19 Nov 2026) tertulis di
+`ci/workflow.yml`.

@@ -226,10 +226,66 @@ def regen_check(entries, problems):
                 problems.append(f"    ... and {len(drift) - 8} more")
 
 
+def retired():
+    """The shipped sprites were retired on 2026-10-12. Guard that decision.
+
+    When a population a gate exists to check goes to zero, the honest options
+    are to delete the gate or to give it the new invariant. Deleting it would
+    mean nothing notices when 3.1 MB of unreachable art reappears in a build,
+    which is exactly how it accumulated the first time. So the gate stays and
+    now asserts the retirement instead:
+
+      - nothing is shipped under frontend/public/sprites again by accident,
+      - and the sources survive, because a retirement you cannot reverse is a
+        deletion wearing a politer word.
+
+    check-assets.sh already enforces the first half for the 100 upstream
+    sprites through its `removals` symmetry. It cannot see the 32 donghua
+    archetypes this fork drew itself — those were never upstream assets — so
+    without this branch they could drift back in unnoticed.
+    """
+    problems = []
+    if os.path.isdir(SPRITE_DIR):
+        stray = sorted(walk(SPRITE_DIR))
+        if stray:
+            problems.append(
+                f"{len(stray)} file(s) are shipped under frontend/public/sprites "
+                "again — the sprites were retired on 2026-10-12 because nothing "
+                "rendered them. If character art is coming back, that is a "
+                "product decision: restore the reader in frontend/src first, "
+                "then re-record this manifest with --write.")
+            problems.extend("    " + s for s in stray[:8])
+
+    for src, what in ((ORIGINALS, "art/originals/sprites"),
+                      (CAST_FRONT, "art/donghua-cast/front-256"),
+                      (CAST_REAR, "art/donghua-cast/rear-256")):
+        if not os.path.isdir(src) or not walk(src):
+            problems.append(
+                f"{what} is missing — the retired sprites are supposed to stay "
+                "rebuildable from source. Losing the originals turns a "
+                "reversible decision into a permanent one.")
+
+    if problems:
+        print(f"FAIL: {len(problems)} sprite problem(s)\n")
+        for p in problems:
+            print(f"  - {p}")
+        return 1
+
+    n_orig = len(walk(ORIGINALS))
+    n_cast = len(walk(CAST_FRONT)) + len(walk(CAST_REAR))
+    print(f"PASS: 0 sprites shipped (retired 2026-10-12, recorded in "
+          f"ASSET-MANIFEST.json); {n_orig} originals and {n_cast} cast renders "
+          f"preserved, so the decision stays reversible")
+    return 0
+
+
 def verify(regen):
     if not os.path.exists(MANIFEST):
-        print(f"FAIL: no manifest at {MANIFEST} — run with --write")
-        return 1
+        # Zero shipped sprites is the expected state since 2026-10-12, so a
+        # missing manifest is not itself an error. retired() decides: it passes
+        # on an empty tree and explains the retirement when art reappears,
+        # which is a far more useful message than "run with --write".
+        return retired()
     with open(MANIFEST, encoding="utf-8") as fh:
         doc = json.load(fh)
     recorded = {e["file"]: e for e in doc["sprites"]}

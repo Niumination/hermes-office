@@ -1008,18 +1008,13 @@ const deskBoard = new DeskBoard({ file: config.desksFile, pollMs: config.desksPo
 void deskBoard.load().then(() => { if (config.desksFile) deskBoard.start(); });
 app.use("/desks", createDesksRouter(deskBoard));
 
-// GitHub feed — owner full, guest sanitized
-app.get("/github/feed", requireAny, (_req, res) => {
-  const events = bus.buffer.recent(200).filter((e) => e.type === "git_push");
-  res.json({
-    events: _req.identity?.role === "guest" ? events.map(sanitizeEventForGuest) : events,
-  });
-});
-
-function sanitizeEventForGuest(ev) {
-  if (ev.privat) return { type: "git_push", repo: "[private]", privat: true, source: ev.source, ts: ev.ts };
-  return ev;
-}
+// GET /github/feed was retired on 2026-10-12. It returned git_push events from
+// the ring buffer for a panel the Sect UI migration removed, so it had no
+// reader left — and an endpoint with no reader is surface that still has to be
+// authenticated, sanitized for guests, and reasoned about in SECURITY.md.
+// The events themselves did not go anywhere: they are still in the buffer and
+// still reach /debug/events (owner) and the WebSocket. Nothing was lost except
+// a second door to the same room.
 
 // Static frontend build (dist/) when present
 const DIST = join(__dirname, "..", "frontend", "dist");
@@ -1056,7 +1051,7 @@ if (existsSync(DIST)) {
     res.json({
       service: "hermes-office",
       version: "1.0",
-      endpoints: ["/health", "/event", "/chat", "/roster", "/ws", "/github/feed", "/debug/events"],
+      endpoints: ["/health", "/event", "/chat", "/roster", "/ws", "/desks", "/debug/events"],
     })
   );
 }

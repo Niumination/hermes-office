@@ -26,7 +26,7 @@ other failure untrustworthy until settled.
 
 ## 1. Never edit a number to make a gate green
 
-`check-docs.py` compares 112 documented claims against the repo. When it says
+`check-docs.py` compares 101 documented claims against the repo. When it says
 the doc is wrong, the doc is *usually* wrong — but not always. Twice the
 honest fix was in the opposite direction:
 
@@ -133,9 +133,10 @@ clock **and assert the pin cannot collide**.
 ## 8. Committing
 
 `node_modules/`, `dist/`, `data/`, `*.db` are generated — never commit them.
-`art/` **is** committed (13 MB): it is the input that makes all 132 shipped sprites
-reproducible, and keeping it outside the repo is the defect that destroyed
-the art once already.
+`art/` **is** committed (13 MB). The sprites it feeds are no longer shipped —
+they were retired on 2026-10-12 — but the sources stay, because that is the
+only thing keeping the retirement reversible. Keeping `art/` outside the repo
+is the defect that destroyed the art once already; do not repeat it.
 
 After any deliberate change to tracked files:
 

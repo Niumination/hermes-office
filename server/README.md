@@ -20,7 +20,6 @@ npm start                            # http://127.0.0.1:7333
 | `GET /health` | none | uptime, ws clients, buffer size |
 | `GET /roster` | any token | static roster |
 | `GET /chat`, `POST /chat` (+`/reply /seen /react /typing /completions`) | role-scoped | guests read-only; `@mac` → A2A peer (1 turn, 60s cooldown) |
-| `GET /github/feed` | any token | git_push history; guest sees `[private]` |
 | `GET /debug/events?limit=N` | owner | ring buffer peek |
 | `WS /ws` | Bearer + origin allowlist | `hello` handshake, `event` frames, guest-filtered |
 

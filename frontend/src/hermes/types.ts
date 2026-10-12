@@ -51,17 +51,6 @@ export type KnownEvent =
       detail?: string
     }
 
-export interface GithubFeedItem {
-  id: string
-  repo: string
-  privat: boolean
-  author: string
-  commits: number
-  message: string
-  url?: string
-  ts: number
-}
-
 /** Server → client WS frames (EVENTS.md §4). */
 export type ServerFrame =
   | { channel: 'hello'; data: { server: string; events: string[] } }

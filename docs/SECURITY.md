@@ -17,7 +17,7 @@
 | cloud-bridge | `OFFICE_CLOUD_TOKEN` | POST /event, GET /roster |
 | mac-bridge | `OFFICE_MAC_TOKEN` | POST /event, GET /roster |
 | owner | `OFFICE_OWNER_TOKEN` | Semua kecuali /event |
-| guest | `OFFICE_GUEST_TOKEN` | GET WS (filtered), /roster, /github/feed (sanitized) |
+| guest | `OFFICE_GUEST_TOKEN` | GET WS (filtered), /roster, /desks (redacted) |
 
 - Token 24+ byte hex, disimpan `.env.office` (0600), tidak pernah di log
 - Rotasi: panel admin regenerate; bridge lama langsung invalid

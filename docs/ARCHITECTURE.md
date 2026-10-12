@@ -36,7 +36,7 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1278   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1273   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     585   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   412   validasi, clamp, REDAKSI, rate limit, ring buffer
@@ -150,7 +150,7 @@ dan keduanya harus diperiksa saat menambah endpoint.
 | POST | `/ledger/anchor` | `requireOwner` | terbitkan sekarang; **207** bila sebagian sink gagal |
 | GET | `/standup` | `requireOwner` | bacaan pagi berperingkat; `?hours=`, `?format=md\|json`; tidak direkam ke rantai |
 | GET | `/dossier` | `requireOwner` | `?from=&to=&format=md\|json` |
-| GET | `/presence`, `/roster`, `/github/feed` | `requireAny` | |
+| GET | `/presence`, `/roster` | `requireAny` | |
 | GET | `/debug/events` | `requireOwner` | |
 
 ---
@@ -225,8 +225,13 @@ adalah fenomena per-frame yang tetap bisa dijalankan di atas pelat statis. Biaya
 
 - **18 pelat ruangan** (12 ruangan, varian siang/malam, @2x) — semua seni
   nyata, nol placeholder.
-- **132 sprite** dikirim, dan **semuanya** bisa dibangun ulang byte-for-byte
-  (lihat `docs/SPRITES.md`). **100 `derived`** lewat
+- **0 sprite** dikirim sejak 12 Okt 2026. Penggambaran karakter dihentikan
+  oleh migrasi UI Sect, jadi 132 sprite yang tersisa tidak punya pembaca —
+  tidak ada `<img>`, tidak ada `url()`, tidak ada path yang dirangkai di
+  `frontend/src`. Mereka dipensiunkan secara resmi dan tercatat di
+  `ASSET-MANIFEST.json`; sumbernya tetap di `art/`, jadi keputusan ini bisa
+  dibalik (lihat `docs/SPRITES.md`). Pipeline di bawah ini **tetap ada** dan
+  itulah yang membuatnya bisa dibalik. **100 `derived`** lewat
   `scripts/stylize-donghua.py` — rim light searah god ray pelat, AO,
   specular, grade hangat, keyline; semua alpha-aware, idempoten, selalu
   membaca dari `art/originals/sprites/` dan tidak pernah dari keluarannya

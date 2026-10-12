@@ -58,10 +58,12 @@ mengapa ia diizinkan.
 | **Standup** | Bacaan pagi berperingkat, deterministik, tanpa panggilan LLM. Malam yang tenang menghasilkan satu baris. |
 | **Dossier kepatuhan** | Artefak yang dibaca asesor, dengan vonis verifikasinya sendiri di dalamnya. |
 
-Dan ya — tampilannya bagus. Kantor isometrik bergaya donghua 3D, 12 ruangan,
-132 sprite. Itu bukan dekorasi: seluruh alasan denah lantai dipakai sebagai
-kebijakan adalah supaya orang non-teknis bisa melihat postur armada Anda dari
-seberang ruangan.
+Dan ya — tampilannya bagus. Aula perguruan isometrik bergaya donghua, 12
+ruangan, 18 pelat seni nyata. Itu bukan dekorasi: seluruh alasan denah lantai
+dipakai sebagai kebijakan adalah supaya orang non-teknis bisa melihat postur
+armada Anda dari seberang ruangan. Murid digambar sebagai tanda ber-aura qi,
+bukan sprite karakter — sprite dipensiunkan 12 Okt 2026 (lihat
+`docs/SPRITES.md`).
 
 ## Apa yang TIDAK dilakukannya
 
@@ -129,7 +131,7 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 |---|---|
 | Test backend | **329** |
 | Test frontend | **125** |
-| Klaim dokumen yang diverifikasi mesin | **112** (`scripts/check-docs.py`) |
+| Klaim dokumen yang diverifikasi mesin | **101** (`scripts/check-docs.py`) |
 | Bundel | 269,3 kB JS · 26,3 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 
@@ -176,7 +178,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | room plates | 26 pelat cocok hash **dan** aturan gaya rumah |
 | theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |
-| sprites (+rebuild) | seluruh 132 sprite dibangun ulang dari sumber, cocok byte-for-byte |
+| sprites (+rebuild) | 0 sprite dikirim — pensiunnya bertahan dan sumbernya tetap ada |
 
 Tiga di antaranya layak disebut khusus, karena merekalah yang menangkap apa
 yang tidak bisa ditangkap hash:

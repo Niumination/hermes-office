@@ -1,5 +1,26 @@
 # Sprite — asal, reproduksi, dan liabilitas yang ditutup
 
+> **PENSIUN — 12 Oktober 2026.** Repo ini tidak lagi mengirim satu sprite pun.
+> Migrasi UI Sect menghentikan penggambaran karakter: Murid kini digambar
+> sebagai tanda ber-aura qi, bukan gambar. Akibatnya 132 sprite yang tersisa
+> tidak punya pembaca — nol `<img>`, nol `url()` di CSS, nol path yang
+> dirangkai di `frontend/src` — sementara setiap build tetap menyalin 3,1 MB
+> ke tiap deploy.
+>
+> Mereka **dipensiunkan secara sadar**, bukan hilang diam-diam: 100 sprite
+> asal upstream tercatat di `removals` pada `ASSET-MANIFEST.json` beserta
+> alasannya, dan 32 arketipe donghua buatan fork ini ikut ditarik.
+>
+> **Seluruh sisa dokumen ini tetap berlaku** dan sengaja tidak dihapus.
+> Sumbernya masih di `art/originals/sprites` dan `art/donghua-cast`, pipeline
+> `stylize-donghua.py` masih ada, dan `scripts/check-sprites.py` kini menjaga
+> dua hal sekaligus: tidak ada sprite yang menyelinap kembali ke `public/`
+> tanpa pembaca, **dan** sumbernya tidak boleh hilang. Pensiun yang tidak bisa
+> dibatalkan hanyalah penghapusan dengan kata yang lebih sopan.
+>
+> Kalau penggambaran karakter dihidupkan lagi: pulihkan dulu pembacanya di
+> `frontend/src`, baru jalankan `python3 scripts/check-sprites.py --write`.
+
 Dokumen pendamping [`ROOM-PLATES.md`](ROOM-PLATES.md). Keduanya menjawab
 pertanyaan yang sama — "apakah aset ini yang kami kira?" — tapi sprite bisa
 menjawabnya jauh lebih kuat, karena sprite **bisa dibangun ulang**.
