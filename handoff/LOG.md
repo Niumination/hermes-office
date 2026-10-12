@@ -1359,6 +1359,362 @@ Cloudflare account), 3.3 (niu-mode) and 3.4 (marketplace).
 
 ---
 
+## 015 — Niu-mode: a preference that was never read, and a palette nobody measured
+
+**Stage 3.3 of RENCANA-v3.** The plan called this item a "niu-mode stub". It
+was not a stub. `frontend/src/hermes/niu.ts` was 110 lines, imported by
+`HermesOfficeApp.tsx` and `ChatPanel.tsx`, with `/niu` and `/niu-mode` live in
+the chat command table and a `body.niu-mode` palette live in `hermes.css`.
+Building a "stub" into a feature would have duplicated a working one.
+
+Measuring what each export was actually used for found two real things
+instead.
+
+### 1. The toggle was silently not persisting
+
+`load()` returned `true` unconditionally while `setNiuMode()` kept writing
+`localStorage['niu_mode']`. The write was never read back. A user typed
+`/niu-mode`, the palette changed, they reloaded, and their preference was
+gone — with no error, no warning, nothing in the console. Nothing failed; it
+just quietly did not work, which is the failure mode that most needs a test
+and is least likely to get one.
+
+Proven before it was touched: a test asserting the preference survives a
+module reload went red with `expected true to be false`. Then fixed —
+`localStorage.getItem(KEY) !== '0'`, wrapped in try/catch so a browser that
+refuses storage defaults to on rather than throwing.
+
+Default-on is deliberate and is not a hedge. This palette is LightVela's
+visual identity, and a visitor has no way to know a command exists to switch
+it on. Only an explicit `'0'` turns it off; an unrecognised value is treated
+as absent.
+
+`niu.test.ts`, 9 tests: default on · off survives reload · on survives
+reload · `'banana'` falls back to the default · `getItem` throwing falls back
+to the default · toggling both ways · language defaults to `id` (`#kantor-niu`)
+· `en` survives reload (`#office`) · both string sets have identical keys and
+no empty arrays, so a future translator cannot half-add a language.
+
+Frontend tests 170 → 179.
+
+### 2. The chrome palette was outside every gate
+
+`--ho-*` drives 48 declarations in `hermes.css`. Gate 14 measured only the
+`--sect-*` tokens, which are `oklch()` in `sect.css`; the chrome palette is
+hex and was measured by nobody. Until the toggle was fixed this was
+theoretical — the palette was permanently on, so the override was the only
+one that shipped. Fixing persistence made both palettes genuinely reachable,
+which made measuring them necessary.
+
+Gate 14 now parses hex `--ho-*` from both `:root` and `body.niu-mode` and
+measures 8 APCA pairs per palette. The niu block is merged over the base
+first, because that is what the cascade does — resolving the inheritance
+rather than assuming it is what caught the next finding.
+
+**It found a real defect, and not in the new code.** `--ho-muted` was below
+its level in *both* palettes: Lc 50.2 and 49.4 in the default theme, 48.4 and
+46.4 in niu, against a required 60 for secondary text. The default theme had
+shipped unreadable muted text the whole time. The niu work did not introduce
+it; measuring is simply the first thing that could have found it.
+
+Fixed by lightening the token to `#b8bec6` — worst case Lc 63.0, a +3.0
+margin so a future background tweak does not instantly redden the gate, and
+still clearly subordinate to `--ho-text` at Lc 90. **The level was not
+lowered.** A gate moved to fit the colour it is grading is not a gate.
+
+Gate 14: 13 pairs → 29 (13 sect, 16 chrome across two palettes).
+
+**Mutation-tested, all four caught**
+
+1. `--ho-muted` restored to its old value → 4 failures, both palettes named
+2. the whole `body.niu-mode` block deleted → `no readable niu chrome palette`
+   (an absent palette is not a silent pass)
+3. niu accent darkened to near-invisible → `Lc 3.2` and `Lc 1.3`, critical
+4. a token rewritten as `oklch()` → named as not defined, in both palettes,
+   rather than skipped
+
+### 3. A claim about how much checking happens
+
+Both READMEs advertised "13 token pairs" and nothing bound that number. The
+gate grew to 29 and the READMEs would have kept promising 13 indefinitely. A
+claim about the extent of the verification is the first claim a sceptical
+buyer tests, so it is now bound: `check-docs.py` runs gate 14 and compares
+its reported count against both READMEs. It takes the number by running the
+gate rather than counting entries in its source, because the source has two
+lists and one is measured twice per palette — a regex would get it wrong, and
+so would a careful human reader.
+
+Mutation-tested: README reverted to 13 → `says gate 14 measures 13 token
+pairs; it measures 29`.
+
+Doc claims 108 → 110.
+
+`docs/UI-SPEC.md` §9 no longer calls this a stub. It records the persistence
+bug as a dated correction rather than quietly rewriting the old sentence, and
+states plainly which promises from UI-SPEC v1 — nameplates, the Gayo coffee
+prop, the gamelan music box — are still not built.
+
+---
+
+---
+
+## 016 — the UI replacement that quietly removed two governance surfaces (patch 017)
+
+**Stage 3.4 / the sect integration.** The previous patches put the 宗門 UI in
+front of the user: a three-column shell, 境界 as altitude, 氣 as burn, 雲深不知處
+as 403. The office rendered, the gates were green, and the screenshot looked
+right. This entry is about what that green did not cover.
+
+### 1. Reachability, measured rather than assumed
+
+An import walk from `main.tsx` found **21 live files** out of 63 `.ts/.tsx/.css`
+files in `frontend/src`. Forty-two were unreachable — the entire isometric
+office: `OfficeStage` (535 lines), `HermesOfficeApp`, `agentManager`,
+`Character`, `FurnitureRenderer`, four stylesheets, and every panel component.
+
+Two surprises in that list, and both mattered.
+
+**`AtmosphereLayer.tsx` and `BurnOverlay.tsx` were "live" on a technicality.**
+Each was reached by exactly one `import type`. The components were dead; their
+*type declarations* were not. `BurnOverlay` held `BurnState` and
+`BurnSnapshot` — the shape of `GET /burn` — so three live modules were
+tethered to a dead view, and deleting the view would have taken the server
+contract with it. The types moved to `hermes/burnTypes.ts` first. A data
+contract living inside a render component is a latent version of this problem
+in every codebase that has one.
+
+**`styles/hermes.css` was unreachable, and gate 14 was measuring it.** The
+contrast gate had been extended one patch earlier to cover the `--ho-*` chrome
+palette across both niu states. That palette was in a stylesheet nothing
+imported. The gate was green, honestly computed, and measuring a file the
+browser never loaded.
+
+Worse: `niu.ts` still attached `body.niu-mode` to `<body>`, and after the
+sect rebuild there was no rule anywhere that responded to it. Patch 016 had
+just finished fixing a preference that was written and never read. One patch
+later the same failure had reappeared in a new shape — a class applied and
+never styled.
+
+So the palette was **ported, not dropped**: `body.niu-mode` now restates five
+ink rungs and one accent as `--sect-*` overrides inside `sect.css`. The
+lightness ladder is deliberately identical to the default, because contrast is
+a function of lightness and matching the ladder inherits the headroom instead
+of re-earning it by luck.
+
+Gate 14 was rewritten to follow the thing rather than the filename: thirteen
+pairs, measured twice, once per palette. **26 pairs, not 29.** The advertised
+number went down. Both READMEs bind to it by running the gate, so the drop had
+to be stated rather than quietly kept.
+
+Rewriting it exposed two defects in the gate itself:
+
+- `parse_tokens()` scanned the whole stylesheet, so the second palette's
+  overrides overwrote the base palette in the same dict. Both palettes would
+  have reported identical numbers and the default would never have been
+  measured at all. Scoped to `:root`.
+- The ported ember accent, `oklch(80% 0.145 62)`, is **outside sRGB**. The
+  gate refused it — a browser would have clipped it to a colour nothing
+  measured. Replaced with `oklch(78% 0.165 66)` from a two-axis sweep.
+
+### 2. The part no gate noticed
+
+`AuditBadge` and `ApprovalGate` were in the dead set. Both were **functional**:
+`fetch('/ledger/head')`, `fetch('/ledger/verify')`, `fetch('/approvals')`,
+`POST /approvals/:id`.
+
+The sect UI had shipped without a ledger surface and without an approval
+queue. The product's two load-bearing claims — *replay is governance* and
+*doors are policy gates* — had no representation in the interface a buyer
+looks at. Sixteen gates were green throughout. Not one of them can see a
+feature that stopped being rendered.
+
+Restored as `sect/Seal.tsx` (印) and `sect/Writ.tsx` (令), in the sect's idiom
+rather than reinstated as foreign widgets. Two inherited behaviours were kept
+deliberately: the seal renders *nothing* to a viewer the server refuses
+(a disabled control would advertise an audit log the guest cannot read), and
+the head hash is shown in full and selectable (truncating it removes the only
+defence against tail truncation).
+
+One behaviour was deliberately **not** inherited. The old badge reported
+`verify.ok` — chain-link integrity alone. The server also computes
+`trustworthy = chain ok AND anchors ok`, and the two can disagree. A chain can
+be internally consistent and still contradict its external anchors, which is
+precisely the case where "terverifikasi" is a lie. The seal reports the weaker
+of the two and names which half failed.
+
+### 3. What the mutation test caught
+
+Seven mutants were killed on the first pass. The eighth survived, and it was
+the most important one: replacing `trustworthy` with `ok` in the seal.
+
+The test asserted the verdict *sentence*, and the sentence was computed from
+`chainBroken`/`anchorsBroken` directly. The indicator dot was computed from
+`trusted`. Two expressions for one claim — so the mutant produced a seal whose
+dot glowed green while the sentence underneath it said the anchors disagreed,
+and the test passed.
+
+That is a defect in the component, not only in the test. One verdict, one
+source: `trusted` is now derived from the same two flags the sentence uses,
+and the test asserts the indicator class as well as the text. Both mutants
+die now, plus a ninth written to cover the new path.
+
+### 4. The bug the unit tests could not see
+
+With both components green and mutation-checked, the writ was pointed at the
+running server. The owner got **no approve/deny buttons at all**.
+
+`GET /approvals` returns the raw approval object to a non-guest and simply
+omits the `redacted` key; only the guest branch sets `redacted: true`. The
+component inferred ownership with `redacted === false` — a value the server
+never sends. Every viewer was treated as a guest, so the panel whose entire
+reason for existing is the owner's decision offered the owner nothing.
+
+Seven unit tests passed throughout, because the fixture sent `redacted: false`
+rather than what the server actually produces. A fixture is a claim about an
+interface; this one was wrong, and being wrong in the same direction as the
+code made the pair agree with each other and with nothing else.
+
+Fixed to `redacted !== true`, which is what the server contract actually says,
+and locked with two regression tests — one using the real owner shape (no
+`redacted` key), one asserting a fully redacted queue still withholds the
+controls. The mutant restoring `=== false` now dies.
+
+The polling backoff from the old component was restored at the same time:
+after four consecutive failures the interval stretches to a maximum of 30 s
+instead of hammering a server that is already refusing.
+
+### 5. Numbers
+
+| | before | after |
+|---|---|---|
+| files in `frontend/src` | 63 | 34 |
+| stylesheets | 5 | 1 |
+| frontend tests | 179 | 84 |
+| gate 14 pairs | 29 | 26 |
+| JS bundle | 298.9 kB | 257.1 kB |
+| CSS bundle | 47.2 kB | 19.3 kB |
+
+The test count **fell by 95**, and that is not a saving. Those tests covered
+components no user could reach; they were green against dead code, which is
+the most expensive kind of green. Forty-two new tests were written against what
+actually ships — the five sect components plus the two restored governance
+surfaces — every one of them mutation-checked.
+
+The bundle numbers deserve the same honesty: the deletion did **not** cause
+them. Vite had already tree-shaken every dead file. CSS went *up* from the
+post-rebuild 14.9 kB to 19.3 kB, because of the second palette and the two
+restored components. The win here is maintenance and truthfulness, not bytes.
+
+`docs/UI-SPEC.md` was rewritten end to end. It had described the isometric
+office in detail — layout, characters, furniture, the old components — none of
+which ships. A specification describing an interface that no longer exists is
+a liability, not an asset: a buyer reads it and then finds a different product.
+
+### 6. Standing trap, now in the deployment doc
+
+`ALLOWED_ORIGINS` has now caused the same outage three times. The default
+listed Vite's stock port 5173; this repo binds 3333. Every new host is a fresh
+instance of it — a preview host was refused `403` on the WebSocket upgrade
+while REST kept working, so the office rendered, sat on "luring", and looked
+like a flaky socket rather than one wrong word in a config.
+
+Diagnosis, written down so the next person does not rediscover it:
+**403 = the origin was rejected; 401 = the origin passed and the session is
+missing.** `curl` without an `Origin` header returns `101` and tells you
+nothing.
+
+---
+
+---
+
+## 017 — Arena → Hermes · antarmuka Bahasa Indonesia (patch 018)
+
+**Permintaan user:** "ganti karakter dari bahasa china ke bahasa indonesia,
+ganti semuanya." Dijalankan harfiah: nol aksara Han di pohon aktif, termasuk
+komentar kode, data pengumpan demo, dan diagram ASCII di dokumen.
+
+### 1. Register dipilih, dan itu keputusan produk
+
+Pilihannya bukan antara Han dan Indonesia, melainkan antara dua bahasa
+Indonesia. "Ruang Server" benar dan membunuh temanya; **Bilik Rajah** menjaga
+janji yang sudah disetujui user — tema donghua menyeluruh, bukan tempelan.
+Kosakata persilatan dipakai konsisten: balai, bilik, sesepuh, murid, tataran.
+Glosarium penuh ada di `frontend/src/theme/sect.ts`, yang menjadi satu-satunya
+sumber kebenaran; dokumen mengutipnya, tidak menyalinnya.
+
+### 2. Yang sengaja TIDAK diterjemahkan
+
+`CHANGELOG-v2.md` dan entri `handoff/LOG.md` 007, 008 serta entri lama masih
+memuat Han. Itu bukan kelalaian. Entri-entri itu merekam keputusan yang memang
+diambil dengan nama Han pada saat itu; menulis ulangnya akan membuat log
+berbohong tentang masa lalunya sendiri.
+
+### 3. Terjemahan adalah perubahan tata letak, bukan teks
+
+Tiga glif menjadi enam belas huruf. Yang harus ikut berubah:
+
+| permukaan | sebelum | sesudah | alasan |
+| --- | --- | --- | --- |
+| `sect-hall__name` | 54px | 40px + `max-width: 11ch` | "Gerbang Gunung" meluber |
+| `sect-rung__name` | `nowrap` + ellipsis | `-webkit-line-clamp: 2` | ellipsis yang tak pernah aktif kini memotong "Balai Musyawarah" |
+| `sect-veil__name` | 42px | 31px | "Lenyap di Balik Kabut" = 21 huruf |
+| avatar `MARK` | 1 glif Han | 2 huruf + `markFor()` | satu huruf Latin bentrok antar agen |
+
+Nama kelas dan token font ikut berbohong setelah terjemahan.
+`--sect-face-han` memimpin dengan Songti SC / Noto Serif CJK / SimSun; pada
+pohon tanpa satu pun karakter CJK, itu menyerahkan suara display ke serif
+Tionghoa acak. Jadi `.han` → `.sect-script`, `--sect-face-han` →
+`--sect-face-script`, `__cn` → `__name`, `SectHall.cn/en` → `nameId`/`nameEn`.
+
+### 4. Temuan terpenting giliran ini datang dari mata, bukan dari tes
+
+84 tes frontend hijau, `tsc` bersih, 15 dari 16 gerbang hijau — dan antarmuka
+di bawah 860px **rusak total**: rail Tataran dan kolom Babad saling menimpa.
+
+Sebabnya tidak ada hubungannya dengan terjemahan. Kedua breakpoint ditulis di
+baris 195–206, sedangkan `.sect-rail { display: flex }` ada di baris 311 dan
+`.sect-scroll { display: flex }` di 661. **Media query tidak menambah
+spesifisitas.** Urutan sumber menang, `display: none` kalah, dan kedua panel
+ditempatkan ke kolom implisit di atas satu sama lain. Breakpoint yang
+diiklankan `docs/UI-SPEC.md` tidak pernah sekali pun menyala sejak tema sekte
+ditulis. Keduanya dipindah ke akhir berkas, di bawah komentar yang menjelaskan
+mengapa mereka harus tetap di sana.
+
+Pelajarannya bukan "tambah tes responsif". Pelajarannya: **tak satu pun dari 16
+gerbang melihat piksel.** Gerbang kontras membaca token, gerbang pelat membaca
+berkas PNG, tes frontend membaca pohon DOM — tak ada yang pernah menata letak
+halaman. Ini lubang yang sama bentuknya dengan hilangnya `AuditBadge` di
+entri 016.
+
+### 5. Chrome headless menipu dua kali, dan keduanya harus dibantah
+
+- Chrome dari `choreo_get_chrome` tidak jalan: 11 pustaka sistem hilang
+  (`libnss3`, `libnspr4`, `libatk-1.0`, `libasound2t64`, …). `sudo apt-get
+  install` menyelesaikannya.
+- Tangkapan layar menunjukkan pita hitam ~90px di dasar **setiap** lebar.
+  Terlihat seperti `height: 100%` yang gagal. Bukan: halaman kontrol
+  membuktikan `innerHeight=733` pada `--window-size=1000,820` — headless
+  menyisakan tinggi jendela. Lebarnya konstan di tiga lebar yang berbeda, dan
+  itulah petunjuknya; cacat tata letak akan ikut berubah bersama konten.
+
+### 6. Gerbang 15 flaky sekali, dan itu belum selesai
+
+Satu kali jalan, `check-docs.py` melaporkan `PRICING.md backend test count: doc
+says '305', repo has '192'`. `npm test` mandiri memberi 305/305 tiga kali
+berturut-turut, dan `check-docs.py` memberi 111/111 dua kali berturut-turut
+sesudahnya. Jadi angka 192 lahir di dalam skrip, bukan di dokumen.
+
+`check-docs.py` memanggil `_backend_counts()` **dua kali** dalam satu jalan
+(baris 423 dan 759) — dua kali `node --test` penuh. Dugaan: panggilan kedua
+terpotong di bawah beban, menyisakan `# pass 192` tanpa `# fail`. Belum
+dibuktikan, jadi **jangan** diperlakukan sebagai selesai. Gejalanya berbahaya
+karena ia menuduh dokumen berbohong padahal mesinnya yang tergelincir —
+persis mode kegagalan yang komentar di fungsi itu sendiri bersumpah dicegah.
+
+**Saran:** satu kali jalan, satu hasil di-cache, dipakai kedua pemeriksaan.
+
+---
+
 ## Arena → Hermes · PR `arena/sect-ui-id` (antarmuka perguruan, di-rebase ke b3ef09e)
 
 Pemilik repo meminta PR untuk seluruh pekerjaan UI. Pemeriksaan pertama

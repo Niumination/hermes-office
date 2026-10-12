@@ -19,11 +19,23 @@ const API_PORT = process.env.OFFICE_PORT || '7333'
 // burn HUD, the approval gate and the audit badge silently did nothing under
 // `npm run dev` while working perfectly in a production build.
 //
-// Keeping it as one explicit list, rather than scattered entries, is what
-// makes an omission visible on review.
-const HTTP_ROUTES = [
-  // core
-  '/chat', '/roster', '/event', '/health', '/presence', '/github', '/auth',
+  // Keeping it as one explicit list, rather than scattered entries, is what
+  // makes an omission visible on review.
+  //
+  // Third time: /kiosk. The sect interface calls it to bootstrap a guest
+  // session, and `GET /kiosk` is one of only TWO routes that mint one — the
+  // other is `GET /`, which Vite itself serves in dev and which therefore
+  // never reaches the office server. Without this entry the fetch returned
+  // Vite's index.html with a 200 and no Set-Cookie, so the ladder stayed null
+  // and the entire redacted-guest surface was dead under `npm run dev` while
+  // working in production. Proven, not guessed: through Vite the response was
+  // 200 text/html with zero Set-Cookie headers; straight to :7333 it was 200
+  // with one.
+  const HTTP_ROUTES = [
+    // core
+    '/chat', '/roster', '/event', '/health', '/presence', '/github', '/auth',
+    // session: the only proxied route that can mint an auto-guest cookie
+    '/kiosk',
   // Fase 1 — OTLP ingest
   '/v1',
   // Fase 2 — burn rate
