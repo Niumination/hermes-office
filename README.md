@@ -2,6 +2,8 @@
 
 **English** · [Bahasa Indonesia](README.id.md)
 
+[![CI](https://github.com/Niumination/hermes-office/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/Niumination/hermes-office/actions/workflows/ci.yml)
+
 **Agent fleet governance you can show an auditor — and the person who signs
 the invoice.**
 

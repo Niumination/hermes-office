@@ -2,6 +2,8 @@
 
 [English](README.md) · **Bahasa Indonesia**
 
+[![CI](https://github.com/Niumination/hermes-office/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/Niumination/hermes-office/actions/workflows/ci.yml)
+
 **Tata kelola armada agen yang bisa Anda tunjukkan ke auditor — dan ke orang
 yang menandatangani tagihannya.**
 

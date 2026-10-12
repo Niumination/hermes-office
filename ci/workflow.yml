@@ -33,10 +33,26 @@ concurrency:
 permissions:
   contents: read
 
+# RUNNER IMAGE IS PINNED ON PURPOSE
+# ---------------------------------
+# GitHub moves the `ubuntu-latest` label from Ubuntu 24.04 to 26.04 gradually
+# between 2026-10-19 and 2026-11-19. "Gradually" is the part that matters: two
+# runs an hour apart can land on different images, so a failure in that window
+# looks intermittent and costs an afternoon to attribute.
+#
+# Three defaults change under us: Python 3.12 -> 3.14, Node 22 -> 24, Java
+# 17 -> 25. Node is already explicit everywhere here via setup-node, and the
+# jobs that call python3 now declare it with setup-python (see below), so the
+# pin is belt-and-braces rather than the only defence.
+#
+# This is a deliberate deferral, not a decision to stay on 24.04 forever.
+# REMOVE THIS PIN by 2026-11-19: run the suite once on ubuntu-26.04, and when
+# it is green drop the label back to ubuntu-latest. A pin nobody revisits is
+# how a repo ends up on an image that stopped getting security updates.
 jobs:
   server:
     name: Server — lint, parse, test (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     # Two runtimes, not one. Node 20 reached end of life on 2026-04-30 and
     # is gone from `engines`; 22 is maintenance LTS until 2027-04 and 24 is
@@ -62,6 +78,14 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+
+      # This job calls `python3 scripts/make-sbom.py --check` further down.
+      # It used to inherit whatever python the runner image shipped, which is
+      # an undeclared dependency: it works until the image changes underneath
+      # it (24.04 ships 3.12, 26.04 ships 3.14). Say the version out loud.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
 
       # Upstream shipped `npm ci || npm install`, which tolerates a lockfile
       # that disagrees with package.json. That is a defect to fix, not to
@@ -186,7 +210,7 @@ jobs:
 
   frontend:
     name: Frontend — typecheck and build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     defaults:
       run:
@@ -223,7 +247,7 @@ jobs:
 
   assets:
     name: Assets — references resolve, nothing dropped
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
@@ -231,6 +255,12 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
+
+      # scripts/check-assets.sh reads ASSET-MANIFEST.json with inline python3.
+      # Same undeclared dependency as the server job; same fix.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
 
       # Every sprite path the code asks for must exist. A typo renders as an
       # invisible character rather than an error.
@@ -256,7 +286,7 @@ jobs:
 
   deployability:
     name: Deployability — no host is hard-coded
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
