@@ -30,6 +30,8 @@ import { useNiuMode, toggleNiuMode, useLang, toggleLang, getStrings } from '../h
 import RealmRail from './RealmRail'
 import Hall, { type Cultivator } from './Hall'
 import Chronicle from './Chronicle'
+import Sabda from './Sabda'
+import { useSabda } from './useSabda'
 import QiRing from './QiRing'
 import Seal from './Seal'
 import Writ from './Writ'
@@ -95,7 +97,7 @@ export const SectApp: React.FC = () => {
   // look asleep; yanking the view around after someone has deliberately
   // navigated is worse. So: follow by default, stop following on first click.
   const followRef = useRef(true)
-  const [tab, setTab] = useState<'chronicle' | 'roster'>('chronicle')
+  const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda'>('chronicle')
   const [, tick] = useState(0)
   const agentsRef = useRef<Map<string, Tracked>>(new Map())
 
@@ -121,7 +123,16 @@ export const SectApp: React.FC = () => {
     tick((n) => n + 1)
   }, [])
 
-  const { connected, offline, events, serverVersion } = useOfficeSocket({ onEvent })
+  // Sabda owns the chat transcript; its frame handlers go straight into the
+  // socket so there is one connection, not a second one for chat.
+  const sabda = useSabda()
+  const { connected, offline, events, serverVersion } = useOfficeSocket({
+    onEvent,
+    onChatDelta: sabda.onChatDelta,
+    onChatDone: sabda.onChatDone,
+    onTyping: sabda.onTyping,
+    onReaction: sabda.onReaction,
+  })
   const { state: burn, snapshot } = useBurnState(events)
 
   useEffect(() => {
@@ -293,9 +304,24 @@ export const SectApp: React.FC = () => {
             aria-selected={tab === 'roster'}
             onClick={() => setTab('roster')}
           >Murid</button>
+          <button
+            type="button" role="tab" className="sect-tab"
+            aria-selected={tab === 'sabda'}
+            onClick={() => setTab('sabda')}
+          >Sabda</button>
         </div>
 
-        {tab === 'chronicle' ? (
+        {tab === 'sabda' ? (
+          <Sabda
+            messages={sabda.messages}
+            typing={sabda.typing}
+            refusal={sabda.refusal}
+            loaded={sabda.loaded}
+            guest={isGuest}
+            onSend={(t) => { void sabda.send(t) }}
+            onReact={(id, emoji) => { void sabda.react(id, emoji) }}
+          />
+        ) : tab === 'chronicle' ? (
           <Chronicle events={events} />
         ) : (
           <div className="sect-log">

@@ -62,7 +62,7 @@ Satu stylesheet: `frontend/src/styles/sect.css`.
 
 | berkas | baris | peran |
 |---|---|---|
-| `sect.css` | 1024 | seluruh sistem desain — token, tata letak, komponen, gerak |
+| `sect.css` | 1202 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
 Versi v1 mengimpor lima stylesheet (`office.css`, `rooms.css`, `donghua.css`,
 `hermes.css`, dan satu lagi lewat `@import`), menghasilkan empat generasi token
@@ -71,7 +71,7 @@ pertama CSS juga dihapus: ia memblokir render secara berantai.
 
 ### Token warna (OKLCH)
 
-**35 token OKLCH** di `sect.css`. OKLCH dipilih karena lightness-nya
+**36 token OKLCH** di `sect.css`. OKLCH dipilih karena lightness-nya
 perseptual — menaikkan `L` menaikkan kontras terbaca, yang membuat perbaikan
 APCA bisa dicari secara sistematis alih-alih ditebak.
 
@@ -121,7 +121,7 @@ Qi tampil di dua tempat: cincin di bilah atas, dan aura tiap Murid di aula.
 
 | komponen | baris | peran |
 |---|---|---|
-| `SectApp` (330 baris) | orkestrasi, socket, follow-mode, bootstrap tamu |
+| `SectApp` (356 baris) | orkestrasi, socket, follow-mode, bootstrap tamu |
 | `Hall` (112 baris) | aula, awan, Murid, tabir Lenyap di Balik Kabut |
 | `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |

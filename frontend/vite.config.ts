@@ -51,6 +51,12 @@ export default defineConfig({
   base: './',
   server: {
     port: 3333,
+    // Dev-only: Vite 8 refuses Host headers it does not know, which makes the
+    // app unreachable from any remote preview/tunnel (the sandbox proxy, a
+    // Tailscale Funnel, a phone on the LAN). Opt-in via VITE_ALLOW_REMOTE=1 so
+    // the default stays locked down; this block never ships, as `vite build`
+    // does not read `server`.
+    ...(process.env.VITE_ALLOW_REMOTE ? { allowedHosts: true as const } : {}),
     // Same-origin dev proxy to the office-server (WS + REST).
     proxy: {
       '/ws': { target: `ws://localhost:${API_PORT}`, ws: true },

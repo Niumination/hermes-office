@@ -29,11 +29,75 @@ export interface OfficeSocketOptions {
   disabled?: boolean
   /** Called for every `event` channel frame. Stable ref recommended. */
   onEvent?: (e: HermesEnvelope) => void
-  onChatDelta?: (d: { id?: string; delta: string }) => void
-  onChatDone?: (d: { id?: string; text: string }) => void
-  onTyping?: (d: { who: string }) => void
-  onReaction?: (d: { messageId: string; emoji: string }) => void
+  /**
+   * Frame shapes below are the SERVER's, read from server/chat.js — not a
+   * guess. They used to be wrong in a way no test could see, because every
+   * one of these is a bare `as` cast with no runtime check:
+   *
+   *   typing   server sends { sender }        — this said { who }
+   *   reaction server sends { messageId, reactions: string[] } — said { emoji }
+   *
+   * The old office read `d?.who` on every typing frame, which is permanently
+   * undefined, so the typing indicator never once appeared in production.
+   * A cast is a promise the compiler cannot keep; the only thing that makes
+   * it true is matching it to the sender.
+   */
+  onChatDelta?: (d: { sender?: string; delta: string }) => void
+  onChatDone?: (d: SabdaMessageLike) => void
+  onTyping?: (d: { sender: string }) => void
+  onReaction?: (d: { messageId: number | string; reactions: string[] }) => void
   onRoster?: (d: unknown) => void
+}
+
+/** One row of `messages` in server/chat-db.js, as the server serialises it. */
+export interface SabdaMessageLike {
+  id: number
+  sender: string
+  role?: string
+  text: string
+  timestamp: number
+  is_system?: number
+  /** TEXT JSON from GET /chat; a real array on the WS frame. Both occur. */
+  reactions?: string[] | string
+}
+
+/**
+ * Channels that only ever reach a client through server/chat.js.
+ *
+ * `server/index.js` has one `broadcast()` and it hardcodes the envelope:
+ *
+ *     const raw = JSON.stringify({ channel: "event", data: event })
+ *
+ * chat.js then calls that same function with an envelope of its own —
+ * `broadcast({ channel: "chat_done", data: msg })` — so what actually goes
+ * down the wire is a frame inside a frame:
+ *
+ *     {"channel":"event","data":{"channel":"typing","data":{"sender":"hermes"}}}
+ *
+ * Captured from a live socket, not inferred. Two consequences, both real
+ * today: `case 'chat_done'` can never fire, so every chat frame is dropped;
+ * and the nested envelope is handed to onEvent as though it were an
+ * event, so the chronicle quietly logs rows for things that are not events.
+ *
+ * The server is the contract and is not edited to suit the client, so the
+ * client unwraps. The guard is deliberately narrow — a `channel_msg` event
+ * also carries a `channel` field (the platform name), and unwrapping on that
+ * would eat real events.
+ */
+const WRAPPED_CHANNELS = new Set(['chat_done', 'chat_delta', 'typing', 'reaction', 'roster'])
+
+export function unwrapFrame(frame: ServerFrame): ServerFrame {
+  if (frame?.channel !== 'event') return frame
+  const inner = frame.data as { channel?: unknown; data?: unknown } | null
+  if (
+    inner && typeof inner === 'object' &&
+    typeof inner.channel === 'string' &&
+    WRAPPED_CHANNELS.has(inner.channel) &&
+    'data' in inner
+  ) {
+    return inner as ServerFrame
+  }
+  return frame
 }
 
 export interface OfficeSocketResult {
@@ -82,6 +146,7 @@ export function useOfficeSocket(options: OfficeSocketOptions = {}): OfficeSocket
   const handleFrame = useCallback((raw: string) => {
     let frame: ServerFrame
     try { frame = JSON.parse(raw) } catch { return }
+    frame = unwrapFrame(frame)
 
     switch (frame.channel) {
       case 'hello': {
@@ -94,16 +159,16 @@ export function useOfficeSocket(options: OfficeSocketOptions = {}): OfficeSocket
         pushEvent(frame.data as HermesEnvelope)
         return
       case 'chat_delta':
-        cbs.current.onChatDelta?.(frame.data as { id?: string; delta: string })
+        cbs.current.onChatDelta?.(frame.data as { sender?: string; delta: string })
         return
       case 'chat_done':
-        cbs.current.onChatDone?.(frame.data as { id?: string; text: string })
+        cbs.current.onChatDone?.(frame.data as SabdaMessageLike)
         return
       case 'typing':
-        cbs.current.onTyping?.(frame.data as { who: string })
+        cbs.current.onTyping?.(frame.data as { sender: string })
         return
       case 'reaction':
-        cbs.current.onReaction?.(frame.data as { messageId: string; emoji: string })
+        cbs.current.onReaction?.(frame.data as { messageId: number | string; reactions: string[] })
         return
       case 'roster':
         cbs.current.onRoster?.(frame.data)

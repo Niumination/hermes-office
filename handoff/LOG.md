@@ -1765,3 +1765,88 @@ gerbang 15 naik 108 → 111 klaim. `scripts/check-contrast.py` dan
 `scripts/check-docs.py` versi lama tidak bisa membaca pohon ini sama sekali —
 yang pertama gagal pada lightness persen, yang kedua mencari `styles/donghua.css`
 yang sudah tidak ada.
+
+## 018 — Sabda: fitur chat yang hidup di server tanpa satu pun pintu di UI
+
+Entri 016 mencatat bahwa `ChatPanel` terhapus dan "kolom chat `channel_msg`
+tidak punya pengganti visual". Catatan itu dibiarkan apa adanya karena ia
+catatan sejarah, tetapi ia **keliru dua kali**, dan koreksinya penting:
+
+1. `channel_msg` **sudah** dirender Babad (`Chronicle.tsx:54`), hanya metadata
+   platform dan arahnya — persis yang diizinkan `docs/PRIVACY.md`.
+2. Yang benar-benar hilang bukan itu. Yang hilang adalah **percakapan
+   operator**: `server/chat.js` + `server/chat-db.js` — SQLite persisten,
+   reaksi, thread, tanda terbaca, streaming token — berjalan penuh di server
+   sementara `grep '/chat' frontend/src/` tidak menemukan apa pun. Sebuah
+   fitur lengkap tanpa pintu.
+
+Patch ini memasang pintunya: **Sabda**, tab ketiga di gulungan kanan. Babad =
+apa yang *dilakukan* armada; Murid = siapa yang *hadir*; Sabda = apa yang
+*dikatakan*. Tiga jenis kebenaran, tiga panel — menggabungkannya akan membuat
+perintah yang diucapkan tampak seperti perintah yang dijalankan.
+
+### Tiga kerusakan yang ditemukan saat membangunnya, bukan diduga
+
+Membangun di atas kontrak yang ada justru membongkar tiga cacat nyata. Semua
+ditangkap dari server yang berjalan, bukan dari membaca kode.
+
+**(a) Amplop ganda — seluruh chat mati di WebSocket.** `server/index.js:41`
+punya satu `broadcast()` dan ia memaksa amplopnya sendiri:
+
+    const raw = JSON.stringify({ channel: "event", data: event });
+
+`server/chat.js` memanggil fungsi yang sama dengan amplop miliknya,
+`broadcast({ channel: "chat_done", data: msg })`. Yang benar-benar lewat kabel:
+
+    {"channel":"event","data":{"channel":"typing","data":{"sender":"hermes"}}}
+
+Akibatnya `case 'chat_done'` di `useOfficeSocket` **tidak pernah bisa menyala**,
+dan amplop bersarang itu diserahkan ke `onEvent` seolah-olah peristiwa — Babad
+diam-diam mencatat baris untuk hal yang bukan peristiwa. Server tidak diubah
+(ia kontraknya); klien yang membuka bungkus, lewat `unwrapFrame()` dengan
+penjaga sempit: sebuah `channel_msg` juga punya field `channel` berisi nama
+platform, dan membuka bungkus atas dasar itu akan memakan peristiwa asli.
+
+**(b) `typing` tidak pernah tampil, dan tak satu tes pun bisa melihatnya.**
+Hook mendeklarasikan `onTyping?: (d: { who: string })`, server menyiarkan
+`{ sender }`, dan kantor lama membaca `d?.who` — `undefined`, selamanya. Yang
+membuatnya lolos adalah `frame.data as { who: string }`: sebuah `as` bukan
+validasi, melainkan janji yang tidak bisa ditepati kompilator. Hal sama pada
+`reaction`, yang dideklarasikan `{ emoji }` padahal server mengirim
+`{ messageId, reactions[] }`.
+
+**(c) `reactions` datang dalam dua bentuk berbeda.** `GET /chat` mengembalikan
+baris SQLite mentah, jadi `reactions` berupa **string** JSON; frame WS
+mengirim **array** yang sudah diurai (`chat.js:95`). Menerima hanya array akan
+menghapus diam-diam setiap reaksi yang ada sebelum halaman dimuat.
+
+### Balapan sesi yang hanya terlihat di peramban
+
+Pada muat dingin, `GET /chat` berlomba dengan `GET /kiosk` milik `SectApp` —
+satu-satunya rute yang mencetak sesi tamu di dev — dan kalah: server menjawab
+401 dan transkrip tinggal kosong sampai pengunjung kebetulan memuat ulang.
+Tidak terlihat di unit test; terlihat pada tangkapan peramban pertama (`lines:
+0`, enam 401). Karena itu 401 di sini berarti "belum ada sesi", bukan
+"ditolak", dan diulang dengan backoff bertingkat yang sama seperti sisa
+aplikasi (maks 30 s).
+
+### Batas izin dicerminkan, bukan dikarang
+
+`GET /chat` `requireAny` → tamu **boleh membaca**, jadi riwayat tetap tampil.
+`POST /chat` `requireAuth(["bridge","owner"])` → tamu **tidak boleh bersabda**,
+jadi komposer tidak dirender sama sekali. Komposer tetap tampil lalu gagal
+akan menjadi UI yang berbohong; menyembunyikan riwayat akan menjadi UI yang
+mengarang penolakan yang tidak pernah dibuat server. Bila server tetap menolak
+(403), penolakan itu **ditampilkan**, bukan ditelan — operator tidak boleh
+mengira titahnya tersampaikan padahal dibuang.
+
+Dibuktikan terhadap server hidup: tamu `GET /chat` 200, `POST /chat` 403,
+`POST /chat/react` 200; pemilik mengirim lewat UI dan barisnya muncul tanpa
+muat ulang (`chat_done` melalui WS, setelah bungkusnya dibuka).
+
+### Gerbang
+
+16/16 tetap hijau. Tes frontend 90 → 111 (+21: 15 Sabda, 6 amplop).
+`VITE_ALLOW_REMOTE` dipulihkan ke `vite.config.ts` sebagai `allowedHosts` —
+hilang saat port fase 018 dan membuat dev server tak terjangkau dari pratinjau
+mana pun; hanya blok `server`, jadi tidak ikut ke hasil build.

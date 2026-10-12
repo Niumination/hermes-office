@@ -809,6 +809,184 @@ body {
 /* The contract, learned the hard way in patch 010: reduced-motion FREEZES
    time, it does not delete the layer. Removing the cloud would change what the
    scene *is*; holding it still only stops it moving. */
+/* ---- Sabda: percakapan operator -------------------------------------- */
+/* Lives above every @media block on purpose: the breakpoint rules at the end
+   of this file must be able to override these without a specificity fight. */
+
+.sect-sabda { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+
+.sect-sabda__list { flex: 1; min-height: 0; }
+
+.sect-said {
+  display: grid;
+  grid-template-columns: 1.55rem 1fr;
+  gap: 0.5rem;
+  padding: 0.42rem 0.5rem;
+  border-radius: 0.4rem;
+}
+.sect-said:hover { background: color-mix(in oklch, var(--sect-ink-2) 54%, transparent); }
+
+.sect-said__mark {
+  display: grid;
+  place-items: center;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 34%, transparent);
+  background: color-mix(in oklch, var(--sect-ink-1) 80%, transparent);
+  color: var(--sect-gold);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+
+.sect-said__body { min-width: 0; }
+
+.sect-said__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.42rem;
+}
+.sect-said__who {
+  color: var(--sect-jade);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+}
+.sect-said__t {
+  color: color-mix(in oklch, var(--sect-mist) 52%, transparent);
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sect-said__text {
+  margin: 0.12rem 0 0;
+  color: var(--sect-mist);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.sect-said.is-system .sect-said__text {
+  color: color-mix(in oklch, var(--sect-mist) 66%, transparent);
+  font-style: italic;
+}
+
+/* A streaming line is visibly unfinished — the caret says "still arriving"
+   rather than letting a half-sentence read as the whole answer. */
+.sect-said.is-streaming .sect-said__text::after {
+  content: '\2590';
+  margin-left: 0.1rem;
+  color: var(--sect-gold);
+  animation: sect-sabda-caret 1s steps(2) infinite;
+}
+@keyframes sect-sabda-caret { 50% { opacity: 0; } }
+
+.sect-said__reacts { display: flex; flex-wrap: wrap; gap: 0.22rem; margin-top: 0.22rem; }
+
+.sect-react {
+  padding: 0.04rem 0.28rem;
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 26%, transparent);
+  background: color-mix(in oklch, var(--sect-ink-1) 70%, transparent);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+.sect-react--btn { cursor: pointer; }
+.sect-react--btn:hover { border-color: var(--sect-gold); }
+
+.sect-said__tools { position: relative; }
+
+.sect-said__more {
+  margin-top: 0.1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: color-mix(in oklch, var(--sect-mist) 40%, transparent);
+  font-size: 0.64rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.sect-said:hover .sect-said__more,
+.sect-said__more:focus-visible { opacity: 1; }
+
+.sect-said__picker {
+  position: absolute;
+  z-index: 4;
+  bottom: 1.15rem;
+  left: 0;
+  display: flex;
+  gap: 0.18rem;
+  padding: 0.2rem;
+  border-radius: 0.45rem;
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 30%, transparent);
+  background: color-mix(in oklch, var(--sect-ink-0) 94%, transparent);
+  box-shadow: 0 6px 18px oklch(8% 0 0 / 0.5);
+}
+
+.sect-sabda__typing {
+  margin: 0;
+  padding: 0.22rem 0.55rem;
+  color: var(--sect-jade);
+  font-size: 0.66rem;
+  font-style: italic;
+}
+
+/* The server's refusal, shown as the server's. Cinnabar is the gate colour
+   everywhere else in this interface, so a refusal reads the same here. */
+.sect-sabda__refusal {
+  margin: 0.2rem 0.5rem;
+  padding: 0.3rem 0.45rem;
+  border-left: 2px solid var(--sect-cinnabar);
+  border-radius: 0.2rem;
+  background: color-mix(in oklch, var(--sect-cinnabar) 13%, transparent);
+  color: var(--sect-mist);
+  font-size: 0.68rem;
+}
+
+.sect-sabda__guest {
+  margin: 0;
+  padding: 0.45rem 0.55rem;
+  border-top: 1px solid color-mix(in oklch, var(--sect-gold) 18%, transparent);
+  color: color-mix(in oklch, var(--sect-mist) 58%, transparent);
+  font-size: 0.66rem;
+  text-align: center;
+}
+
+.sect-sabda__composer {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.45rem 0.5rem;
+  border-top: 1px solid color-mix(in oklch, var(--sect-gold) 18%, transparent);
+}
+
+.sect-sabda__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.34rem 0.5rem;
+  border-radius: 0.35rem;
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 24%, transparent);
+  background: color-mix(in oklch, var(--sect-ink-0) 86%, transparent);
+  color: var(--sect-mist);
+  font: inherit;
+  font-size: 0.74rem;
+}
+.sect-sabda__input::placeholder { color: color-mix(in oklch, var(--sect-mist) 40%, transparent); }
+.sect-sabda__input:focus-visible { outline: 2px solid var(--sect-jade); outline-offset: 1px; }
+
+.sect-sabda__send {
+  padding: 0.34rem 0.7rem;
+  border-radius: 0.35rem;
+  border: 1px solid color-mix(in oklch, var(--sect-gold) 40%, transparent);
+  background: color-mix(in oklch, var(--sect-gold) 16%, transparent);
+  color: var(--sect-gold);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.sect-sabda__send:hover:not(:disabled) { background: color-mix(in oklch, var(--sect-gold) 26%, transparent); }
+.sect-sabda__send:disabled { opacity: 0.45; cursor: default; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
