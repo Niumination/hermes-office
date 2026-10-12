@@ -1,0 +1,82 @@
+{
+  "generatedAt": "2026-10-12T18:59:19Z",
+  "commit": "6ecdce94401ea53b5ece43e7a64cccd1c74f8c35",
+  "branch": "arena/pos-jaga",
+  "dirty": true,
+  "gates": [
+    {
+      "gate": "handoff integrity",
+      "ok": true
+    },
+    {
+      "gate": "eslint",
+      "ok": true
+    },
+    {
+      "gate": "frontend build",
+      "ok": true
+    },
+    {
+      "gate": "backend tests",
+      "ok": true
+    },
+    {
+      "gate": "frontend tests",
+      "ok": true
+    },
+    {
+      "gate": "clean shutdown",
+      "ok": true
+    },
+    {
+      "gate": "ledger under load",
+      "ok": true
+    },
+    {
+      "gate": "upstream assets",
+      "ok": true
+    },
+    {
+      "gate": "ci workflow",
+      "ok": true
+    },
+    {
+      "gate": "dependency pins",
+      "ok": true
+    },
+    {
+      "gate": "sbom",
+      "ok": true
+    },
+    {
+      "gate": "deployable",
+      "ok": true
+    },
+    {
+      "gate": "dev server routes",
+      "ok": true
+    },
+    {
+      "gate": "room plates",
+      "ok": true
+    },
+    {
+      "gate": "theme contrast",
+      "ok": true
+    },
+    {
+      "gate": "doc claims",
+      "ok": true
+    },
+    {
+      "gate": "sprites (+rebuild)",
+      "ok": true
+    }
+  ],
+  "gatesGreen": 17,
+  "gatesTotal": 17,
+  "bundle": {
+    "file": "index-tH8PyKks.js",
+    "sha256": "946dd0d94868dbeb7ecfd880f382251a7fb4c50bc90963a9981c63802eb3644c"
+  }
+}

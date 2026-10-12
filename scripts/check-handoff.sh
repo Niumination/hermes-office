@@ -31,6 +31,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 MANIFEST="MANIFEST.sha256"
 
+# handoff/VERIFY-REPORT.json is excluded for a different reason than the rest,
+# and the difference matters. It is not an output of the build — it is
+# evidence ABOUT this tree, written by `verify.sh` as its last act. Hashing it
+# would make this gate self-invalidating: writing the manifest, running the
+# suite, and then checking the manifest would fail every single time, because
+# the run that checks the tree is also the run that changes it. The file is
+# still committed, still served by GET /proof, and still carries the commit it
+# describes — so a stale report is detectable by reading it, not by hashing it.
+#
 # Everything a clone needs, and nothing a clone regenerates. node_modules,
 # dist, data and __pycache__ are excluded because they are outputs: hashing
 # them would make the manifest fail for correct reasons, which trains people
@@ -47,6 +56,7 @@ list_files() {
     -path ./coverage -prune -o \
     -name '__pycache__' -prune -o \
     -name '.env.office' -prune -o \
+    -path ./handoff/VERIFY-REPORT.json -prune -o \
     -name '.DS_Store' -prune -o \
     -name "$MANIFEST" -prune -o \
     -type f -print | sed 's|^\./||' | LC_ALL=C sort

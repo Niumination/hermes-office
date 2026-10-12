@@ -115,6 +115,78 @@ else
 fi
 
 echo
+# The report is written on every full run, pass or fail. A report that only
+# appears when everything is green is a marketing asset, not evidence: the
+# absence of a red report is indistinguishable from nobody having run the
+# suite, which is the ambiguity this file exists to remove.
+#
+# --fast runs are deliberately NOT recorded. They skip the byte-exact sprite
+# rebuild, so recording them would let a weaker run overwrite the evidence of
+# a stronger one.
+if [[ $FAST -eq 0 ]]; then
+  REPORT=handoff/VERIFY-REPORT.json
+  bundle_js=$(ls -1 frontend/dist/assets/index-*.js 2>/dev/null | head -1)
+  PASS_LIST="${pass[*]:-}" FAIL_LIST="${fail[*]:-}" BUNDLE="${bundle_js##*/}" \
+  python3 - "$REPORT" <<'PY'
+import hashlib, json, os, subprocess, sys, datetime
+
+out = sys.argv[1]
+passed = [g for g in os.environ.get("PASS_LIST", "").split() if g]
+failed = [g for g in os.environ.get("FAIL_LIST", "").split() if g]
+# Gate names contain spaces, so a space-split loses them. Recover by matching
+# against verify.sh's own invocation list rather than guessing.
+names = []
+for line in open("scripts/verify.sh", encoding="utf-8"):
+    line = line.strip()
+    if line.startswith('gate "'):
+        names.append(line.split('"')[1])
+joined_pass = " ".join(passed)
+gates = []
+for n in names:
+    if n in joined_pass:
+        gates.append({"gate": n, "ok": True})
+    elif n in " ".join(failed):
+        gates.append({"gate": n, "ok": False})
+
+def git(*a):
+    try:
+        return subprocess.run(["git", *a], capture_output=True, text=True,
+                              timeout=10).stdout.strip() or None
+    except Exception:
+        return None
+
+bundle = os.environ.get("BUNDLE") or None
+bundle_sha = None
+if bundle:
+    p = os.path.join("frontend", "dist", "assets", bundle)
+    if os.path.exists(p):
+        bundle_sha = hashlib.sha256(open(p, "rb").read()).hexdigest()
+
+doc = {
+    "generatedAt": datetime.datetime.now(datetime.timezone.utc)
+                   .replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+    "commit": git("rev-parse", "HEAD"),
+    "branch": git("rev-parse", "--abbrev-ref", "HEAD"),
+    "dirty": bool(git("status", "--porcelain")),
+    "gates": gates,
+    "gatesGreen": sum(1 for g in gates if g["ok"]),
+    "gatesTotal": len(gates),
+    # The bundle fingerprint is the point of this file. A server can compare it
+    # against what it is actually serving and prove the deployed build is the
+    # verified build — the failure we hit for weeks, where a live instance
+    # served an older bundle and nothing in the product could say so.
+    "bundle": {"file": bundle, "sha256": bundle_sha},
+}
+os.makedirs(os.path.dirname(out), exist_ok=True)
+with open(out, "w", encoding="utf-8") as fh:
+    json.dump(doc, fh, indent=2)
+    fh.write("\n")
+print(f"  wrote {out} ({doc['gatesGreen']}/{doc['gatesTotal']} gates, "
+       f"bundle {(bundle or 'none')})")
+PY
+fi
+
+echo
 if [[ ${#fail[@]} -eq 0 ]]; then
   echo "PASS: ${#pass[@]}/${#pass[@]} gates green"
   exit 0

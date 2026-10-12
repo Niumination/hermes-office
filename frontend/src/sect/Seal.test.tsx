@@ -99,10 +99,19 @@ describe('Seal', () => {
   })
 
   it('keeps the last known value when a poll throws, instead of flashing an alarm', async () => {
-    let calls = 0
-    vi.stubGlobal('fetch', vi.fn(async () => {
-      calls += 1
-      if (calls === 1) return { ok: true, status: 200, json: async () => HEAD } as Response
+    // Routes by URL rather than counting calls. The call-counting version
+    // silently depended on /ledger/head being the only request this component
+    // makes; when the build-proof fetch landed, call #1 stopped being the one
+    // under test and this test failed for a reason that had nothing to do
+    // with what it asserts. The intent is unchanged: when the HEAD poll
+    // throws, the last known value must survive.
+    let headCalls = 0
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (!String(url).includes('/ledger/head')) {
+        return { ok: true, status: 200, json: async () => ({}) } as Response
+      }
+      headCalls += 1
+      if (headCalls === 1) return { ok: true, status: 200, json: async () => HEAD } as Response
       throw new Error('network blip')
     }))
     render(<Seal pollMs={5} />)
@@ -110,5 +119,81 @@ describe('Seal', () => {
     await vi.advanceTimersByTimeAsync(40)
     expect(screen.getByText(/42 catatan/)).toBeTruthy()
     expect(screen.queryByText('RANTAI PUTUS')).toBeNull()
+  })
+
+  describe('bukti build', () => {
+    const openPanel = async () => {
+      await waitFor(() => expect(screen.getByText(/42 catatan/)).toBeTruthy())
+      fireEvent.click(screen.getByRole('button', { expanded: false }))
+    }
+
+    it('says a stale deployment out loud instead of implying the gates apply', async () => {
+      vi.stubGlobal('fetch', mockFetch({
+        '/ledger/head': { body: HEAD },
+        '/proof': { body: {
+          reportMissing: false,
+          bundleMatches: false,
+          verification: { verifiedAt: '2026-10-12T09:00:00Z', gatesGreen: 17, gatesTotal: 17 },
+          served: { file: 'index-OLD.js' },
+          verifiedBundle: 'index-NEW.js',
+        } },
+      }))
+      render(<Seal />)
+      await openPanel()
+      await waitFor(() => expect(screen.getByText(/BUKAN yang diuji/)).toBeTruthy())
+      // The gates stay visible — they are real results for a real build —
+      // but they can no longer be read as describing what is served.
+      expect(screen.getByText('17/17 hijau')).toBeTruthy()
+      expect(screen.getByText('index-OLD.js')).toBeTruthy()
+    })
+
+    it('never renders a missing report as zero gates', async () => {
+      vi.stubGlobal('fetch', mockFetch({
+        '/ledger/head': { body: HEAD },
+        '/proof': { body: { reportMissing: true, bundleMatches: null, verification: null } },
+      }))
+      render(<Seal />)
+      await openPanel()
+      await waitFor(() => expect(screen.getByText('belum pernah dicatat')).toBeTruthy())
+      expect(screen.queryByText('0/0 hijau')).toBeNull()
+    })
+
+    it('shows when the build cannot be matched, without calling it a mismatch', async () => {
+      vi.stubGlobal('fetch', mockFetch({
+        '/ledger/head': { body: HEAD },
+        '/proof': { body: {
+          reportMissing: false,
+          bundleMatches: null,
+          verification: { verifiedAt: '2026-10-12T09:00:00Z', gatesGreen: 17, gatesTotal: 17 },
+        } },
+      }))
+      render(<Seal />)
+      await openPanel()
+      await waitFor(() => expect(screen.getByText('tidak bisa dicocokkan')).toBeTruthy())
+      expect(screen.queryByText(/BUKAN yang diuji/)).toBeNull()
+    })
+
+    it('publishes when it was verified, so staleness needs no arithmetic', async () => {
+      vi.stubGlobal('fetch', mockFetch({
+        '/ledger/head': { body: HEAD },
+        '/proof': { body: {
+          reportMissing: false,
+          bundleMatches: true,
+          verification: { verifiedAt: '2026-10-12T09:00:00Z', gatesGreen: 17, gatesTotal: 17 },
+        } },
+      }))
+      render(<Seal />)
+      await openPanel()
+      await waitFor(() => expect(screen.getByText(/2026-10-12 09:00:00 UTC/)).toBeTruthy())
+    })
+
+    it('a proof fetch that fails must not blank the seal', async () => {
+      vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+        if (String(url).includes('/proof')) throw new Error('down')
+        return { ok: true, status: 200, json: async () => HEAD } as Response
+      }))
+      render(<Seal />)
+      await waitFor(() => expect(screen.getByText(/42 catatan/)).toBeTruthy())
+    })
   })
 })

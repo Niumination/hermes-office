@@ -26,6 +26,17 @@ import React, { useEffect, useState } from 'react'
 
 interface Head { seq: number; hash: string; records: number }
 
+/** GET /proof — see server/proof.js. Shapes differ for owner and guest; the
+ *  fields this component reads are present in both, except `served` /
+ *  `verifiedBundle`, which only an owner is allowed to see. */
+interface Proof {
+  reportMissing: boolean
+  bundleMatches: boolean | null
+  verification: { verifiedAt?: string; gatesGreen?: number; gatesTotal?: number } | null
+  served?: { file: string } | null
+  verifiedBundle?: string | null
+}
+
 interface Anchors { ok: boolean; strength: string; anchors: number }
 
 interface Verify {
@@ -44,6 +55,20 @@ export const Seal: React.FC<{ pollMs?: number }> = ({ pollMs = 30000 }) => {
   const [visible, setVisible] = useState(true)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [proof, setProof] = useState<Proof | null>(null)
+
+  // Build evidence is fetched once, in its own effect. It changes when the
+  // server is redeployed, not on a polling cadence — and sharing the head
+  // poll's tick would reorder that poll's requests, which is exactly what
+  // broke its "keep the last known value" test the first time.
+  useEffect(() => {
+    let alive = true
+    void fetch('/proof', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (alive && d) setProof(d as Proof) })
+      .catch(() => { /* additive: its absence must never blank the seal */ })
+    return () => { alive = false }
+  }, [])
 
   useEffect(() => {
     if (!visible) return
@@ -154,6 +179,54 @@ export const Seal: React.FC<{ pollMs?: number }> = ({ pollMs = 30000 }) => {
                 keeps the export working when JS state is stale. */}
             <a className="sect-chain__export" href="/dossier" download>Ekspor dossier</a>
           </div>
+
+          {/* Bukti build. Separate from the chain on purpose: the chain says
+              "this record was not edited", this says "the thing you are
+              looking at is the thing we tested". A seal that conflates them
+              certifies a different building. */}
+          {proof && (
+            <div className="sect-chain__proof">
+              {proof.reportMissing ? (
+                <div className="sect-chain__row">
+                  <span>Gerbang</span>
+                  {/* Never "0/0": nobody ran the suite and the suite failed
+                      are different facts. */}
+                  <strong>belum pernah dicatat</strong>
+                </div>
+              ) : (
+                <>
+                  <div className="sect-chain__row">
+                    <span>Gerbang</span>
+                    <strong>
+                      {proof.verification?.gatesGreen}/{proof.verification?.gatesTotal} hijau
+                    </strong>
+                  </div>
+                  <div className="sect-chain__row">
+                    <span>Diverifikasi</span>
+                    {/* The timestamp is not decoration: it is the only way a
+                        reader can judge staleness without trusting us. */}
+                    <strong>{proof.verification?.verifiedAt?.replace('T', ' ').replace('Z', ' UTC') ?? '—'}</strong>
+                  </div>
+                </>
+              )}
+
+              {proof.bundleMatches === false && (
+                <div className="sect-chain__verdict bad">
+                  Yang disajikan BUKAN yang diuji: server menyajikan{' '}
+                  <code>{proof.served?.file ?? '—'}</code> sementara gerbang di
+                  atas dijalankan terhadap <code>{proof.verifiedBundle ?? '—'}</code>.
+                  Perlakukan hasil gerbang itu sebagai milik build lain.
+                </div>
+              )}
+              {proof.bundleMatches === null && !proof.reportMissing && (
+                <div className="sect-chain__row">
+                  <span>Build</span>
+                  {/* unknown is not a mismatch — same rule as the desks board. */}
+                  <strong>tidak bisa dicocokkan</strong>
+                </div>
+              )}
+            </div>
+          )}
 
           <p className="sect-chain__note">
             Tahan-rusak, bukan anti-rusak. Salin hash kepala ke tempat yang

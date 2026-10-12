@@ -2071,3 +2071,72 @@ Token memakai fallback sekali pakai seperti `check-shutdown.sh`, jadi gerbang
 ini jalan di CI tanpa `.env.office`. Port diminta dari OS, bukan ditetapkan:
 gerbang yang merah karena port terpakai adalah gerbang yang mulai dilewati
 orang.
+
+---
+
+## 022 — Bukti: `GET /proof` dan laporan verifikasi (12 Okt 2026)
+
+Produk ini menjual "replay adalah tata kelola": Anda bisa menunjukkan kepada
+auditor apa yang terjadi dan membuktikan catatannya tidak disunting. Ledger
+sudah menopang klaim itu. Yang tidak bisa dijawab apa pun adalah pertanyaan
+**kedua** seorang auditor:
+
+> Apakah yang saya lihat ini benda yang Anda uji?
+
+Selama berminggu-minggu sebuah instance hidup menyajikan bundel tiga commit
+di belakang pohon terverifikasi. Semua gerbang hijau, ledger terverifikasi,
+UI tampak benar — dan tidak ada satu permukaan pun yang bisa mengatakan
+deploy-nya basi. Verifikasi yang tidak terikat pada artefak di depan Anda
+adalah sertifikat untuk gedung lain.
+
+### Tiga klaim, dilaporkan terpisah
+
+1. **LANGSUNG** — rantai, dihitung ulang sekarang, oleh server yang menjawab.
+2. **TERCATAT** — hasil gerbang dari `verify.sh` penuh terakhir, selalu
+   disertai stempel waktu dan commit-nya. Tidak pernah disajikan sebagai "kini".
+3. **PENGIKATAN** — apakah bundel yang server ini sajikan identik byte dengan
+   bundel yang diuji gerbang-gerbang itu.
+
+Ketiganya tidak boleh dikaburkan jadi satu lencana hijau.
+
+### Aturan kejujuran yang ditanam
+
+- Laporan yang tidak ada dilaporkan **tidak ada**, bukan 0/0. "Tidak ada yang
+  menjalankan suite" dan "suite gagal" adalah dua fakta berbeda; menyamakannya
+  menyanjung kita di satu arah dan memfitnah di arah lain.
+- `bundleMatches` bernilai **null** bila tidak bisa dicocokkan. Sama seperti
+  papan Pos Jaga: `unknown` tidak boleh dinaikkan jadi vonis.
+- Saat bundel tidak cocok, hasil gerbang **tetap ditampilkan** — ia hasil
+  nyata untuk commit nyata — tetapi pembaca diberi tahu bahwa ia milik build
+  lain. Menyembunyikannya sama tidak jujurnya dengan menyiratkan ia berlaku.
+- `verify.sh` menulis laporan **baik lulus maupun gagal**. Laporan yang hanya
+  muncul saat hijau adalah materi pemasaran, bukan bukti. (Terbukti sendiri:
+  run pertama yang merah menulis `16/17`.)
+- Run `--fast` **tidak** dicatat — ia melewati rebuild sprite byte-exact, jadi
+  mencatatnya akan membiarkan run lemah menimpa bukti run kuat.
+
+### Mengapa laporan dikecualikan dari MANIFEST
+
+`handoff/VERIFY-REPORT.json` bukan keluaran build melainkan **bukti tentang
+pohon**, ditulis `verify.sh` sebagai tindakan terakhirnya. Menghash-nya
+membuat gerbang integritas membatalkan dirinya sendiri: run yang memeriksa
+pohon adalah juga run yang mengubahnya. Berkas tetap di-commit dan tetap
+disajikan; basinya terdeteksi dengan **membacanya**, bukan dengan menghash-nya.
+
+### Dibuktikan terhadap server hidup
+
+Kasus tersulit sengaja dipilih: **nama berkas identik, isi berbeda**
+(byte ditambahkan ke bundel yang disajikan). Perbandingan berbasis nama akan
+lolos; sha256 menangkapnya — `bundleMatches: false` sementara gerbang tetap
+17/17. Tamu melihat vonisnya, tidak melihat nama berkas, commit, branch,
+maupun nama gerbang.
+
+### Catatan
+
+`commit` bernilai null bila `.git` tidak tersedia saat verify berjalan. Itu
+jujur dan disengaja; di klon nyata dan di CI nilainya terisi.
+
+Satu tes lama ikut diperbaiki: `Seal.test.tsx` menghitung **jumlah panggilan**
+fetch, bukan rutenya, sehingga diam-diam bergantung pada asumsi "satu-satunya
+permintaan komponen ini adalah /ledger/head". Kini dirutekan per-URL; maksud
+tesnya tidak berubah.

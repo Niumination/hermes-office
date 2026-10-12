@@ -38,6 +38,9 @@ const API_PORT = process.env.OFFICE_PORT || '7333'
     // rute yang lupa didaftarkan hanya 404 di `npm run dev` dan tetap lolos
     // seluruh 16 gerbang — persis cara regresi /kiosk bersembunyi berminggu.
     '/desks',
+    // Fase 6 — permukaan bukti (gerbang 17 menangkap ketiadaannya
+    // dalam hitungan detik, yang memang gunanya).
+    '/proof',
     // session: the only proxied route that can mint an auto-guest cookie
     '/kiosk',
   // Fase 1 — OTLP ingest

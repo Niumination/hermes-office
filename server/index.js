@@ -13,6 +13,7 @@ import { authenticate, getBearer, createSession, sessionCookieHeader, requireAut
 import { OfficeEventBus, RateLimiter } from "./eventbus.js";
 import { createChatRouter } from "./chat.js";
 import { DeskBoard, createDesksRouter } from "./desks.js";
+import { createProofRouter } from "./proof.js";
 import { createGithubPoller } from "./github.js";
 import { otlpToEvents } from "./otlp.js";
 import { FlightRecorder } from "./ledger.js";
@@ -1008,6 +1009,14 @@ const deskBoard = new DeskBoard({ file: config.desksFile, pollMs: config.desksPo
 void deskBoard.load().then(() => { if (config.desksFile) deskBoard.start(); });
 app.use("/desks", createDesksRouter(deskBoard));
 
+// Bukti — lihat server/proof.js. Mount di sini, logika di sana: rute ini
+// menjawab "apakah yang Anda lihat adalah yang kami uji?", dan jawabannya
+// harus memuat perbandingan bundel, bukan sekadar ringkasan gerbang.
+app.use("/proof", createProofRouter({
+  requireAny,
+  verifyLedger: () => (ledger ? ledger.verify() : null),
+}));
+
 // GET /github/feed was retired on 2026-10-12. It returned git_push events from
 // the ring buffer for a panel the Sect UI migration removed, so it had no
 // reader left — and an endpoint with no reader is surface that still has to be
@@ -1051,7 +1060,7 @@ if (existsSync(DIST)) {
     res.json({
       service: "hermes-office",
       version: "1.0",
-      endpoints: ["/health", "/event", "/chat", "/roster", "/ws", "/desks", "/debug/events"],
+      endpoints: ["/health", "/event", "/chat", "/roster", "/ws", "/desks", "/proof", "/debug/events"],
     })
   );
 }

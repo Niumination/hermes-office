@@ -126,7 +126,7 @@ Qi tampil di dua tempat: cincin di bilah atas, dan aura tiap Murid di aula.
 | `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |
 | `QiRing` (95 baris) | cincin Tenaga, tiga keadaan |
-| `Seal` (168 baris) | Segel — integritas rantai ledger |
+| `Seal` (241 baris) | Segel — integritas rantai ledger |
 | `Writ` (164 baris) | Titah — antrean persetujuan |
 
 ### `QiRing` — tiga keadaan, bukan dua
