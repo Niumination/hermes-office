@@ -89,7 +89,7 @@ git clone https://github.com/Niumination/hermes-office
 cd hermes-office && npm ci && npm run verify
 ```
 
-16 gates, about 4 minutes on a 2-core machine. The gate list and what each
+17 gates, about 4 minutes on a 2-core machine. The gate list and what each
 one proves is in the [README](../README.md#verify-it-yourself).
 
 This is the actual product. An isometric office can be copied in a week; a

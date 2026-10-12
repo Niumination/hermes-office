@@ -127,6 +127,13 @@ jobs:
       - name: Clean shutdown with a live WebSocket
         run: bash scripts/check-shutdown.sh
 
+      # The only check that starts the dev server. Every other gate reads
+      # files at rest, which is how /kiosk stopped minting guest sessions and
+      # how /debug, /replay and /standup went months answering 404 under
+      # `npm run dev` with 16/16 green.
+      - name: Dev server boots and every backend route is proxied
+        run: bash scripts/check-dev-server.sh
+
       - name: CI workflow matches its canonical source
         run: bash scripts/check-ci.sh
 

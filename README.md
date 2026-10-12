@@ -152,7 +152,7 @@ npm ci
 npm run verify
 ```
 
-**16 gates, about 4 minutes** on a 2-core machine. `npm run verify:fast`
+**17 gates, about 4 minutes** on a 2-core machine. `npm run verify:fast`
 skips the two rebuild gates and finishes in roughly a minute. Exit code 0
 means every gate passed — and no gate prints a green line it did not earn,
 because each verdict comes from that gate's own exit status, never from
@@ -173,6 +173,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | dependency pins | no floating or URL versions |
 | sbom | `sbom.cdx.json` rebuilt from the lockfiles and matched byte-for-byte |
 | deployable | no hard-coded host or tailnet address in shipped code |
+| dev server routes | the dev server boots and every backend route is proxied |
 | room plates | 26 plates match their hashes **and** the house style rules |
 | theme contrast | 26 token pairs measured in APCA Lc, computed from `oklch()` |
 | doc claims | 94 documented claims executed against the repo |

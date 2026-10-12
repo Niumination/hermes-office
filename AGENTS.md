@@ -10,7 +10,7 @@ Every rule below was paid for. None of them is style preference.
 ## 0. One command decides
 
 ```bash
-bash scripts/verify.sh          # ~4 min on 2 cores, all 16 gates
+bash scripts/verify.sh          # ~4 min on 2 cores, all 17 gates
 bash scripts/verify.sh --fast   # ~1 min, skips the byte-exact sprite rebuild
 ```
 

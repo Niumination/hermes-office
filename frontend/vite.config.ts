@@ -48,6 +48,11 @@ const API_PORT = process.env.OFFICE_PORT || '7333'
   '/policy', '/approvals', '/agents',
   // Fase 4 — flight recorder
   '/ledger', '/dossier',
+  // Ditemukan oleh scripts/check-dev-server.sh pada 12 Okt 2026: ketiganya
+  // terdaftar di server/index.js tetapi tidak pernah diproxy, jadi selama ini
+  // 404 di `npm run dev` tanpa seorang pun menyadarinya. Tak ada gerbang yang
+  // bisa melihatnya sebelum ada gerbang yang benar-benar menjalankan servernya.
+  '/replay', '/standup', '/debug',
 ]
 
 export default defineConfig({

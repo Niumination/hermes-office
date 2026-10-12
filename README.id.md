@@ -153,7 +153,7 @@ npm ci
 npm run verify
 ```
 
-**16 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
+**17 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
 melewati dua gerbang pembangunan ulang dan selesai sekitar satu menit. Exit
 code 0 berarti semua gerbang lolos — dan tidak ada gerbang yang mencetak baris
 hijau yang tidak ia dapatkan, karena setiap vonis berasal dari exit status
@@ -175,6 +175,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | dependency pins | nol versi mengambang atau versi URL |
 | sbom | `sbom.cdx.json` dibangun ulang dari lockfile dan cocok byte-for-byte |
 | deployable | nol host atau alamat tailnet yang ditanam di kode |
+| dev server routes | dev server menyala dan setiap rute backend diproxy |
 | room plates | 26 pelat cocok hash **dan** aturan gaya rumah |
 | theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |

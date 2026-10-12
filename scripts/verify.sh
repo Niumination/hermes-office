@@ -103,6 +103,7 @@ gate "ci workflow"         bash scripts/check-ci.sh
 gate "dependency pins"     bash scripts/check-pins.sh
 gate "sbom"                python3 scripts/make-sbom.py --check
 gate "deployable"          bash scripts/check-deployable.sh
+gate "dev server routes"   bash scripts/check-dev-server.sh
 gate "room plates"         python3 scripts/check-plates.py
 gate "theme contrast"      python3 scripts/check-contrast.py
 gate "doc claims"          python3 scripts/check-docs.py

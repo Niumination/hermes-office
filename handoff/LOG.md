@@ -2012,3 +2012,62 @@ ada di image (3.12 → 3.14). Keempat runner di-pin ke `ubuntu-24.04` **dan**
 ketergantungan Python dinyatakan eksplisit. Yang kedua itu yang membuat pin
 bisa dicabut; tanggal pencabutannya (19 Nov 2026) tertulis di
 `ci/workflow.yml`.
+
+---
+
+## 021 — Gerbang 17: `check-dev-server.sh` (12 Okt 2026)
+
+Enam belas gerbang memeriksa berkas dalam keadaan diam. Tidak satu pun
+menjalankan server. Celah itu sudah memakan korban dua kali — regresi
+`/kiosk` (entri 018) dan nyaris `/desks` (entri 019) — jadi gerbang ini
+menutupnya.
+
+### Yang dijaga
+
+1. Dev server benar-benar menyala (backend + Vite).
+2. **Setiap prefiks rute yang didaftarkan `server/index.js` tercakup oleh
+   `HTTP_ROUTES`.** Ini inti gerbangnya.
+3. `/kiosk` masih mencetak cookie `office_session`.
+
+### Kesalahan yang saya buat, dan kenapa dicatat
+
+Versi pertama hanya memeriksa rute yang **dideklarasikan** `vite.config.ts`.
+Uji mutasi membongkarnya: menghapus `/desks` dari daftar itu membuat gerbang
+**lulus**, karena ia berhenti memeriksa rute yang tak lagi diketahuinya. Itu
+bug aslinya memakai gerbang sebagai penyamaran — berkas yang sedang dicurigai
+tidak boleh sekaligus menjadi sumber kebenaran. Sekarang harapan diambil dari
+`server/index.js`, dan `vite.config.ts` yang diaudit terhadapnya.
+
+Dua jebakan lain yang tercatat supaya tidak terulang:
+
+- Dijalankan dari akar repo, `npx vite` tidak menemukan vite lokal dan
+  **mengunduh major version lain dari jaringan**. Harus dari `frontend/`
+  dengan `./node_modules/.bin/vite`.
+- Tanpa `--host 127.0.0.1`, Vite hanya mengikat `::1` sementara log tetap
+  berkata "ready", sehingga setiap probe IPv4 ditolak.
+- `<div id="root">` **bukan** pembeda yang sah: backend menyajikan
+  `index.html` hasil build sebagai fallback SPA-nya sendiri, jadi rute yang
+  benar-benar diproxy pun memuat div itu. Hanya `@vite/client` yang
+  membuktikan jawaban datang dari Vite, bukan dari API.
+- `/` **tidak** mencetak cookie di dev — Vite yang menyajikannya, dan justru
+  itulah alasan `/kiosk` ada. Gerbang yang menuntut `/` mencetak cookie di dev
+  adalah gerbang yang menuntut sebuah bug.
+
+### Temuan langsung
+
+Pada jalan pertama yang benar, gerbang ini menemukan **tiga rute nyata** yang
+selama ini 404 di `npm run dev`: `/replay`, `/standup`, `/debug`. Ketiganya
+terdaftar di `server/index.js` dan tidak pernah diproxy. Enam belas gerbang
+hijau selama berbulan-bulan tidak pernah melihatnya.
+
+### Batas yang disengaja
+
+Gerbang ini **tidak merender**. Menangkap "tata letak ambruk" atau "komponen
+melempar" butuh peramban sungguhan, artinya unduhan ~300 MB di CI. Ia sengaja
+berhenti sebelum itu dan mengambil 80% yang murah. Kalau gerbang render
+ditambahkan nanti, ia duduk **di samping** gerbang ini, bukan menggantikannya.
+
+Token memakai fallback sekali pakai seperti `check-shutdown.sh`, jadi gerbang
+ini jalan di CI tanpa `.env.office`. Port diminta dari OS, bukan ditetapkan:
+gerbang yang merah karena port terpakai adalah gerbang yang mulai dilewati
+orang.
