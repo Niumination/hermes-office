@@ -32,3 +32,4 @@ upstream/
 # Python bytecode caches are per-interpreter outputs, never sources.
 __pycache__/
 *.pyc
+*.env.office.bak*

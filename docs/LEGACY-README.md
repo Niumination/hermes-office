@@ -7,7 +7,7 @@
 
 > Pixel-art virtual office yang memvisualisasikan ekosistem [Niumination](https://github.com/Niumination) secara **real-time** — agent, channel messaging, tautan A2A, dan aktivitas repo GitHub, semuanya hidup dalam satu kantor isometrik.
 
-**Status: 🟢 LIVE** — berjalan di server LightVela cloud, diakses publik via Tailscale Funnel.
+**Status: 🟢 LIVE** — berjalan di server LightVela cloud, diakses publik via Cloudflare Tunnel.
 
 > ☁️ **Repo ini dikelola dari lightvela.ai** oleh tim Niumination — seluruh development, deployment, dan operasionalnya dijalankan oleh Hermes Agent di server cloud LightVela (dengan dukungan peer Hermes Mac via A2A).
 
@@ -30,9 +30,12 @@ Buka halamannya, dan lihat: karakter Hermes Cloud mengetik saat mengerjakan tuga
 
 | Jalur | URL | Catatan |
 |---|---|---|
-| Publik (HTTPS) | `https://vm-6-34-ubuntu.tailec8707.ts.net` | Tailscale Funnel → port 7333, tanpa install apa pun |
+| Publik (HTTPS) | `https://dash.abstract.biz.id` | Cloudflare Tunnel → port 7333, tanpa install apa pun |
 | Tailnet | `http://<office-host>:7333` | Dari perangkat dalam tailnet |
 | Demo | tambah `?mock=1` | Data mock, tanpa agent live |
+
+> **Riwayat expose:** sebelumnya Tailscale Funnel (`vm-6-34-ubuntu.tailec8707.ts.net`),
+> dipensiunkan 12 Okt 2026 — domain jelek, HTTPS terbatas 3 port, tanpa WAF.
 
 > **Auto-guest:** tanpa token apa pun, `GET /` otomatis membuat session guest
 > read-only. Karena funnel bersifat publik, **guest = pengunjung anonim mana

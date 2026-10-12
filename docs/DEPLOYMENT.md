@@ -1,6 +1,6 @@
 # Deployment & Operations — Hermes Office
 
-> **Status aktual (Okt 2026):** DEPLOYED di `~/niumination/hermes-office` — systemd user unit `hermes-office` aktif di port 7333; akses publik via **Tailscale Funnel** (`https://vm-6-34-ubuntu.tailec8707.ts.net`, unit `tailscale-funnel.service` enabled + linger); cloud bridge aktif di `~/.hermes/hooks/office-bridge`. Lihat §11.
+> **Status aktual (Okt 2026):** DEPLOYED di `~/niumination/hermes-office` — systemd user unit `hermes-office` aktif di port 7333; akses publik via **Cloudflare Tunnel** (`https://dash.abstract.biz.id`, unit `cloudflared.service`); cloud bridge aktif di `~/.hermes/hooks/office-bridge`. Lihat §11.
 
 ## 1. Prasyarat Server
 
@@ -76,19 +76,22 @@ WantedBy=default.target
 
 ## 5. Akses Publik
 
-**Opsi DIPAKAI: Tailscale Funnel** ✓
+**Opsi DIPAKAI: Cloudflare Tunnel** ✓
 
 ```bash
-sudo tailscale funnel --bg 7333
-# → https://vm-6-34-ubuntu.tailec8707.ts.net → 127.0.0.1:7333
+# Route: dash.abstract.biz.id → http://127.0.0.1:7333
+# Config: ~/.cloudflared/config.yml, unit: cloudflared.service
 ```
-- Persisten via unit systemd user `tailscale-funnel.service` (enabled + linger → auto-start saat reboot).
-- WAJIB: origin funnel masuk `ALLOWED_ORIGINS` di `.env.office` — tanpa ini asset browser ditolak 403 → halaman blank.
-- WebSocket `/ws` otomatis ter-route.
+- Tunnel outbound-only — tidak ada port publik yang dibuka di server (UFW deny incoming).
+- WebSocket `/ws` otomatis ter-route (tunnel mendukung WS).
+- WAJIB: origin tunnel masuk `ALLOWED_ORIGINS` di `.env.office` — tanpa ini asset browser ditolak 403 → halaman blank.
+- TLS, DDoS protection, dan WAF dasar sudah include di edge Cloudflare (free tier).
 
-**Opsi alternatif: subdomain** `office.lightvela.ai`
-- Tambahkan DNS CNAME → platform LightVela / Cloudflare
-- Konfigurasi proxy: `office.lightvela.ai/* → http://127.0.0.1:7333/*`
+> **Riwayat:** sebelumnya pakai Tailscale Funnel (`tailscale funnel --bg 7333`),
+> dipensiunkan 12 Okt 2026 — domain jelek, HTTPS terbatas 3 port, tanpa WAF.
+
+**Opsi alternatif: subdomain lain**
+- Tambahkan DNS CNAME → tunnel (via `cloudflared tunnel route dns`)
 - WAJIB: upgrade header `Connection` & `Upgrade: websocket` diteruskan (untuk /ws)
 
 **Opsi B: path prefix** `lightvela.ai/office/`
@@ -218,15 +221,19 @@ Thread ID topik juga dipakai relay laporan warga agroclimate (`POST /api/reports
 | Komponen | Status |
 |---|---|
 | Service `hermes-office` | aktif (user systemd), port 7333, env `.env.office` (0600) |
-| Akses publik | Tailscale Funnel `https://vm-6-34-ubuntu.tailec8707.ts.net` |
-| Unit funnel | `~/.config/systemd/user/tailscale-funnel.service` (enabled, linger=yes) |
-| `ALLOWED_ORIGINS` | funnel origin + office.lightvela.ai + 127.0.0.1:7333 |
+| Akses publik | Cloudflare Tunnel `https://dash.abstract.biz.id` (12 Okt 2026) |
+| Unit tunnel | `~/.config/systemd/user/cloudflared.service` (enabled, auto-restart) |
+| `ALLOWED_ORIGINS` | `https://dash.abstract.biz.id` + 127.0.0.1:7333 |
 | Cloud hook | `~/.hermes/hooks/office-bridge` AKTIF — token `OFFICE_CLOUD_TOKEN` di `~/.hermes/.env` |
 | Mac relay | siap, belum ter-install (menunggu Mac online) |
 | Health | `curl -s http://127.0.0.1:7333/health` |
 
+> **Riwayat:** sebelum 12 Okt 2026 pakai Tailscale Funnel
+> (`https://vm-6-34-ubuntu.tailec8707.ts.net`, unit `tailscale-funnel.service`).
+> Funnel publik sudah dimatikan; UFW deny incoming, semua inbound lewat tunnel.
+
 Catatan gotcha yang pernah terjadi:
-- Blank page saat funnel baru aktif → penyebab: origin `*.tailec8707.ts.net` belum di `ALLOWED_ORIGINS` → 403 pada asset JS.
+- Blank page saat expose baru aktif → penyebab: origin belum di `ALLOWED_ORIGINS` → 403 pada asset JS.
 - Hook diam (tidak kirim event) → penyebab: `OFFICE_CLOUD_TOKEN` belum ada di `~/.hermes/.env`.
 
 
