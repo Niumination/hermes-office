@@ -12,6 +12,7 @@ import { config, assertConfig } from "./config.js";
 import { authenticate, getBearer, createSession, sessionCookieHeader, requireAuth, requireAny, requireOwner } from "./auth.js";
 import { OfficeEventBus, RateLimiter } from "./eventbus.js";
 import { createChatRouter } from "./chat.js";
+import { DeskBoard, createDesksRouter } from "./desks.js";
 import { createGithubPoller } from "./github.js";
 import { otlpToEvents } from "./otlp.js";
 import { FlightRecorder } from "./ledger.js";
@@ -1000,6 +1001,13 @@ app.get("/presence", requireAny, (_req, res) => {
 // Chat routes
 app.use("/chat", createChatRouter(broadcast, emitInternal));
 
+// External outposts — read-only status for things this office does not run.
+// Polling happens here, once per interval, so N browsers do not become N
+// times the probe traffic against somebody else's service.
+const deskBoard = new DeskBoard({ file: config.desksFile, pollMs: config.desksPollMs });
+void deskBoard.load().then(() => { if (config.desksFile) deskBoard.start(); });
+app.use("/desks", createDesksRouter(deskBoard));
+
 // GitHub feed — owner full, guest sanitized
 app.get("/github/feed", requireAny, (_req, res) => {
   const events = bus.buffer.recent(200).filter((e) => e.type === "git_push");
@@ -1237,6 +1245,7 @@ function shutdown(sig) {
   // from a crash, then close the handle — an open SQLite handle would hold
   // the process open and turn a graceful exit into a SIGKILL.
   try { anchorTimer.stop(); } catch (e) { console.error("[shutdown] anchor timer:", e.message); }
+  try { deskBoard.stop(); } catch (e) { console.error("[shutdown] desk board:", e.message); }
   if (ledger) {
     try { ledger.checkpoint("shutdown"); } catch (e) { console.error("[shutdown] ledger checkpoint:", e.message); }
     // Anchor the sealed head locally before closing. Deliberately file-only:

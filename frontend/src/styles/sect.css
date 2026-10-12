@@ -987,6 +987,123 @@ body {
 .sect-sabda__send:hover:not(:disabled) { background: color-mix(in oklch, var(--sect-gold) 26%, transparent); }
 .sect-sabda__send:disabled { opacity: 0.45; cursor: default; }
 
+/* ---- Pos Jaga: pos pengawasan eksternal ------------------------------ */
+/* Above every @media block on purpose, same as the Sabda rules. */
+
+.sect-posts { display: flex; flex-direction: column; }
+
+.sect-post {
+  display: grid;
+  grid-template-columns: 0.5rem 1fr;
+  gap: 0.5rem;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.4rem;
+}
+.sect-post:hover { background: color-mix(in oklch, var(--sect-ink-2) 54%, transparent); }
+
+/* The lamp is the whole point of the panel, so the four states must be
+   distinguishable by more than hue: jade glows, cinnabar glows, stale is a
+   hollow ring, unknown is a dim dash. Colour alone would fail anyone who
+   cannot separate red from green. */
+.sect-post__lamp {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: 0.34rem;
+  border-radius: 50%;
+}
+.sect-post.is-ok .sect-post__lamp {
+  background: var(--sect-jade);
+  box-shadow: 0 0 6px color-mix(in oklch, var(--sect-jade) 60%, transparent);
+}
+.sect-post.is-failed .sect-post__lamp {
+  background: var(--sect-cinnabar);
+  box-shadow: 0 0 6px color-mix(in oklch, var(--sect-cinnabar) 60%, transparent);
+}
+.sect-post.is-stale .sect-post__lamp {
+  background: transparent;
+  border: 1.5px solid var(--sect-gold);
+}
+.sect-post.is-unknown .sect-post__lamp {
+  background: none;
+  border-radius: 0;
+  height: 1.5px;
+  margin-top: 0.62rem;
+  border-top: 1.5px solid color-mix(in oklch, var(--sect-mist) 38%, transparent);
+}
+
+.sect-post__body { min-width: 0; }
+
+.sect-post__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.sect-post__name {
+  color: var(--sect-mist);
+  font-size: 0.76rem;
+  letter-spacing: 0.01em;
+}
+
+.sect-post__state {
+  flex: none;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: help;
+}
+.sect-post.is-ok      .sect-post__state { color: var(--sect-jade); }
+.sect-post.is-failed  .sect-post__state { color: var(--sect-cinnabar); }
+.sect-post.is-stale   .sect-post__state { color: var(--sect-gold); }
+.sect-post.is-unknown .sect-post__state { color: color-mix(in oklch, var(--sect-mist) 52%, transparent); }
+
+.sect-post__meta {
+  margin: 0.1rem 0 0;
+  color: color-mix(in oklch, var(--sect-mist) 55%, transparent);
+  font-size: 0.63rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sect-post__hall { color: var(--sect-jade); }
+
+.sect-post__note {
+  margin: 0.14rem 0 0;
+  color: color-mix(in oklch, var(--sect-mist) 62%, transparent);
+  font-size: 0.66rem;
+  font-style: italic;
+}
+
+.sect-post__detail {
+  margin: 0.18rem 0 0;
+  padding: 0.16rem 0.34rem;
+  border-left: 2px solid color-mix(in oklch, var(--sect-cinnabar) 55%, transparent);
+  border-radius: 0.2rem;
+  background: color-mix(in oklch, var(--sect-ink-1) 70%, transparent);
+  color: color-mix(in oklch, var(--sect-mist) 72%, transparent);
+  font-size: 0.63rem;
+  overflow-wrap: anywhere;
+}
+
+.sect-posts__stale {
+  margin: 0 0 0.2rem;
+  padding: 0.26rem 0.5rem;
+  border-left: 2px solid var(--sect-gold);
+  background: color-mix(in oklch, var(--sect-gold) 11%, transparent);
+  color: color-mix(in oklch, var(--sect-mist) 76%, transparent);
+  font-size: 0.65rem;
+}
+
+.sect-posts__problems {
+  margin-top: 0.4rem;
+  padding: 0.34rem 0.5rem;
+  border-top: 1px solid color-mix(in oklch, var(--sect-cinnabar) 26%, transparent);
+  color: color-mix(in oklch, var(--sect-mist) 70%, transparent);
+  font-size: 0.63rem;
+}
+.sect-posts__problems-h { margin: 0 0 0.16rem; color: var(--sect-cinnabar); }
+.sect-posts__problems ul { margin: 0; padding-left: 1rem; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

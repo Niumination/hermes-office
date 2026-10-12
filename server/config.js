@@ -128,6 +128,12 @@ export const config = {
   a2aMaxTurns: parseInt(process.env.A2A_MAX_TURNS || "1", 10),
   a2aCooldownMs: parseInt(process.env.A2A_COOLDOWN_MS || "60000", 10),
   dataDir: process.env.OFFICE_DATA_DIR || join(__dirname, "..", "data"),
+
+  // --- External outposts (read-only) ------------------------------------
+  // Unset = no outposts, which is the default and not an error. The file is
+  // owner-authored; nothing in a request can point this somewhere else.
+  desksFile: process.env.OFFICE_DESKS_FILE || "",
+  desksPollMs: parseInt(process.env.OFFICE_DESKS_POLL_MS || "30000", 10),
 };
 
 try { mkdirSync(config.dataDir, { recursive: true }); } catch {}

@@ -31,6 +31,8 @@ import RealmRail from './RealmRail'
 import Hall, { type Cultivator } from './Hall'
 import Chronicle from './Chronicle'
 import Sabda from './Sabda'
+import Outposts from './Outposts'
+import { useOutposts } from './useOutposts'
 import { useSabda } from './useSabda'
 import QiRing from './QiRing'
 import Seal from './Seal'
@@ -97,7 +99,7 @@ export const SectApp: React.FC = () => {
   // look asleep; yanking the view around after someone has deliberately
   // navigated is worse. So: follow by default, stop following on first click.
   const followRef = useRef(true)
-  const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda'>('chronicle')
+  const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda' | 'posts'>('chronicle')
   const [, tick] = useState(0)
   const agentsRef = useRef<Map<string, Tracked>>(new Map())
 
@@ -126,6 +128,7 @@ export const SectApp: React.FC = () => {
   // Sabda owns the chat transcript; its frame handlers go straight into the
   // socket so there is one connection, not a second one for chat.
   const sabda = useSabda()
+  const posts = useOutposts()
   const { connected, offline, events, serverVersion } = useOfficeSocket({
     onEvent,
     onChatDelta: sabda.onChatDelta,
@@ -309,9 +312,22 @@ export const SectApp: React.FC = () => {
             aria-selected={tab === 'sabda'}
             onClick={() => setTab('sabda')}
           >Sabda</button>
+          <button
+            type="button" role="tab" className="sect-tab"
+            aria-selected={tab === 'posts'}
+            onClick={() => setTab('posts')}
+          >Pos Jaga</button>
         </div>
 
-        {tab === 'sabda' ? (
+        {tab === 'posts' ? (
+          <Outposts
+            outposts={posts.outposts}
+            problems={posts.problems}
+            loaded={posts.loaded}
+            stale={posts.stale}
+            lastOkTs={posts.lastOkTs}
+          />
+        ) : tab === 'sabda' ? (
           <Sabda
             messages={sabda.messages}
             typing={sabda.typing}

@@ -1,0 +1,62 @@
+{
+  "$comment": [
+    "Pos jaga (external outposts) — status read-only untuk hal-hal yang TIDAK",
+    "dijalankan oleh office ini sendiri: cron job, layanan tetangga, pipeline batch.",
+    "",
+    "Salin ke lokasi mana pun, lalu tunjuk dengan OFFICE_DESKS_FILE=/path/desks.json",
+    "Tanpa env itu, fitur ini mati total dan /desks mengembalikan daftar kosong.",
+    "",
+    "Hanya ada DUA jenis probe, dan keduanya read-only:",
+    "  http — GET sebuah URL; opsional mensyaratkan satu field JSON bernilai tertentu",
+    "  file — stat sebuah path; mtime-nya dibaca sebagai 'terakhir jalan'",
+    "         (pola touchfile cron klasik — tidak butuh kerja sama dari job-nya)",
+    "",
+    "TIDAK ADA jenis probe 'command'. Menjalankan perintah shell adalah batas",
+    "antara pemantau dan eksekutor, dan berkas config biasanya disunting orang",
+    "yang sedang tidak memikirkan batas itu. Lihat server/desks.js.",
+    "",
+    "Status yang mungkin: ok · failed · stale · unknown.",
+    "'unknown' bukan sinonim 'failed' — ia berarti kita tidak berhasil bertanya."
+  ],
+
+  "desks": [
+    {
+      "id": "mitigasi-pagi",
+      "label": "Mitigasi Pagi",
+      "note": "Cron 05:30 WIB — menulis touchfile saat selesai",
+      "hall": "main-office",
+      "probe": {
+        "kind": "file",
+        "path": "/var/lib/agroclimate/last-mitigasi"
+      },
+      "staleAfterSec": 93600
+    },
+    {
+      "id": "alert-check",
+      "label": "Penjaga Peringatan",
+      "note": "Layanan agroclimate-api lokal",
+      "hall": "server-room",
+      "probe": {
+        "kind": "http",
+        "url": "http://127.0.0.1:7455/api/health",
+        "expectField": "status",
+        "expectValue": "ok",
+        "timeoutMs": 2000
+      }
+    },
+    {
+      "id": "imerg",
+      "label": "Unduhan IMERG",
+      "note": "GES DISC — sering lambat, timeout dilonggarkan",
+      "hall": "mac-studio",
+      "probe": {
+        "kind": "http",
+        "url": "http://127.0.0.1:7455/api/imerg/status",
+        "expectField": "last.ok",
+        "expectValue": true,
+        "timeoutMs": 5000
+      },
+      "staleAfterSec": 86400
+    }
+  ]
+}

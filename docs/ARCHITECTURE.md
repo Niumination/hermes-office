@@ -36,7 +36,7 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1269   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1278   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     585   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   412   validasi, clamp, REDAKSI, rate limit, ring buffer
@@ -48,7 +48,8 @@ replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
 dossier.js    346   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
-config.js     145   seluruh konfigurasi env, validasi wajib saat boot
+desks.js      306   Fase 5 — pos jaga eksternal, read-only (http/file, tanpa eksekusi)
+config.js     151   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
 chat-db.js    101   SQLite (WAL) untuk riwayat chat
 pricing.js    100   token → USD, pencocokan prefiks-terpanjang
@@ -247,8 +248,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **305** | `npm test` |
-| Frontend | **111** | `cd frontend && npm test` |
+| Backend | **329** | `npm test` |
+| Frontend | **125** | `cd frontend && npm test` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

@@ -34,6 +34,10 @@ const API_PORT = process.env.OFFICE_PORT || '7333'
   const HTTP_ROUTES = [
     // core
     '/chat', '/roster', '/event', '/health', '/presence', '/github', '/auth',
+    // Fase 5 — pos jaga eksternal (read-only). Didaftarkan sejak hari pertama:
+    // rute yang lupa didaftarkan hanya 404 di `npm run dev` dan tetap lolos
+    // seluruh 16 gerbang — persis cara regresi /kiosk bersembunyi berminggu.
+    '/desks',
     // session: the only proxied route that can mint an auto-guest cookie
     '/kiosk',
   // Fase 1 — OTLP ingest

@@ -1850,3 +1850,82 @@ muat ulang (`chat_done` melalui WS, setelah bungkusnya dibuka).
 `VITE_ALLOW_REMOTE` dipulihkan ke `vite.config.ts` sebagai `allowedHosts` —
 hilang saat port fase 018 dan membuat dev server tak terjangkau dari pratinjau
 mana pun; hanya blok `server`, jadi tidak ikut ke hasil build.
+
+## 019 — Pos Jaga: separuh yang berguna dari UPGRADE-PLAN, tanpa separuh yang berbahaya
+
+`UPGRADE-PLAN.md` (`f3114b8`) meminta daftar cron job sebagai "desk" plus
+perintah `@mention` yang me-restart layanan. Separuh pertama berguna dan
+dikerjakan di sini. Separuh kedua **sengaja tidak**, dan alasannya bukan
+kemalasan: `@mitigasi → systemctl restart` mengubah office dari **pengamat
+berwenang** menjadi **eksekutor shell**, pada layanan yang diterbitkan lewat
+Tailscale Funnel, di mana "tamu" dan "pengunjung anonim dari internet" adalah
+principal yang sama (`docs/SECURITY.md §3`). Perubahan sebesar itu butuh
+desain izinnya sendiri, bukan ditempelkan ke rilis pemantauan.
+
+Hasilnya: **tidak ada satu pun rute di patch ini yang mengubah apa pun, di mana
+pun.** Model ancaman hari ini identik dengan kemarin.
+
+### Generik, bukan khusus agroclimate
+
+Tidak ada kata "mitigasi" di dalam `server/desks.js`. Sebuah pos jaga
+dideklarasikan di berkas JSON milik pemilik (`OFFICE_DESKS_FILE`), dengan dua
+jenis probe:
+
+- `http` — GET sebuah URL; opsional mensyaratkan satu field JSON bernilai tertentu
+- `file` — `stat` sebuah path; mtime dibaca sebagai "terakhir jalan" (pola
+  touchfile cron klasik, tidak butuh kerja sama dari job-nya)
+
+**Tidak ada** jenis `command`. Itu batas antara pemantau dan shell, dan berkas
+config disunting oleh orang yang sedang tidak memikirkan batas itu. Ada tes
+yang memastikan `kind: "command"` ditolak, supaya ia tidak masuk diam-diam
+suatu hari nanti. `desks.example.json` memakai agroclimate sebagai **satu
+contoh konfigurasi**, bukan sebagai kode.
+
+### Empat keadaan, dan yang keempat yang paling penting
+
+    ok       pos menjawab dan sehat
+    failed   pos menjawab, tetapi tidak sebagaimana mestinya
+    stale    sehat terakhir kali, tetapi sudah terlalu lama diam
+    unknown  kami tidak berhasil bertanya
+
+`unknown` **bukan** sinonim `failed`. Pos yang timeout belum tentu rusak — kita
+yang gagal bertanya. Menampilkannya merah melatih operator mengabaikan merah,
+dan sesudah itu kegagalan yang sungguhan ikut tak terlihat. Keempatnya dibedakan
+di UI bukan hanya oleh warna: lampu menyala (jade/cinnabar), cincin berongga
+(emas), dan garis redup. Warna saja akan gagal bagi siapa pun yang tak bisa
+memisahkan merah dari hijau.
+
+### Polling di server, bukan di klien
+
+Satu `DeskBoard` memeriksa pada intervalnya sendiri; `GET /desks` hanya
+menyajikan snapshot. Sepuluh peramban terbuka **tidak** menjadi sepuluh kali
+lalu lintas probe ke layanan milik orang lain — itu mengubah pemantau menjadi
+pembangkit beban. (Kekhawatiran "WebSocket storm" di `UPGRADE-PLAN.md §3.1`,
+diterapkan di tempat ia benar-benar menggigit.)
+
+### Batas tamu
+
+`GET /desks` adalah `requireAny`, jadi tamu melihat **ada pos apa saja dan
+sehat atau tidak** — tetapi `detail` di-null-kan dan `problems` dikosongkan.
+Field `detail`-lah yang paling mungkin membawa hostname internal
+(`HTTP 500 from http://10.0.0.4:7455/...`), dan Funnel tidak boleh membagikan
+peta jaringan. Ada tes yang menegaskan string host tidak muncul di hasil
+redaksi.
+
+### Yang dicatat untuk penerus
+
+- Rute `/desks` **langsung didaftarkan** di `HTTP_ROUTES`
+  (`frontend/vite.config.ts`) pada commit yang sama. Rute yang lupa
+  didaftarkan hanya 404 di `npm run dev` dan tetap lolos seluruh 16 gerbang —
+  persis cara regresi `/kiosk` bersembunyi berminggu-minggu (entri 018).
+- `server/index.js` disentuh **tiga baris**: satu impor, satu mount, satu
+  `stop()` di jalur shutdown. Logikanya hidup di `server/desks.js`, pola yang
+  sama dengan `chat.js`.
+- Dibuktikan terhadap server hidup, bukan hanya jsdom: keempat keadaan
+  diproduksi sungguhan (pos sehat, pos menjawab `degraded`, touchfile
+  bertanggal 2020, port mati), lalu dipulihkan dan statusnya kembali `ok`
+  sendiri pada poll berikutnya.
+
+### Gerbang
+
+16/16 hijau. Tes backend 305 → 329 (+24), frontend 111 → 125 (+14).
