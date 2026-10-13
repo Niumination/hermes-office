@@ -41,14 +41,14 @@ policy.js     585   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   412   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       403   Fase 1 — OTel GenAI → event Hermes
-ledger.js     379   Fase 4 — rantai hash append-only
+ledger.js     383   Fase 4 — rantai hash append-only
 standup.js    465   Fase 14 — bacaan pagi; deterministik, tanpa panggilan model
 kiosk.js      269   Fase 13 — layar dinding, teredaksi-tamu saat dibangun
 replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
-dossier.js    346   Fase 4 — rantai → dokumen untuk petugas kepatuhan
+dossier.js    368   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
-desks.js      392   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
+desks.js      400   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
 proof.js      158   Fase 6 — bukti: gerbang tercatat + pengikatan bundel yang disajikan
 config.js     151   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
@@ -254,7 +254,7 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **366** | `npm test` |
+| Backend | **375** | `npm test` |
 | Frontend | **132** | `cd frontend && npm test` |
 
 Gerbang skrip, semuanya dijalankan CI:

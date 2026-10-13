@@ -124,7 +124,7 @@ the normalisation is real work and it is already done here.
 
 | | |
 |---|---|
-| Backend tests | **366** |
+| Backend tests | **375** |
 | Frontend tests | **132** |
 | Machine-verified doc claims | **102** (`scripts/check-docs.py`) |
 | Bundle | 269.3 kB JS · 26.3 kB CSS |
@@ -164,7 +164,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | handoff integrity | every file matches `MANIFEST.sha256` byte-for-byte; no extras |
 | eslint | no lint errors in `server/` and `tests/` |
 | frontend build | `tsc && vite build` — a type error fails here |
-| backend tests | 366 tests |
+| backend tests | 375 tests |
 | frontend tests | 170 tests |
 | clean shutdown | the process exits with a live WebSocket attached |
 | ledger under load | the hash chain survives 400 concurrent decisions: contiguous, no duplicates, verify ok |

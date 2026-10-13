@@ -130,11 +130,29 @@ describe("runAction — measured, not forwarded", () => {
     assert.ok(r.ms < 20_000);
   });
 
-  test("stdout/stderr never reach the caller — not even in the error", async () => {
+  /**
+   * This test used to assert that runAction's result contained no output at
+   * all. That stopped being true on purpose: output is now captured so the
+   * ledger can hold it, because "exit 1" and nothing else is not a debuggable
+   * record of what the office did on the owner's behalf.
+   *
+   * The guarantee did not disappear — it moved to where it can actually be
+   * enforced. runAction hands the bytes to its caller; the ROUTER is what
+   * refuses to put them in an HTTP response, and dossier.narrate() is what
+   * refuses to put them in the exported file. Both are tested:
+   * tests/desks-router.test.js, "the response body never carries stdout or
+   * stderr" and "captured output is withheld from the export".
+   *
+   * So what is left to assert here is the narrower, still-vital claim: the
+   * error string itself must not smuggle output out through the back door.
+   */
+  test("output is captured for the ledger, but never folded into the error string", async () => {
     const r = await runAction({ run: ["sh", "-c", "echo SECRET-LEAK >&2; exit 3"], timeoutMs: 5_000 });
     assert.equal(r.ok, false);
     assert.equal(r.exitCode, 3);
-    assert.ok(!JSON.stringify(r).includes("SECRET-LEAK"));
+    assert.equal(r.error, null, "a non-zero exit is not an error message");
+    assert.match(r.stderrTail, /SECRET-LEAK/, "the tail is captured deliberately");
+    assert.equal(r.stdoutTail, null);
   });
 });
 
@@ -158,5 +176,40 @@ describe("cooldownRemaining — an alarm must not become an outage", () => {
 
   test("an action that never ran has no cooldown", () => {
     assert.equal(cooldownRemaining(state(), deskId, "never"), 0);
+  });
+});
+
+describe("captured output — bounded, tail-biased, ledger-only", () => {
+  const act = (run, extra = {}) => ({ id: "x", run, timeoutMs: 5000, cooldownMs: 1000, ...extra });
+
+  test("stdout and stderr tails are captured", async () => {
+    const r = await runAction(act(["node", "-e", "console.log('halo-stdout');console.error('halo-stderr')"]));
+    assert.equal(r.ok, true);
+    assert.match(r.stdoutTail, /halo-stdout/);
+    assert.match(r.stderrTail, /halo-stderr/);
+  });
+
+  test("a chatty child is capped, and we keep the END not the beginning", async () => {
+    // A process that fails says why on its way out, so the tail is the part
+    // worth keeping. It also must not be able to grow the ledger without
+    // bound by printing a lot.
+    const r = await runAction(act([
+      "node", "-e",
+      "for (let i = 0; i < 5000; i++) console.log('x'.repeat(40)); console.log('PENANDA-AKHIR')",
+    ]));
+    assert.ok(r.stdoutTail.length <= 2048, `tail was ${r.stdoutTail.length} bytes`);
+    assert.match(r.stdoutTail, /PENANDA-AKHIR/, "the end of the output is what survives");
+  });
+
+  test("silent output is null, not an empty string", async () => {
+    const r = await runAction(act(["true"]));
+    assert.equal(r.stdoutTail, null);
+    assert.equal(r.stderrTail, null);
+  });
+
+  test("a spawn that throws still resolves, with null tails", async () => {
+    const r = await runAction(act(["/tidak/ada/biner-ini"]));
+    assert.equal(r.ok, false);
+    assert.equal(r.stdoutTail, null);
   });
 });

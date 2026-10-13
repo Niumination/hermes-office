@@ -17,6 +17,7 @@
 import { describe, test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import express from "express";
+import { narrate } from "../server/dossier.js";
 
 // auth.js builds its token table at module load from config, which reads env
 // at ITS load. So the env has to exist before the first import of the chain —
@@ -141,7 +142,7 @@ describe("desks action router — the guards live here, not in the helpers", () 
     assert.equal(res.status, 200);
     assert.equal((await res.json()).exitCode, 3);
     assert.equal(recorded.length, 1, "a failed action is evidence too");
-    assert.equal(recorded[0].payload.allow, false);
+    assert.equal(recorded[0].payload.ok, false);
   });
 
   test("a ledger that throws does not deny an action that already ran", async (t) => {
@@ -171,5 +172,73 @@ describe("desks action router — the guards live here, not in the helpers", () 
     assert.ok(!body.includes("rahasia-sekali"), "stdout must not reach the client");
     assert.ok(!body.includes("jalur-internal"), "stderr must not reach the client");
     assert.deepEqual(Object.keys(JSON.parse(body)).sort(), ["error", "exitCode", "ms", "ok"]);
+  });
+});
+
+describe("what the ledger is told about an action", () => {
+  test("a desk action is recorded as desk_action, never as a policy denial", async (t) => {
+    const recorded = [];
+    await mount(makeBoard([ACTION]), {
+      runActionImpl: async () => ({ ok: false, exitCode: 3, ms: 9, error: null, stdoutTail: "keluaran", stderrTail: null }),
+      recordImpl: (type, payload) => recorded.push({ type, payload }),
+    });
+    t.after(() => server.close());
+
+    await post("/desks/pos-a/actions/restart", process.env.OFFICE_OWNER_TOKEN);
+
+    // A command that exited 3 was not "refused by a rule". Filing it as a
+    // policy_decision/deny puts a denial that never happened into the
+    // auditor's dossier and inflates its denial count.
+    assert.equal(recorded[0].type, "desk_action");
+    assert.notEqual(recorded[0].type, "policy_decision");
+    assert.equal(recorded[0].payload.action, "restart");
+    assert.equal(recorded[0].payload.ok, false);
+    assert.equal(recorded[0].payload.exitCode, 3);
+  });
+
+  test("captured output reaches the ledger but not the response", async (t) => {
+    const recorded = [];
+    await mount(makeBoard([ACTION]), {
+      runActionImpl: async () => ({
+        ok: true, exitCode: 0, ms: 2, error: null,
+        stdoutTail: "TOKEN=rahasia-sekali", stderrTail: "peringatan",
+      }),
+      recordImpl: (type, payload) => recorded.push({ type, payload }),
+    });
+    t.after(() => server.close());
+
+    const body = await (await post("/desks/pos-a/actions/restart", process.env.OFFICE_OWNER_TOKEN)).text();
+    assert.equal(recorded[0].payload.stdoutTail, "TOKEN=rahasia-sekali");
+    assert.ok(!body.includes("rahasia-sekali"), "the tail is ledger-only");
+  });
+});
+
+describe("what the exported dossier says about an action", () => {
+  const rec = (payload) => ({ type: "desk_action", seq: 1, ts: Date.now(), payload });
+
+  test("it reads as what happened, not as a verdict", () => {
+    const s = narrate(rec({ desk: "pos-a", action: "restart", label: "Mulai ulang", ok: true, exitCode: 0, ms: 120 }));
+    assert.match(s, /ran action/);
+    assert.match(s, /completed successfully/);
+    // "refused"/"denied" is the vocabulary of the policy engine. Nothing
+    // judged this action; it ran.
+    assert.ok(!/refused|denied/i.test(s), s);
+  });
+
+  test("a failed action is reported as failed, not as a denial", () => {
+    const s = narrate(rec({ desk: "pos-a", action: "restart", ok: false, exitCode: 3, ms: 9 }));
+    assert.match(s, /exited with code 3/);
+    assert.ok(!/refused|denied/i.test(s), s);
+  });
+
+  test("captured output is withheld from the export, and the export says so", () => {
+    const s = narrate(rec({
+      desk: "pos-a", action: "restart", ok: false, exitCode: 1, ms: 5,
+      stdoutTail: "TOKEN=rahasia-sekali", stderrTail: "/home/owner/jalur-internal",
+    }));
+    assert.ok(!s.includes("rahasia-sekali"), "the dossier leaves the building; output must not ride along");
+    assert.ok(!s.includes("jalur-internal"), s);
+    // An omission the document admits to is still evidence; a silent one is not.
+    assert.match(s, /withheld from this export/);
   });
 });

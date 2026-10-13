@@ -97,6 +97,28 @@ export function narrate(rec) {
         `This gap is declared, not hidden: the last removed record hashed to \`${String(p.lastRemovedHash).slice(0, 16)}…\`.`;
     case "dossier_exported":
       return `A compliance dossier covering ${safe(p.from)} to ${safe(p.to)} was exported by ${safe(p.actor) || "an owner"}.`;
+    case "desk_action": {
+      // An action the owner ran on an outpost. Phrased as what happened, not
+      // as a verdict: nothing judged this, it simply ran and exited.
+      //
+      // stdoutTail/stderrTail are in the ledger and are deliberately NOT
+      // narrated here. This file is written to be handed to an outsider, and
+      // command output is the likeliest carrier of an internal path, a
+      // hostname, or a token. The reader is told the output exists and where
+      // to find it rather than being quietly left unaware of it — an omission
+      // the dossier admits to is still evidence; a silent one is not.
+      const what = p.label ? `\`${safe(p.action)}\` (${safe(p.label)})` : `\`${safe(p.action)}\``;
+      const outcome = p.ok
+        ? `completed successfully`
+        : p.error
+          ? `did not complete: ${safe(p.error, 200)}`
+          : `exited with code ${safe(String(p.exitCode))}`;
+      const held = (p.stdoutTail || p.stderrTail)
+        ? ` Command output was captured to the ledger and is withheld from this export.`
+        : "";
+      return `The owner ran action ${what} on outpost \`${safe(p.desk)}\`. ` +
+        `It ${outcome} after ${safe(String(p.ms))} ms.${held}`;
+    }
     default:
       return `${safe(rec.type)}: ${safe(JSON.stringify(p), 200)}`;
   }

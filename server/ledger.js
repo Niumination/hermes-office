@@ -65,6 +65,10 @@ export const LEDGER_TYPES = Object.freeze([
   "chain_anchored",
   "chain_truncated",
   "dossier_exported",
+  // Tahap 2: an action the owner ran on an outpost. Deliberately NOT
+  // policy_decision — a command that exited non-zero was not "refused by a
+  // rule", and recording it as one puts a false denial in the auditor's hands.
+  "desk_action",
 ]);
 
 /**

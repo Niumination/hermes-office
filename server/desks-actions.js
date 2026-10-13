@@ -45,6 +45,8 @@ const MAX_COOLDOWN_MS = 3600_000;
 const DEFAULT_COOLDOWN_MS = 60_000;
 const MAX_ARG_LEN = 4096;
 const MAX_RUN_ARGS = 32;
+/** Per-stream cap on captured output. Enough to see a stack trace, not a log file. */
+const MAX_CAPTURE_BYTES = 2048;
 
 /** Sub-second resolution: the cooldown is measured against real time. */
 const now = () => Date.now();
@@ -131,10 +133,37 @@ export function runAction(action, { spawnImpl = spawn, nowImpl = now } = {}) {
     const startedAt = nowImpl();
     let exited = false;
 
+    // Keep the TAIL of each stream, bounded. The pipes must be drained
+    // regardless — a full pipe blocks a chatty child past its own timeout —
+    // so the only question is whether we throw the bytes away or keep the
+    // last few KB. We keep them: an operator debugging a failed action at 3am
+    // with nothing but "exit 1" is a support ticket we wrote ourselves.
+    //
+    // The tail, not the head: a process that fails says why on its way out.
+    //
+    // These bytes go to the ledger and NOWHERE else. They are never in the
+    // HTTP response (see the router), and `narrate()` in dossier.js withholds
+    // them from the exported dossier — that file is written to be handed to
+    // an outsider, and command output is the likeliest place for a path,
+    // hostname, or token to be sitting.
+    const cap = { stdout: [], stderr: [] };
+    const capLen = { stdout: 0, stderr: 0 };
+    const keep = (name) => (chunk) => {
+      const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
+      cap[name].push(buf);
+      capLen[name] += buf.length;
+      while (capLen[name] > MAX_CAPTURE_BYTES && cap[name].length > 1) {
+        capLen[name] -= cap[name].shift().length;
+      }
+    };
+
+    const tail = (name) =>
+      Buffer.concat(cap[name]).toString("utf8").slice(-MAX_CAPTURE_BYTES) || null;
+
     const finish = (ok, exitCode, ms, error = null) => {
       if (exited) return;
       exited = true;
-      resolve({ ok, exitCode, ms, error });
+      resolve({ ok, exitCode, ms, error, stdoutTail: tail("stdout"), stderrTail: tail("stderr") });
     };
 
     let child;
@@ -149,10 +178,9 @@ export function runAction(action, { spawnImpl = spawn, nowImpl = now } = {}) {
       return;
     }
 
-    // Drain pipes; we measure, we do not forward. Letting them fill would
-    // block a chatty child past its own timeout.
-    child.stdout?.on("data", () => {});
-    child.stderr?.on("data", () => {});
+    child.stdout?.on("data", keep("stdout"));
+    child.stderr?.on("data", keep("stderr"));
+
 
     const timer = setTimeout(() => {
       try {

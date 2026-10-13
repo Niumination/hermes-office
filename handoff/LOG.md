@@ -2205,3 +2205,81 @@ rule"* dan memasukkannya ke daftar penolakan — padahal tak ada yang menolak:
 kebijakan mengizinkan, perintahnya jalan, lalu keluar dengan kode bukan nol.
 Dossier adalah dokumen yang diserahkan ke auditor, jadi ini salah-nyata di
 tempat yang paling mahal. Lihat entri berikutnya.
+
+---
+
+## 024 — Aksi Pos Jaga punya tipe ledger sendiri, dan keluarannya disimpan (13 Okt 2026)
+
+Entri 023 menutup balapan cooldown dan mencatat dua hal yang belum
+diperbaiki. Keduanya diperbaiki di sini, dan keduanya ternyata satu masalah.
+
+### Aksi yang gagal bukan penolakan kebijakan
+
+Aksi dicatat sebagai `policy_decision` dengan `action: "allow"` atau
+`"deny"`. Untuk aksi yang gagal, `dossier.js` menarasikannya:
+
+> *the owner attempted `desk:pos-a#restart` and was **refused** by the
+> desk_action rule. Reason given: exit 1*
+
+Tak satu pun kalimat itu benar. Tidak ada yang menolak: kebijakan
+mengizinkan, perintahnya jalan, lalu keluar dengan kode bukan nol. Lebih
+buruk, `summarize()` memasukkan setiap payload ber-`action: "deny"` ke daftar
+`denials` dan menaikkan hitungan penolakan — di dokumen yang justru dibuat
+untuk diserahkan ke auditor.
+
+Dua fakta berbeda yang dilebur jadi satu: *kebijakan menolak sesuatu* dan
+*sebuah perintah gagal*. Produk ini dijual atas dasar ledger yang tidak
+berbohong, jadi peleburan itu tidak bisa dibiarkan.
+
+Sekarang aksi punya tipe sendiri, `desk_action`, dengan narasi yang
+menyatakan apa yang terjadi alih-alih menjatuhkan vonis:
+
+> *The owner ran action `restart` (Mulai ulang) on outpost `pos-a`. It exited
+> with code 3 after 9 ms.*
+
+### Keluaran disimpan — tapi tidak ikut keluar gedung
+
+Header `desks-actions.js` menjanjikan *"the full output stays in the
+owner-only ledger"*. Itu tidak pernah benar: stdout dan stderr dialirkan ke
+fungsi kosong dan hilang. Janji jejak audit yang tidak ada.
+
+Kini 2 KB **terakhir** tiap aliran benar-benar disimpan. Ekornya, bukan
+kepalanya: proses yang gagal menjelaskan alasannya saat hendak mati. Batas
+itu juga mencegah anak proses yang cerewet menumbuhkan ledger sesuka hati.
+
+Sebelum menulisnya saya telusuri setiap permukaan yang bisa memancarkan
+payload ledger: `/ledger`, `/ledger/head`, `/ledger/verify`, `/ledger/anchors`,
+`/replay`, `/standup`, `/dossier` — **semuanya `requireOwner`**, dan `record()`
+tidak menyiarkan ke WebSocket (siaran berjalan di `bus`, jalur terpisah).
+
+Satu permukaan tetap berbahaya, dan justru yang paling mudah terlewat:
+**`/dossier` memang dirancang untuk keluar gedung.** Ia diserahkan ke auditor.
+`narrate()` punya `default:` yang mem-`JSON.stringify` payload tipe tak
+dikenal — artinya menambah tipe baru *tanpa* case eksplisit akan menumpahkan
+keluaran perintah ke dokumen itu secara diam-diam. Karena itu `desk_action`
+punya case sendiri yang menahan `stdoutTail`/`stderrTail` dan **menyatakan**
+penahanannya:
+
+> *Command output was captured to the ledger and is withheld from this export.*
+
+Kelalaian yang diakui dokumen tetap bukti; kelalaian yang disembunyikan
+bukan. Diuji-mutasi: membuat narasi mencetak keluaran membuat tes merah.
+
+### Satu tes lama ditulis ulang, bukan dilemahkan
+
+`"stdout/stderr never reach the caller"` menjadi salah karena perubahan ini —
+`runAction` sekarang memang mengembalikan ekor keluaran. Jaminannya tidak
+hilang, ia **pindah ke tempat yang bisa menegakkannya**: router menolak
+memasukkannya ke respons HTTP, `narrate()` menolak memasukkannya ke berkas
+ekspor, dan keduanya punya tes sendiri. Yang tersisa di tes lama adalah klaim
+yang lebih sempit dan tetap penting: string `error` tidak boleh menyelundupkan
+keluaran lewat pintu belakang.
+
+Tes yang diubah agar hijau tanpa alasan tertulis adalah tes yang dibuang.
+Alasannya ditulis di atas tesnya.
+
+### Belum dikerjakan
+
+`summarize()` belum menghitung `desk_action` sama sekali, jadi ringkasan
+dossier diam soal aksi meskipun narasi per-rekaman memuatnya. Bukan
+ketidakbenaran, tapi kelalaian — dicatat untuk fase berikutnya.

@@ -348,37 +348,45 @@ export function createDesksRouter(board, opts = {}) {
       // everything from the check above to this line runs without interleaving
       // — which makes the reservation atomic with respect to the check.
       //
-      // Recording it *after* the await (the obvious-looking order) means the
-      // slot stays empty for the whole duration of the action, and every
-      // request that arrives in that window passes the check and spawns its
-      // own process. Measured: five concurrent POSTs produced five processes,
-      // not one. That is precisely the alarm-storm this cooldown exists to
-      // stop, so the guard was absent exactly when it was needed.
+      // Recording it *after* the await (the obvious-looking order) leaves the
+      // slot empty for the whole duration of the action, so every request that
+      // arrives in that window passes the check and spawns its own process.
+      // Measured: five concurrent POSTs produced five processes, not one —
+      // precisely the alarm-storm this cooldown exists to stop, absent exactly
+      // when it was needed.
       //
-      // Consequence, chosen deliberately: the cooldown is measured from the
-      // START of the run, so an action that fails in 1s is still locked for
-      // its full window. For an execution surface, erring toward too cautious
-      // is the correct direction to be wrong in.
+      // Consequence, chosen deliberately: the cooldown runs from the START of
+      // the action, so one that fails in 1s is still locked for its full
+      // window. For an execution surface, too cautious is the right direction
+      // to be wrong in.
       const before = Date.now();
       board.lastRun.set(`${id}::${actionId}`, before);
       const result = await runActionImpl(action);
 
-    // What happened is evidence, not telemetry: chain it into the ledger so
-    // an action cannot silently not-have-happened. Recorded as a
-    // policy_decision because that is the type this codebase already uses for
-    // "the owner decided to allow something".
-    if (recordImpl) {
-      try {
-        recordImpl("policy_decision", {
-          agent: req.identity?.name ?? "owner",
-          tool: `desk:${id}#${actionId}`,
-          action: result.ok ? "allow" : "deny",
-          allow: result.ok,
-          scope: "desk_action",
-          reason: result.error ?? `exit ${result.exitCode}`,
-        }, { subject: id, actor: req.identity?.role });
-      } catch { /* a ledger failure must never deny an action that ran */ }
-    }
+      // What happened is evidence, not telemetry: chain it into the ledger so
+      // an action cannot silently not-have-happened.
+      //
+      // Its own record type, NOT policy_decision. A command that exited 3 was
+      // not "refused by a rule" — the policy allowed it, it ran, and it failed.
+      // Filing that as a denial hands the auditor a denial that never happened
+      // and inflates the dossier's denial count. Two different facts; the
+      // ledger has to keep them different.
+      if (recordImpl) {
+        try {
+          recordImpl("desk_action", {
+            desk: id,
+            action: actionId,
+            label: action.label,
+            ok: result.ok,
+            exitCode: result.exitCode,
+            ms: result.ms,
+            error: result.error ?? null,
+            // Owner-only, bounded, and withheld from the exported dossier.
+            stdoutTail: result.stdoutTail ?? null,
+            stderrTail: result.stderrTail ?? null,
+          }, { subject: id, actor: req.identity?.role });
+        } catch { /* a ledger failure must never deny an action that ran */ }
+      }
 
     res.json({
       ok: result.ok,
