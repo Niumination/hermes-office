@@ -1007,7 +1007,7 @@ app.use("/chat", createChatRouter(broadcast, emitInternal));
 // times the probe traffic against somebody else's service.
 const deskBoard = new DeskBoard({ file: config.desksFile, pollMs: config.desksPollMs });
 void deskBoard.load().then(() => { if (config.desksFile) deskBoard.start(); });
-app.use("/desks", createDesksRouter(deskBoard));
+app.use("/desks", createDesksRouter(deskBoard, { recordImpl: recordGovernance }));
 
 // Bukti — lihat server/proof.js. Mount di sini, logika di sana: rute ini
 // menjawab "apakah yang Anda lihat adalah yang kami uji?", dan jawabannya

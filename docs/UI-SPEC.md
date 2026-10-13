@@ -121,7 +121,7 @@ Qi tampil di dua tempat: cincin di bilah atas, dan aura tiap Murid di aula.
 
 | komponen | baris | peran |
 |---|---|---|
-| `SectApp` (372 baris) | orkestrasi, socket, follow-mode, bootstrap tamu |
+| `SectApp` (373 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
 | `Hall` (112 baris) | aula, awan, Murid, tabir Lenyap di Balik Kabut |
 | `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |

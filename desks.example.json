@@ -16,7 +16,23 @@
     "yang sedang tidak memikirkan batas itu. Lihat server/desks.js.",
     "",
     "Status yang mungkin: ok · failed · stale · unknown.",
-    "'unknown' bukan sinonim 'failed' — ia berarti kita tidak berhasil bertanya."
+    "'unknown' bukan sinonim 'failed' — ia berarti kita tidak berhasil bertanya.",
+    "",
+    "--- TAHAP 2: actions (opsional, default tidak ada) ---",
+    "",
+    "Sebuah pos boleh membawa `actions`: daftar tertutup aksi bernama yang",
+    "dijalankan PEMILIK (POST /desks/<id>/actions/<actionId>, requireOwner).",
+    "",
+    "  run       WAJIB array argv. Tidak ada shell — jadi tidak ada ; && ` `",
+    "            maupun glob. Dan tidak ada ${...} sama sekali: sekali UI bisa",
+    "            mengisi sebagian perintah, daftar tertutup berhenti tertutup.",
+    "  timeoutMs wajib di atas 0, maks 60000. Proses dibunuh beserta grupnya.",
+    "  cooldownMs default 60000 per aksi per pos. Alarm yang me-restart tiap",
+    "            30 detik membuat pemadaman, bukan perbaikan.",
+    "  confirm   default true — aksi selalu opt-in dua kali.",
+    "",
+    "Tidak ada eksekusi otomatis. 'Kalau Genting maka restart' adalah tahap 3",
+    "dan butuh diskusi tersendiri. Lihat DESAIN-posjaga-tahap2.md."
   ],
 
   "desks": [

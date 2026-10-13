@@ -48,7 +48,7 @@ replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
 dossier.js    346   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
-desks.js      306   Fase 5 — pos jaga eksternal, read-only (http/file, tanpa eksekusi)
+desks.js      377   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
 proof.js      158   Fase 6 — bukti: gerbang tercatat + pengikatan bundel yang disajikan
 config.js     151   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
@@ -254,8 +254,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **340** | `npm test` |
-| Frontend | **130** | `cd frontend && npm test` |
+| Backend | **358** | `npm test` |
+| Frontend | **132** | `cd frontend && npm test` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

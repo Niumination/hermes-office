@@ -129,7 +129,7 @@ export const SectApp: React.FC = () => {
   // socket so there is one connection, not a second one for chat.
   const sabda = useSabda()
   const posts = useOutposts()
-  const { connected, offline, events, serverVersion } = useOfficeSocket({
+  const { connected, offline, events, serverVersion, rttMs } = useOfficeSocket({
     onEvent,
     onChatDelta: sabda.onChatDelta,
     onChatDone: sabda.onChatDone,
@@ -246,6 +246,7 @@ export const SectApp: React.FC = () => {
             <div className="sect-seal__sub">
               {connected ? `terhubung${serverVersion ? ` · v${serverVersion}` : ''}`
                 : offline ? 'luring' : 'menyambung…'}
+              {connected && rttMs != null && ` · ${rttMs} ms`}
             </div>
           </div>
         </div>

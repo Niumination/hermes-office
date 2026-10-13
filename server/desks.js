@@ -42,7 +42,8 @@
  */
 import { Router } from "express";
 import { readFile, stat } from "node:fs/promises";
-import { requireAny } from "./auth.js";
+import { requireAny, requireOwner } from "./auth.js";
+import { parseActions, runAction, cooldownRemaining } from "./desks-actions.js";
 
 export const DESK_OK = "ok";
 export const DESK_FAILED = "failed";
@@ -109,6 +110,9 @@ export function parseDesks(raw) {
         ? Math.min(Math.floor(d.staleAfterSec), 31_536_000)
         : null,
       probe,
+      // Tahap 2: kept raw; parseActions validates it separately so one bad
+      // action does not retire the whole desk.
+      _rawActions: Array.isArray(d?.actions) ? d.actions : null,
     });
   }
 
@@ -236,6 +240,9 @@ export class DeskBoard {
     this.results = new Map();
     this.loadedTs = null;
     this.timer = null;
+    // Tahap 2: named actions per desk, and when each last ran (cooldown).
+    this.actionsByDesk = new Map();
+    this.lastRun = new Map();
   }
 
   async load() {
@@ -245,10 +252,21 @@ export class DeskBoard {
       const parsed = parseDesks(JSON.parse(text));
       this.desks = parsed.desks;
       this.problems = parsed.problems;
+
+      // Tahap 2: attach gated actions. Each desk carries its own actions, so
+      // the router never has to re-read the file.
+      this.actionsByDesk = new Map();
+      for (const desk of this.desks) {
+        const ap = parseActions(desk._rawActions, desk.id);
+        if (ap.actions.length) this.actionsByDesk.set(desk.id, ap.actions);
+        if (ap.problems.length) this.problems.push(...ap.problems);
+      }
+      if (!this.lastRun) this.lastRun = new Map();
+
       this.loadedTs = Date.now();
       return { ok: true, configured: true };
     } catch (err) {
-      // A missing file is not an error — most installs have no outposts.
+      // A missing file is not an error — most installations have no outposts.
       this.desks = [];
       this.problems = err?.code === "ENOENT" ? [] : [`cannot read desks file: ${err?.message || err}`];
       return { ok: err?.code === "ENOENT", configured: err?.code !== "ENOENT" };
@@ -286,8 +304,9 @@ export class DeskBoard {
   }
 }
 
-export function createDesksRouter(board) {
+export function createDesksRouter(board, opts = {}) {
   const r = Router();
+  const { recordImpl = null, runActionImpl = runAction } = opts;
 
   r.get("/", requireAny, (req, res) => {
     const guest = req.identity?.role === "guest";
@@ -299,6 +318,58 @@ export function createDesksRouter(board) {
       problems: guest ? [] : board.problems,
       pollMs: board.pollMs,
       ts: Date.now(),
+    });
+  });
+
+  /**
+   * Tahap 2 — run a named action on a desk. `requireOwner` only: the action
+   * list is owner-authored, and this surface is the first thing this product
+   * executes on the owner's behalf.
+   *
+   * The response carries exit code and duration only. stdout/stderr is never
+   * forwarded — that is the cheapest leak in the product.
+   */
+  r.post("/:id/actions/:actionId", requireOwner, async (req, res) => {
+    const { id, actionId } = req.params;
+
+    const desk = board.desks.find((d) => d.id === id);
+    if (!desk) return res.status(404).json({ ok: false, error: "desk not found" });
+
+    const actions = board.actionsByDesk.get(id) ?? [];
+    const action = actions.find((a) => a.id === actionId);
+    if (!action) return res.status(404).json({ ok: false, error: "action not found" });
+
+    const cd = cooldownRemaining(board, id, actionId);
+    if (cd > 0) {
+      return res.status(429).json({ ok: false, error: `cooldown: ${cd} ms remain` });
+    }
+
+    const before = Date.now();
+    const result = await runActionImpl(action);
+    board.lastRun.set(`${id}::${actionId}`, before);
+
+    // What happened is evidence, not telemetry: chain it into the ledger so
+    // an action cannot silently not-have-happened. Recorded as a
+    // policy_decision because that is the type this codebase already uses for
+    // "the owner decided to allow something".
+    if (recordImpl) {
+      try {
+        recordImpl("policy_decision", {
+          agent: req.identity?.name ?? "owner",
+          tool: `desk:${id}#${actionId}`,
+          action: result.ok ? "allow" : "deny",
+          allow: result.ok,
+          scope: "desk_action",
+          reason: result.error ?? `exit ${result.exitCode}`,
+        }, { subject: id, actor: req.identity?.role });
+      } catch { /* a ledger failure must never deny an action that ran */ }
+    }
+
+    res.json({
+      ok: result.ok,
+      exitCode: result.exitCode,
+      ms: result.ms,
+      error: result.error,
     });
   });
 

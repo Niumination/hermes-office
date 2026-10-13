@@ -15,6 +15,7 @@ const BACKOFF_INITIAL = 500
 const BACKOFF_MAX = 30_000
 const BACKOFF_FACTOR = 2
 const MAX_EVENTS = 100
+export const PING_INTERVAL_MS = 30_000
 
 /** Same-origin WS URL (respects path prefix on subdomain & path deploys). */
 export function defaultWsUrl(): string {
@@ -47,6 +48,8 @@ export interface OfficeSocketOptions {
   onTyping?: (d: { sender: string }) => void
   onReaction?: (d: { messageId: number | string; reactions: string[] }) => void
   onRoster?: (d: unknown) => void
+  /** Ping interval for the latency probe. Overridable so tests don't wait 30s. */
+  pingMs?: number
 }
 
 /** One row of `messages` in server/chat-db.js, as the server serialises it. */
@@ -110,6 +113,8 @@ export interface OfficeSocketResult {
   supportedTypes: string[]
   /** Recent event envelopes (capped). */
   events: HermesEnvelope[]
+  /** Round-trip of the last echo probe, in ms. Null before the first reply. */
+  rttMs: number | null
   /** Dev helper: push a synthetic event through the same handlers. */
   inject: (e: HermesEnvelope) => void
 }
@@ -118,6 +123,7 @@ export function useOfficeSocket(options: OfficeSocketOptions = {}): OfficeSocket
   const {
     url = defaultWsUrl(),
     disabled = false,
+    pingMs = PING_INTERVAL_MS,
     onEvent, onChatDelta, onChatDone, onTyping, onReaction, onRoster,
   } = options
 
@@ -126,11 +132,14 @@ export function useOfficeSocket(options: OfficeSocketOptions = {}): OfficeSocket
   const [serverVersion, setServerVersion] = useState<string | null>(null)
   const [supportedTypes, setSupportedTypes] = useState<string[]>([])
   const [events, setEvents] = useState<HermesEnvelope[]>([])
+  const [rttMs, setRttMs] = useState<number | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
   const retryCountRef = useRef(0)
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const mountedRef = useRef(true)
+  const pingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pingSentRef = useRef<number | null>(null)
 
   // Keep callbacks in refs so the socket effect never needs to re-run.
   const cbs = useRef({ onEvent, onChatDelta, onChatDone, onTyping, onReaction, onRoster })
@@ -153,6 +162,16 @@ export function useOfficeSocket(options: OfficeSocketOptions = {}): OfficeSocket
         const d = frame.data as { server?: string; events?: string[] }
         if (d?.server) setServerVersion(d.server)
         if (Array.isArray(d?.events)) setSupportedTypes(d.events)
+        return
+      }
+      case 'pong': {
+        // RTT of the ping dispatched from `startPing`. The server echoes our
+        // timestamp, but we measure on the client so a clock skew cannot make
+        // the number negative.
+        if (pingSentRef.current != null) {
+          setRttMs(Math.round(performance.now() - pingSentRef.current))
+          pingSentRef.current = null
+        }
         return
       }
       case 'event':
@@ -206,15 +225,29 @@ export function useOfficeSocket(options: OfficeSocketOptions = {}): OfficeSocket
       retryCountRef.current = 0
       setConnected(true)
       setOffline(false)
+      // Latency probe: one ping every 30s. Cheap enough to run forever, and
+      // the only way to know a connected-looking socket is actually slow.
+      if (pingTimerRef.current) clearInterval(pingTimerRef.current)
+      pingTimerRef.current = setInterval(() => {
+        const ws2 = wsRef.current
+        // 1 === WebSocket.OPEN. Compared as a number so the probe does not
+        // depend on the global being intact (tests stub it).
+        if (!ws2 || ws2.readyState !== 1) return
+        pingSentRef.current = performance.now()
+        try { ws2.send(JSON.stringify({ type: 'ping' })) } catch { /* closed under us */ }
+      }, pingMs)
     }
     ws.onmessage = (evt) => { if (mountedRef.current) handleFrame(String(evt.data)) }
     ws.onclose = () => {
       if (!mountedRef.current) return
       setConnected(false)
+      setRttMs(null)
+      if (pingTimerRef.current) { clearInterval(pingTimerRef.current); pingTimerRef.current = null }
+      pingSentRef.current = null
       scheduleReconnect()
     }
     ws.onerror = () => { if (retryCountRef.current === 0) setOffline(true) }
-  }, [url, disabled, handleFrame, scheduleReconnect])
+  }, [url, disabled, handleFrame, scheduleReconnect]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     mountedRef.current = true
@@ -222,15 +255,16 @@ export function useOfficeSocket(options: OfficeSocketOptions = {}): OfficeSocket
     return () => {
       mountedRef.current = false
       if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null }
+      if (pingTimerRef.current) { clearInterval(pingTimerRef.current); pingTimerRef.current = null }
       if (wsRef.current) {
         wsRef.current.onopen = wsRef.current.onmessage = wsRef.current.onclose = wsRef.current.onerror = null
         try { wsRef.current.close() } catch { /* ignore */ }
         wsRef.current = null
       }
     }
-  }, [disabled, connect])
+  }, [disabled, connect]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const inject = useCallback((e: HermesEnvelope) => pushEvent(e), [pushEvent])
 
-  return { connected, offline, serverVersion, supportedTypes, events, inject }
+  return { connected, offline, serverVersion, supportedTypes, events, rttMs, inject }
 }
