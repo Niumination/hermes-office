@@ -2140,3 +2140,68 @@ Satu tes lama ikut diperbaiki: `Seal.test.tsx` menghitung **jumlah panggilan**
 fetch, bukan rutenya, sehingga diam-diam bergantung pada asumsi "satu-satunya
 permintaan komponen ini adalah /ledger/head". Kini dirutekan per-URL; maksud
 tesnya tidak berubah.
+
+---
+
+## 023 — Balapan cooldown pada aksi Pos Jaga (13 Okt 2026)
+
+Tahap 2 mengapalkan lima pagar. Pagar keempat — jeda antar-aksi — tidak
+menahan apa pun.
+
+Urutan di router aksi adalah cek, lalu `await`, lalu catat:
+
+```js
+const cd = cooldownRemaining(board, id, actionId);
+if (cd > 0) return res.status(429)…
+const result = await runActionImpl(action);
+board.lastRun.set(`${id}::${actionId}`, before);   // terlambat
+```
+
+Selama aksi berjalan, slotnya masih kosong. Setiap permintaan yang tiba dalam
+jendela itu lolos pemeriksaan dan men-spawn prosesnya sendiri. Diukur: lima
+POST serentak menghasilkan **lima proses**, bukan satu.
+
+Komentar di `desks-actions.js` sudah menuliskan bahayanya dengan tepat —
+*"an alarm that restarts a service every 30 seconds makes an outage, not a
+fix"* — sehingga pagar ini absen persis pada skenario yang melahirkannya:
+alarm yang mem-fan-out, atau operator yang mengklik dua kali.
+
+Perbaikannya memindahkan satu baris ke atas `await`. Node satu utas, jadi
+seluruh jalur dari pemeriksaan sampai pemesanan berjalan tanpa interleaving;
+pemesanan itu atomik terhadap pemeriksaannya.
+
+Konsekuensi yang dipilih sadar: jeda kini dihitung dari **saat mulai**, bukan
+saat selesai, jadi aksi yang gagal dalam 1 detik tetap terkunci sepenuh
+jendela. Untuk permukaan yang mengeksekusi, terlalu berhati-hati adalah arah
+kesalahan yang benar.
+
+### Mengapa 18 tes tidak melihatnya
+
+`tests/desks-actions.test.js` menguji `parseActions`, `runAction`, dan
+`cooldownRemaining` sebagai fungsi murni — semuanya benar, dan semuanya tidak
+bisa melihat cacat ini. Pagar ini bukan properti fungsi mana pun; ia properti
+**urutan operasi di route handler**. Bahan-bahannya diuji, perakitannya tidak.
+
+Itu juga sebabnya 17/17 gerbang hijau di atas cacat ini. Gerbang 17
+membuktikan rute terdaftar dan terproxy; tidak ada gerbang yang membuktikan
+rute berperilaku benar di bawah tekanan.
+
+`tests/desks-router.test.js` baru menutup kelas itu: HTTP sungguhan, middleware
+auth sungguhan, listener di port 0 (port tetap membuat tes merah karena sebab
+yang tak ada hubungannya dengan kode — pelajaran dari `check-shutdown.sh`).
+
+Diuji-mutasi: mengembalikan `lastRun.set` ke posisi lama membuat tes serentak
+merah dengan pesan "the cooldown must hold while the action is still running".
+
+Tes tamu sengaja memeriksa bahwa aksi **nyata** dan aksi **khayalan** sama-sama
+menjawab `403`, bukan `403` dan `404`. Tamu yang bisa membedakan keduanya dapat
+menghitung daftar aksi pemilik lewat kode status saja.
+
+### Belum diperbaiki, sudah dicatat
+
+Aksi yang gagal dicatat sebagai `policy_decision` dengan `action: "deny"`.
+`dossier.js` menarasikan itu sebagai *"…was **refused** by the desk_action
+rule"* dan memasukkannya ke daftar penolakan — padahal tak ada yang menolak:
+kebijakan mengizinkan, perintahnya jalan, lalu keluar dengan kode bukan nol.
+Dossier adalah dokumen yang diserahkan ke auditor, jadi ini salah-nyata di
+tempat yang paling mahal. Lihat entri berikutnya.

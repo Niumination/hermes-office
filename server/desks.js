@@ -344,9 +344,24 @@ export function createDesksRouter(board, opts = {}) {
       return res.status(429).json({ ok: false, error: `cooldown: ${cd} ms remain` });
     }
 
-    const before = Date.now();
-    const result = await runActionImpl(action);
-    board.lastRun.set(`${id}::${actionId}`, before);
+      // Reserve the cooldown slot BEFORE awaiting. Node is single-threaded, so
+      // everything from the check above to this line runs without interleaving
+      // — which makes the reservation atomic with respect to the check.
+      //
+      // Recording it *after* the await (the obvious-looking order) means the
+      // slot stays empty for the whole duration of the action, and every
+      // request that arrives in that window passes the check and spawns its
+      // own process. Measured: five concurrent POSTs produced five processes,
+      // not one. That is precisely the alarm-storm this cooldown exists to
+      // stop, so the guard was absent exactly when it was needed.
+      //
+      // Consequence, chosen deliberately: the cooldown is measured from the
+      // START of the run, so an action that fails in 1s is still locked for
+      // its full window. For an execution surface, erring toward too cautious
+      // is the correct direction to be wrong in.
+      const before = Date.now();
+      board.lastRun.set(`${id}::${actionId}`, before);
+      const result = await runActionImpl(action);
 
     // What happened is evidence, not telemetry: chain it into the ledger so
     // an action cannot silently not-have-happened. Recorded as a

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-12T18:59:19Z",
-  "commit": "6ecdce94401ea53b5ece43e7a64cccd1c74f8c35",
-  "branch": "arena/pos-jaga",
+  "generatedAt": "2026-10-13T12:52:10Z",
+  "commit": "4322cee2dd5dd18d409a8bfc66a39649bcb7f49a",
+  "branch": "dev",
   "dirty": true,
   "gates": [
     {
@@ -76,7 +76,7 @@
   "gatesGreen": 17,
   "gatesTotal": 17,
   "bundle": {
-    "file": "index-tH8PyKks.js",
-    "sha256": "946dd0d94868dbeb7ecfd880f382251a7fb4c50bc90963a9981c63802eb3644c"
+    "file": "index-CYJBBQcz.js",
+    "sha256": "848f478116e104217844e71798146bd023f3a4d96af5180afa2f420411266758"
   }
 }
