@@ -1,178 +1,231 @@
-# Hermes Office — Rencana Upgrade & Konflik Analysis
+# Hermes Office — Rencana Upgrade (versi faktual)
 
-**Tanggal**: 2026-10-12  
-**Target**: Upgrade hermes-office berdasarkan pelajaran dari Hermes3D dan agents-office, dengan memperbaiki kerentanan dan konflik yang mungkin merusak sistem yang sudah ada.
+**Tanggal**: 2026-10-13
+**Revisi**: Dokumen ini menggantikan versi 2026-10-12. Setiap klaim teknis di
+versi lama diuji ulang terhadap kode di `d93948d`; 11 di antaranya salah fakta
+dan dikoreksi di sini. Telaah lengkap dengan bukti tiap klaim ada di
+`TELAAH-UPGRADE-PLAN.md`.
 
----
-
-## 1. Ringkasan Perubahan yang Akan Dibuild
-
-| Aspek | Dari Hermes3D | Dari agents-office | Kebutuhan Hermes-office |
-|------|---|---|---|
-| **Arsitektur** | Gateway-first, WebSocket bridge | Standalone Node + JSON config | Menambah WS bridge + modular config |
-| **Visualisasi** | 3D + 2D pixel toggle | 3D isometric only | **Dual-mode: 3D + 2D pixel renderer** |
-| **Fleet listing** | Agent list + status | 35 agents, 6 departemen | **Status cron jobs sebagai "desks"** |
-| **Konfigurasi** | `office.config.json` | File JSON + env vars | **JSON config + env fallback** |
-| **Task routing** | — | Task bar ke agent | **`@mitigasi`, `@alerts` routing** |
-| **Brain/notes** | `brain/Agents Office/` | `brain/` folder | `~/.hermes/brain/office-notes.md` |
+**Arah (keputusan pengguna, 12 Okt 2026): generik, bukan kode khusus.**
+Bukan `@mitigasi` yang me-restart `agroclimate-api`, melainkan "desk eksternal"
+yang didefinisikan lewat config: sumber status (HTTP/systemd/cron) + aksi yang
+diizinkan. Agroclimate jadi *satu contoh konfigurasi*. Pos Jaga tahap 1
+(read-only) sudah terpasang di `8bce449`.
 
 ---
 
-## 2. Daftar Fitur yang Akan Dibuild
+## 1. Yang sudah ada — jangan dibangun ulang
 
-### 2.1 Fitur Utama (Wajib)
-
-1. **Dual-mode visualisasi** (3D + 2D pixel)
-   - Settings → toggle "2D mode"
-   - 2D pakai Phaser canvas sprites (ringan)
-   - 3D pakai Three.js (sudah ada)
-   - *Mengapa*: Pengguna MacBook lama tidak perlu rendering 3D berat
-
-2. **Cron job fleet listing**
-   - Setiap "desk" = satu cron job (mitigasi, alerts, imerg)
-   - Menampilkan: last run, next run, status (ok/fail/stale)
-   - Click → buka `/api/alerts` atau `systemctl status`
-   - *Mengapa*: Monitoring agroclimate langsung dari office UI
-
-3. **Task routing (`@mention`)**
-   - `@mitigasi` → restart agroclimate-api
-   - `@alerts` → buka `/api/alerts` tab baru
-   - `@imerg` → cek status GES DISC
-   - *Mengapa*: Akses cepat tanpa keluar office
-
-4. **Konfigurasi JSON otomatis**
-   - `~/.hermes/office/config.json` diisi dari `jobs.json` + SQLite
-   - Struktur:
-     ```json
-     {
-       "studio": "Niu Gayo Agroclimate",
-       "desks": {
-         "mitigasi-pagi": {"job_id": "081c15c134a9", "last": "2026-10-12T14:36", "status": "failed"},
-         "alert-check": {"job_id": "cec9edba7395", "last": "2026-10-12T14:39", "status": "ok"}
-       }
-     }
-     ```
-   - *Mengapa*: Mudah diedit, tidak butuh editor config.yaml
-
-5. **Brain folder notes**
-   - `~/.hermes/brain/office-notes.md` untuk catatan per desk
-   - Sama seperti `brain/Agents Office/` dari agents-office
-   - *Mengapa*: Catatan user bertahan per job
-
-### 2.2 Fitur Tambahan (Opsional)
-
-6. **Budget tracking display**
-   - Burn rate di UI (sudah ada di server/index.js)
-   - Tampilan "global spend" dan "per-agent spend" di office
-
-7. **Approval gate indicators**
-   - Pending approvals terlihat di desk list
-   - Warna: hijau (ok), orange (pending), merah (failed/expired)
-
-8. **Gateway health widget**
-   - Status WS connection ke Hermes Agent
-   - Indicator: connected/disconnected + latency
+| Fitur | Status | Lokasi |
+|-------|--------|--------|
+| Budget tracking display | **Ada** | `frontend/src/hermes/useBurnState.ts` + `frontend/src/sect/QiRing.tsx` |
+| Approval gate indicators | **Ada** | `frontend/src/sect/Writ.tsx` (Titah: tertunda/kedaluwarsa) |
+| Status soket (connected/luring) | **Ada** | bilah atas (`terhubung · v1.0` / `luring`) |
+| Latensi soket | **Belum ada** | satu-satunya pekerjaan baru dari §2.2 versi lama |
+| Desk eksternal read-only | **Ada** (tahap 1) | `server/desks.js` + `frontend/src/sect/Outposts.tsx` |
+| Halaman bukti | **Ada** | `server/proof.js` + `frontend/src/sect/Seal.tsx` |
+| `isGuest` filter di broadcast | **Ada** | `server/index.js:48` (`bus.frameFor(event, true)`) |
+| Guest sanitization | **Ada** | redaksi angka, bukan penolakan halaman |
 
 ---
 
-## 3. Analisis Konflik & Risiko
+## 2. Koreksi teknis (11 butir)
 
-### 3.1 Konflik yang Ditemukan
+### 2.1 DUAL-MODE VISUALISASI — Three.js tidak pernah ada
 
-| Konflik | Penyebab | Dampak | Solusi |
-|--------|----------|--------|--------|
-| **CORS + WebSocket origin** | `.env.office` ALLOWED_ORIGINS di-set tapi WS upgrade gagal jika origin tidak match | Office render tapi socket terputus, tampak "flaky" | Pastikan ALLOWED_ORIGINS mencakup port frontend (3333 atau 7333) + add port development |
-| **Env token konflik** | `.env.office` berisi `HERMES_API` yang menunjuk ke `http://127.0.0.1:3000` (salah) | Traffic chat ke host orang tua yang tidak dikontrol | **Fix**: Set `HERMES_API` ke `http://127.0.0.1:7455` (localhost agroclimate-api) atau kosongkan |
-| **Ledger anchoring vs performance** | `OFFICE_LEDGER_RETENTION_DAYS` default 400 days + `synchronous: FULL` | Setiap decision ter-record fsync → overhead I/O | *Solusi*: Default `synchronous: NATIVE` (tidak fsync setiap append) dan `retentionDays: 90` untuk development |
-| **Budget overflow** | `OFFICE_BUDGET_*` default 0 = unlimited | Developer lupa set cap → runaway AI cost | *Solusi*: Add runtime warning di `/budget/check` response saat melewati 80% cap, bukan hard deny |
-| **WebSocket storm** | Bus `event` broadcast ke ALL wsClients tanpa filter | Saat banyak desk ter-open → CPU spike di server | *Solusi*: Tambah `isGuest` flag dan hanya broadcast event kritis ke semua, non-kritis ke subset |
+Versi lama: "3D pakai Three.js (sudah ada)", usul tambah Phaser untuk mode 2D.
 
-### 3.2 Risiko "Merusak Semua yang Sudah Dikerjakan"
+**Faktanya:** tidak ada `three`, `@react-three/*`, maupun `phaser` di
+`package.json` mana pun. R3F ditolak sadar di `docs/PRD.md` D3:
 
-| Risiko | Tingkat | Mitigasi |
-|--------|--------|--------|
-| **Ledger chain corruption** | TINGGI (dari AGENTS.md #2) | 1. Jangan pernah `synchronous: FULL` di production tanpa backup<br>2. Anchor ke webhook eksternal minimal 1x/hour<br>3. Jangan ever langsung edit `data/ledger.json` — pakai `POST /ledger/record` |
-| **WebSocket dependency loop** | TINGGI | 1. Bus events hanya dari auth-verified sources<br>2. Guest WS hanya terima `temperature` (burn snapshot), bukan invoice detail<br>3. Tambah `skipRateLimit: true` hanya untuk event internal sistem |
-| **CORS + origin lockdown** | SEDANG | 1. Default ALLOWED_ORIGINS sudah benar (3333, 5173, 7333)<br>2. Jika custom port → set via env variable, jangan edit source code<br>3. Test dengan `curl -origin http://localhost:3333 http://localhost:7333/health` |
-| **Token exposure di client** | SEDANG | 1. Token `OFFICE_CLOUD_TOKEN` → hanya bisa POST event, baca tidak bisa<br>2. Token `OFFICE_GUEST_TOKEN` → hanya temperature view<br>3. Jangan pernah kirim `OFFICE_OWNER_TOKEN` ke klien |
-| **Data dir penuh** | RENDAH | 1. `dataDir` default `~/.hermes/office/data`<br>2. Set `OFFICE_DATA_DIR` ke path berbeda jika perlu<br>3. Add rotasi log otomatis saat melebihi 1GB |
+> three ~150–200 kB setelah tree-shake + ~50 kB reconciler. Yang kami kirim: +7,8 kB.
 
----
+Yang ada sekarang **sudah** mode ringan: DOM + pelat pra-render. Menambah
+Phaser membalik keputusan D3 — ratusan kB untuk mencapai apa yang sudah dicapai.
 
-## 4. Daftar Perubahan Code yang Dibutuhkan
+**Jika tampilan sprite memang diinginkan:** 132 sprite webp sudah ada di repo
+(dipensiunkan dari `public/` tapi `art/` 13 MB masih sebagai sumber), plus
+pipeline pelat dengan 7 aturan mutu. Jauh lebih murah dari Phaser.
 
-### 4.1 server/config.js — Tambah opsi konfigurasi
+**Status saat ini:** interface 宗門 (sect) sudah menggantikan kantor isometrik
+sejak `ea8946f` — pelat + DOM, tanpa engine 3D. Toggle "2D mode" tidak
+diperlukan karena tidak ada mode 3D.
 
-```javascript
-// Tambah di config.js setelah line yang sudah ada:
-// Baru: baca dari ~/niumination/.hermes/office/config.json otomatis
-try {
-  const manualConfig = new URL('file://' + require('path').resolve('~/.hermes/office/config.json'));
-  // gabung dengan config env, env menangani override
-} catch {}
+### 2.2 LEDGER — `ledger.db` (SQLite), bukan `ledger.json`
+
+```js
+server/ledger.js:137   this.path = dbPath || join(dataDir, "ledger.db");
 ```
 
-*Catatan: Lebih baik buat file terpisah `~/.hermes/office/config.json` dan baca dari server startup, bukan edit config.js inti.*
+Peringatan "jangan edit ledger manual" **benar**, hanya nama berkasnya salah.
 
-### 4.2 server/index.js — Tambah routes & WS handling
+### 2.3 RUTE LEDGER — tidak ada `POST /ledger/record`
 
-1. **Route GET `/desks`** — Return cron job fleet status dari jobs.json + SQLite
-2. **Route POST `/desk/:id/action`** — Trigger action (restart, refresh, view)
-3. **WS message handler** — Parse `@mention` commands dari client
-4. **2D mode toggle** — Simpan prefensi ke `~/.hermes/office/prefs.json`
+Yang ada: `GET /ledger`, `GET /ledger/head`, `GET /ledger/verify`,
+`GET /ledger/anchors`, `POST /ledger/anchor` — semuanya `requireOwner`.
 
-### 4.3 frontend — UI Changes
+Tidak ada jalur tulis manual. Ledger diisi **dari jalur keputusan**
+(`POST /policy/check`, `POST /budget/check`). Itulah desainnya.
 
-1. **Settings panel** → Toggle 2D/3D mode
-2. **Desk list component** — Loop dari `/api/desks`, tampilkan status
-3. **Command palette** → `@mitigasi`, `@alerts`, `@imerg`
-4. **Brain notes button** → Buka `~/.hermes/brain/office-notes.md` di editor
+### 2.4 `synchronous: NATIVE` — bukan mode SQLite
 
-### 4.4 Tests — Verifikasi
-
-1. `bash scripts/verify.sh` → pastikan all 16 gates lulus
-2. Test CORS dengan origin yang berbeda
-3. Test WS connect/disconnect dengan multiple client
-4. Test desk list mengembalikan data yang benar
-
----
-
-## 5. Checklist Verifikasi Sebelum Deploy
-
-```
-[ ] 1. bash scripts/verify.sh → green (all gates)
-[ ] 2. CORS test: curl -origin http://localhost:3333 http://localhost:7333/health
-[ ] 3. WS connect test: 5 client bersamaan tanpa CPU spike > 50%
-[ ] 4. Desk list mengembalikan data dari jobs.json + SQLite
-[ ] 5. `@mitigasi` routing ke systemctl restart agroclimate-api
-[ ] 6. `@alerts` routing ke /api/alerts di tab baru
-[ ] 7. 2D mode toggle bisa diputar tanpa error
-[ ] 8. Brain notes file ada di ~/.hermes/brain/office-notes.md
-[ ] 9. .env.office tidak berisi HERMESApi ke host luar
-[ ] 10. Ledger anchoring aktif dan bisa divisualisasikan
+```js
+server/ledger.js:145
+this.db.pragma(`synchronous = ${/^(OFF|NORMAL|FULL|EXTRA)$/.test(synchronous) ? synchronous : "FULL"}`);
 ```
 
+`NATIVE` tidak menimbulkan error — diam-diam jatuh ke `FULL`. "Optimasi" ini
+tampak diterapkan padahal tidak mengubah apa pun. Yang dimaksud **`NORMAL`**.
+
+### 2.5 `HERMES_API` — localhost, bukan host luar
+
+```js
+server/config.js:40   hermesApi: process.env.HERMES_API || "http://127.0.0.1:3000",
+```
+
+Bukan kebocoran ke pihak ketiga. Tapi masalah **nyata** di baliknya: port 3000
+kosong di mesin ini → `POST /chat/completions` gagal. Kesimpulan "perlu
+diarahkan ke port yang benar" tepat, alasannya saja yang keliru: risikonya
+fitur mati, bukan privasi.
+
+### 2.6 `isGuest` — sudah ada
+
+```js
+server/index.js:40   /** @type {Map<WebSocket, {isGuest: boolean, ip: string}>} */
+server/index.js:48   ws.send(meta.isGuest ? bus.frameFor(event, true) : raw);
+```
+
+Broadcast sudah disaring untuk tamu.
+
+### 2.7 `OFFICE_GUEST_TOKEN` — bukan "hanya temperature view"
+
+Tamu punya akses ke **10 rute `requireAny`**: `/burn`, `/policy`, `/approvals`,
+`/kiosk`, `/roster`, `/presence`, `/chat`, `/desks`, `/proof`, dan keluarga
+OTLP. Yang membatasi adalah **redaksi angka**, bukan penolakan halaman.
+
+**Bahaya keliru memahami:** `docs/SECURITY.md §3` mencatat lewat Tailscale
+Funnel, "pengunjung anonim" dan "tamu" adalah **principal yang sama** — setiap
+rute `requireAny` efektif terbaca publik.
+
+### 2.8 UJI CORS — checklist lama tidak menguji apa pun
+
+Salah:
+```bash
+curl -origin http://localhost:3333 http://localhost:7333/health
+```
+`-origin` terurai sebagai `-o rigin`. Tidak ada header `Origin` terkirim.
+
+Benar:
+```bash
+curl -H 'Origin: http://localhost:3333' -i http://127.0.0.1:7333/health
+```
+
+### 2.9 Potongan kode §4.1 rusak tiga cara
+
+```js
+const manualConfig = new URL('file://' + require('path').resolve('~/.hermes/office/config.json'));
+```
+
+1. `package.json` memakai `"type": "module"` → `require is not defined`.
+2. `path.resolve()` tidak memekarkan `~` → direktori literal bernama `~`.
+   Yang benar `os.homedir()`.
+3. Membungkus path absolut ke `new URL('file://'+…)` tidak perlu.
+
+### 2.10 `dataDir` — defaultnya `data/` di dalam repo
+
+```js
+server/config.js:130   dataDir: process.env.OFFICE_DATA_DIR || join(__dirname, "..", "data"),
+```
+
+Nama env-nya (`OFFICE_DATA_DIR`) sudah benar di dokumen lama, hanya lokasi
+default-nya yang keliru ditulis `~/.hermes/office/data`.
+
+### 2.11 Rute: `/desks`, bukan `/api/desks`
+
+Tidak ada awalan `/api` di mana pun. Rute baru **wajib** didaftarkan di
+`HTTP_ROUTES` (`frontend/vite.config.ts`), kalau tidak ia 404 hanya di
+`npm run dev` — persis kelas bug `/kiosk` yang dulu lolos 16 gerbang.
+
 ---
 
-## 6. Rollback Plan
+## 3. Yang benar dari versi lama (tetap dikerjakan)
 
-Jika upgrade merusak sistem:
+- ✅ `POST /budget/check` adalah enforcement, bukan observability.
+- ✅ Default `ALLOWED_ORIGINS` mencakup 3333/5173/7333 (`server/config.js:63`).
+  Sejarahnya benar seperti dikhawatirkan: dulu 5173 saja → WS 403 tiap
+  `npm run dev`, terlihat seperti "socket flaky".
+- ✅ Anchor ledger berkala — `POST /ledger/anchor` sudah ada.
+- ✅ Peringatan "jangan edit ledger manual" — benar.
+- ✅ `check-handoff.sh --write` setelah tiap commit — aturan rumah.
+- ✅ Fleet listing cron job sebagai "desk" — ide yang cocok dengan prinsip
+  "agen punya ruangan, bukan koordinat". Sudah terwujud sebagai **desk
+  eksternal** (`server/desks.js`).
+- ✅ Rollback plan.
 
-1. **Matikan office**: `systemctl --user stop hermes-office` atau `kill $(pgrep -f server/index.js)`
-2. **Restore env**: `cp .env.office.example .env.office` (hapus baris yang baru ditambahkan)
-3. **Restore config**: Hapus `~/.hermes/office/config.json` jika baru dibuat
-4. **Restore brain**: Hapus `~/.hermes/brain/office-notes.md` jika perlu
-5. **Restart**: `systemctl --user start hermes-office`
-6. **Verifikasi**: `bash scripts/verify.sh` → pastikan green
+---
+
+## 4. Pekerjaan tersisa (diurutkan)
+
+### 4.1 Latensi soket (kecil, satu-satunya fitur baru dari §2.2 lama)
+
+Bilah atas sudah menampilkan status; tambahkan angka latensi (ms) di
+sampingnya. Sumber: `performance` di `useOfficeSocket.ts`.
+
+### 4.2 Pos Jaga tahap 2 — aksi berpagar
+
+Desain lengkap di `DESAIN-posjaga-tahap2.md` (status: usulan, menunggu
+persetujuan). Prinsipnya:
+
+> **Office tidak boleh pernah menjalankan perintah yang Anda ketik di UI.**
+> Yang boleh: memanggil aksi **yang sudah dideklarasikan di config**, dengan nama.
+
+- `run` = array argv (tidak ada shell → tidak ada `;`, `&&`, backtick).
+- Nol interpolasi `${...}`.
+- `requireOwner` + `POST /policy/check` + dicatat di ledger.
+- Jeda antar-aksi (default 60 detik per aksi per pos).
+- Tidak ada eksekusi otomatis (itu tahap 3).
+- `confirm: true` default; timeout wajib maks 60 detik.
+
+Rute: `POST /desks/:id/actions/:actionId` → `requireOwner`.
+Respons: `{ok, exitCode, ms, ledgerSeq}` — tanpa stdout/stderr mentah.
+
+**Alternatif 80% manfaat tanpa biaya eksekusi:** aksi "tandai sudah dilihat"
+(snooze) — tidak menyentuh server luar sama sekali.
+
+### 4.3 Sisa 11 kekeliruan di TELAAH — sudah dikoreksi di dokumen ini
+
+Selesai. Lihat §2 di atas.
+
+### 4.4 Halaman bukti/keandalan untuk penjualan
+
+`/proof` sudah ada (`server/proof.js`). Tiga klaim dilaporkan terpisah:
+**LANGSUNG** (rantai ledger), **TERCATAT** (17/17 gerbang), **PENGIKATAN**
+(`bundleMatches` — sha256 bundel yang disajikan vs yang diuji).
+
+Sisa: masukkan ke README/PRICING sebagai "verifikasi sendiri" — pembeli
+menjalankan satu perintah dan mendapat 17/17.
 
 ---
 
-## 7. Catatan Akhir
+## 5. Arah produk (keputusan 12 Okt 2026)
 
-- **Jangan pernah** mengubah `data/ledger.json` secara manual — itu adalah source of truth untuk audit
-- **Jangan ever** set `HERMES_API` ke alamat Tailscale publik tanpa reverse proxy TLS
-- **Jangan** melewati `POST /budget/check` — itu enforcement path, tidak hanya observability
-- **Lakukan** `bash scripts/check-handoff.sh --write` setelah setiap commit berkas ter track
+Hermes Office adalah **produk tata kelola armada agen yang dijual**
+($0 / $39 / $299 / $2.000+). Kebutuhan monitoring agroclimate Niu Gayo hidup
+sebagai **satu contoh konfigurasi** desk eksternal, bukan kode khusus
+`@mitigasi`.
+
+Setiap aksi yang menjalankan shell mengubah office dari *pengamat berwenang*
+menjadi *eksekutor* pada layanan yang terpapar publik lewat Funnel — pagar di
+§4.2 membuatnya bisa dipertahankan, tapi tidak membuatnya gratis.
 
 ---
-*Dokumen ini dibuat berdasarkan analisis Hermes3D (3D office + gateway-first) dan agents-office (JSON config + task routing), dengan fokus memperbaiki monitoring agroclimate di hermes-office kita.*
+
+## 6. Aturan yang berlaku saat eksekusi
+
+- `server/index.js` upstream, `server/chat.js`, `chat-db.js`: jangan diubah
+  langsung. Router baru terpisah seperti `desks.js`/`proof.js`.
+- Rute baru wajib didaftarkan di `HTTP_ROUTES` (`frontend/vite.config.ts`).
+- Gerbang 15 (klaim dokumen) memeriksa 101 klaim terhadap repo — setiap angka
+  yang berubah akan tertangkap. Itu fitur.
+- `check-handoff.sh --write` setelah commit berkas ter-track.
+- Jangan turunkan ambang gerbang agar hijau.
