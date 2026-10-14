@@ -46,9 +46,9 @@ standup.js    465   Fase 14 — bacaan pagi; deterministik, tanpa panggilan mode
 kiosk.js      269   Fase 13 — layar dinding, teredaksi-tamu saat dibangun
 replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
-dossier.js    368   Fase 4 — rantai → dokumen untuk petugas kepatuhan
+dossier.js    375   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
-desks.js      400   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
+desks.js      411   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
 proof.js      158   Fase 6 — bukti: gerbang tercatat + pengikatan bundel yang disajikan
 config.js     151   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)

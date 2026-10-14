@@ -11,6 +11,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Use a fixed port for this regression test — the point is to verify that
+# httpServer.close() does not hang when a WebSocket is attached. A random
+# port would make the script need to read it back from the running process,
+# which adds noise to an already fragile timeout measurement.
 PORT="${OFFICE_PORT:-7501}"
 export OFFICE_PORT="$PORT"
 export OFFICE_CLOUD_TOKEN="${OFFICE_CLOUD_TOKEN:-ci-cloud-token-000000000000}"

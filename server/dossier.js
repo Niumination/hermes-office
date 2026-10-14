@@ -156,6 +156,13 @@ export function summarize(records) {
       case "agent_moved": s.moves += 1; break;
       case "budget_transition": s.budgetTransitions.push({ seq: r.seq, ts: r.ts, ...p }); break;
       case "chain_truncated": s.truncations.push({ seq: r.seq, ...p }); break;
+      case "desk_action":
+        // Owner-executed action on an outpost. Not a policy decision — the
+        // policy allowed it and it ran. Reported alongside decisions because
+        // an auditor needs to see both.
+        s.decisions += 1;
+        s.byAction[p.action ?? "desk_action"] = (s.byAction[p.action ?? "desk_action"] || 0) + 1;
+        break;
     }
   }
   s.agents = [...s.agents].sort();

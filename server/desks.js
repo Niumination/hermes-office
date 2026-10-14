@@ -284,9 +284,20 @@ export class DeskBoard {
   }
 
   snapshot() {
-    return this.desks.map((d) => this.results.get(d.id) ?? {
-      id: d.id, label: d.label, hall: d.hall, note: d.note, kind: d.probe.kind,
-      state: DESK_UNKNOWN, lastTs: null, checkedTs: null, detail: "not probed yet",
+    return this.desks.map((d) => {
+      const result = this.results.get(d.id);
+      const actions = this.actionsByDesk.get(d.id) ?? [];
+      const safeActions = actions.map((a) => ({
+        id: a.id,
+        label: a.label,
+        confirm: a.confirm,
+        cooldownMs: a.cooldownMs,
+      }));
+      return result ?? {
+        id: d.id, label: d.label, hall: d.hall, note: d.note, kind: d.probe.kind,
+        state: DESK_UNKNOWN, lastTs: null, checkedTs: null, detail: "not probed yet",
+        actions: safeActions,
+      };
     });
   }
 
