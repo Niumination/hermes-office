@@ -24,8 +24,35 @@
   `.sect-rail { display: flex }`; media query tidak menambah spesifisitas, jadi
   di bawah 860px rail dan kolom Babad saling menimpa. Ditemukan lewat tangkapan
   layar, bukan tes.
-- **Tes frontend 170 → 90.** Penurunan jujur: tes pathfinding dan sprite mati
-  bersama kantor isometrik yang diujinya. Backend tetap 305.
+### Fase 14 — Pos Jaga tahap 2: aksi berpagar (14 Okt 2026)
+
+**Bundle dari `hermes-sect#2.zip`** — 2 commit:
+- `1b9d907` — fix race cooldown: slot dialokasikan sebelum `await`, bukan sesudah
+- `c1fb932` — ledger tipe `desk_action` + output capture 2KB tail
+
+**Implementasi P3-P6 (commit `f2ae3d4`):**
+- **P3** — Serialisasi `actionsByDesk` ke `GET /desks` (id, label, confirm, cooldownMs, tanpa `run`)
+- **P5** — Cabut pin `ubuntu-24.04`, gunakan `ubuntu-latest` di semua CI job
+- **P6** — `summarize()` di `dossier.js` hitung `desk_action` di decisions + byAction
+
+**Implementasi P4 — UI tombol (commit `b67873c`):**
+- **Outposts.tsx** — ActionButton component, confirmation dialog, cooldown countdown
+- **useOutposts.ts** — actions field di interface + normalise()
+- **SectApp.tsx** — pass isOwner prop
+- **CSS** — .action-btn, .action-btn:disabled, .cooldown-overlay styles
+- **Test** — 5 test baru: owner sees actions, guest blind, confirmation renders, results display
+
+**Desain kontrak** (`DESAIN-posjaga-tahap2.md`):
+- `run` = array argv (no shell, no interpolation)
+- `requireOwner` + `POST /policy/check` + ledger recording
+- Cooldown default 60 detik per aksi per pos
+- Response `{ok, exitCode, ms, ledgerSeq}` tanpa stdout/stderr mentah
+
+**Verifikasi:**
+- Backend: 375 tests (+17 sejak `4322cee`)
+- Frontend: 132 tests (137 total termasuk 5 baru)
+- 17/17 gates hijau
+- Bundle roundtrip: byte-identik
 
 
 ### DUAL-SPACE-DESIGN M-A — dua ruang tematik (Server Room ☁️ × Mac Studio 💻)
