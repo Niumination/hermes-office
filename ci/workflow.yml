@@ -46,13 +46,12 @@ permissions:
 # pin is belt-and-braces rather than the only defence.
 #
 # This is a deliberate deferral, not a decision to stay on 24.04 forever.
-# REMOVE THIS PIN by 2026-11-19: run the suite once on ubuntu-26.04, and when
-# it is green drop the label back to ubuntu-latest. A pin nobody revisits is
+# Removed 2026-10-14: switched from ubuntu-24.04 pin to ubuntu-latest.
 # how a repo ends up on an image that stopped getting security updates.
 jobs:
   server:
     name: Server — lint, parse, test (Node ${{ matrix.node }})
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     # Two runtimes, not one. Node 20 reached end of life on 2026-04-30 and
     # is gone from `engines`; 22 is maintenance LTS until 2027-04 and 24 is
@@ -217,7 +216,7 @@ jobs:
 
   frontend:
     name: Frontend — typecheck and build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
       run:
@@ -254,7 +253,7 @@ jobs:
 
   assets:
     name: Assets — references resolve, nothing dropped
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
@@ -293,7 +292,7 @@ jobs:
 
   deployability:
     name: Deployability — no host is hard-coded
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
