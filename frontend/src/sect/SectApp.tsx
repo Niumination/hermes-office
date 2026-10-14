@@ -327,6 +327,7 @@ export const SectApp: React.FC = () => {
             loaded={posts.loaded}
             stale={posts.stale}
             lastOkTs={posts.lastOkTs}
+            isOwner={!isGuest}
           />
         ) : tab === 'sabda' ? (
           <Sabda

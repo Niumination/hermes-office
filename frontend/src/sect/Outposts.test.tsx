@@ -31,7 +31,9 @@ const jsonRes = (body: unknown, status = 200) =>
 
 describe('Outposts — panel', () => {
   it('renders an unknown outpost as its own state, not as a failure', () => {
-    render(<Outposts outposts={[post({ state: 'unknown' })]} problems={[]} loaded stale={false} lastOkTs={1} />)
+    render(<Outposts
+        isOwner={false}
+        outposts={[post({ state: 'unknown' })]} problems={[]} loaded stale={false} lastOkTs={1} />)
     const el = screen.getByTestId('outpost')
     expect(el.getAttribute('data-state')).toBe('unknown')
     expect(screen.getByText('Tak Terjangkau')).toBeTruthy()
@@ -41,6 +43,7 @@ describe('Outposts — panel', () => {
   it('distinguishes all four states by text, not only by colour', () => {
     render(
       <Outposts
+        isOwner={false}
         outposts={[
           post({ id: 'a', state: 'ok' }),
           post({ id: 'b', state: 'failed' }),
@@ -56,18 +59,24 @@ describe('Outposts — panel', () => {
   })
 
   it('shows the detail string when the server sent one', () => {
-    render(<Outposts outposts={[post({ state: 'failed', detail: 'HTTP 500' })]} problems={[]} loaded stale={false} lastOkTs={1} />)
+    render(<Outposts
+        isOwner={false}
+        outposts={[post({ state: 'failed', detail: 'HTTP 500' })]} problems={[]} loaded stale={false} lastOkTs={1} />)
     expect(screen.getByText('HTTP 500')).toBeTruthy()
   })
 
   it('shows nothing extra when the server redacted the detail for a guest', () => {
-    render(<Outposts outposts={[post({ state: 'failed', detail: null, redacted: true })]} problems={[]} loaded stale={false} lastOkTs={1} />)
+    render(<Outposts
+        isOwner={false}
+        outposts={[post({ state: 'failed', detail: null, redacted: true })]} problems={[]} loaded stale={false} lastOkTs={1} />)
     expect(screen.getByText('Genting')).toBeTruthy()
     expect(screen.queryByText(/HTTP/)).toBeNull()
   })
 
   it('says when the view is stale instead of pretending it is live', () => {
-    render(<Outposts outposts={[post()]} problems={[]} loaded stale lastOkTs={1_760_000_000_000} />)
+    render(<Outposts
+        isOwner={false}
+        outposts={[post()]} problems={[]} loaded stale lastOkTs={1_760_000_000_000} />)
     expect(screen.getByTestId('outposts-stale')).toBeTruthy()
     // and the last known outpost is still on screen
     expect(screen.getByText('Mitigasi Pagi')).toBeTruthy()
@@ -76,6 +85,7 @@ describe('Outposts — panel', () => {
   it('offers no control of any kind — phase one is observation only', () => {
     render(
       <Outposts
+        isOwner={false}
         outposts={[post({ state: 'failed' })]} problems={[]} loaded stale={false} lastOkTs={1}
       />,
     )
@@ -84,12 +94,16 @@ describe('Outposts — panel', () => {
   })
 
   it('tells the owner how to configure outposts when there are none', () => {
-    render(<Outposts outposts={[]} problems={[]} loaded stale={false} lastOkTs={1} />)
+    render(<Outposts
+        isOwner={false}
+        outposts={[]} problems={[]} loaded stale={false} lastOkTs={1} />)
     expect(screen.getByText(/OFFICE_DESKS_FILE/)).toBeTruthy()
   })
 
   it('surfaces config problems rather than hiding a broken desks.json', () => {
-    render(<Outposts outposts={[]} problems={['desk "x": probe.url must be http(s)']} loaded stale={false} lastOkTs={1} />)
+    render(<Outposts
+        isOwner={false}
+        outposts={[]} problems={['desk "x": probe.url must be http(s)']} loaded stale={false} lastOkTs={1} />)
     expect(screen.getByTestId('outposts-problems').textContent).toContain('must be http')
   })
 })
@@ -154,3 +168,4 @@ describe('useOutposts', () => {
     expect(typeof result.current.lastOkTs).toBe('number')
   })
 })
+

@@ -132,7 +132,7 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 | Test backend | **375** |
 | Test frontend | **132** |
 | Klaim dokumen yang diverifikasi mesin | **102** (`scripts/check-docs.py`) |
-| Bundel | 269,3 kB JS · 26,3 kB CSS |
+| Bundel | 269,3 kB JS · 28,5 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 
 `check-docs.py` memeriksa dokumentasi terhadap repo — jumlah rute, jumlah

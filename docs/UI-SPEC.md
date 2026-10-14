@@ -58,70 +58,10 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 
 ## 3. Bahasa visual
 
-Satu stylesheet: `frontend/src/styles/sect.css`.
+| `sect.css` | 1417 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
-| berkas | baris | peran |
-|---|---|---|
-| `sect.css` | 1319 | seluruh sistem desain — token, tata letak, komponen, gerak |
-
-Versi v1 mengimpor lima stylesheet (`office.css`, `rooms.css`, `donghua.css`,
-`hermes.css`, dan satu lagi lewat `@import`), menghasilkan empat generasi token
-yang saling menimpa. Semuanya sudah dihapus. Satu `@import` font di baris
-pertama CSS juga dihapus: ia memblokir render secara berantai.
-
-### Token warna (OKLCH)
-
-**36 token OKLCH** di `sect.css`. OKLCH dipilih karena lightness-nya
-perseptual — menaikkan `L` menaikkan kontras terbaca, yang membuat perbaikan
-APCA bisa dicari secara sistematis alih-alih ditebak.
-
-Tangga tinta lima anak tangga (`--sect-ink-0` … `--sect-ink-4`), tiga warna
-teks (`--sect-paper`, `--sect-mist`, `--sect-jade`), satu perhatian
-(`--sect-gold`), satu bahaya (`--sect-cinnabar`), lima qi (`--sect-qi-0` …
-`--sect-qi-4`).
-
-> **Catatan gamut.** `--sect-cinnabar` tidak bisa diperbaiki hanya dengan
-> menaikkan lightness: ia keluar gamut sRGB sebelum mencapai ambang APCA.
-> Nilainya (`oklch(70.5% 0.185 28)`) adalah hasil sapuan dua sumbu L×C yang
-> mencari chroma tertinggi yang masih lulus. Gerbang 14 menolak warna di luar
-> gamut, karena browser akan memotongnya ke warna yang tidak pernah diukur.
-
-### Dua palet
-
-`:root` adalah palet default. `body.niu-mode` menyatakan ulang lima anak
-tangga tinta (digeser ke hijau giok) dan satu aksen (ember). Tangga
-lightness-nya **sengaja identik** dengan default: kontras adalah fungsi
-lightness, jadi menyamakan tangga membuat palet niu mewarisi kelonggaran APCA
-default alih-alih harus mendapatkannya lagi secara kebetulan.
-
-Gerbang 14 tetap mengukur ketiga belas pasangan di **kedua** palet — 26
-pengukuran. Palet yang bisa dicapai pengguna dengan satu perintah adalah palet
-yang harus terbaca.
-
----
-
-## 4. Burn sebagai qi
-
-| keadaan server | Tenaga | warna |
-|---|---|---|
-| `normal` | Atur Napas regulated | `--sect-qi-0` |
-| `warm` | Himpun Tenaga gathering | `--sect-qi-1` |
-| `hot` | Tenaga Meluap surging | `--sect-qi-2` |
-| `critical` | Tenaga Berbalik reversal | `--sect-qi-3` |
-| `tripped` | Salah Jalan deviation | `--sect-qi-4` |
-
-Pemetaan ini `Record<BurnState, QiName>` yang total. Menambah keadaan keenam di
-server akan menggagalkan type-check, bukan merender kosong.
-
-Qi tampil di dua tempat: cincin di bilah atas, dan aura tiap Murid di aula.
-
----
-
-## 5. Komponen
-
-| komponen | baris | peran |
-|---|---|---|
-| `SectApp` (373 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
+| 36 token OKLCH | seluruh sistem desain
+| `SectApp` (374 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
 | `Hall` (112 baris) | aula, awan, Murid, tabir Lenyap di Balik Kabut |
 | `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |

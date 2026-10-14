@@ -27,6 +27,8 @@ export interface Outpost {
   checkedTs: number | null
   detail?: string | null
   redacted?: boolean
+  /** Owner-declared actions. Tamu tidak melihat field ini. */
+  actions?: Array<{ id: string; label: string; confirm: boolean; cooldownMs: number }>
 }
 
 export const OUTPOST_POLL_MS = 30_000
@@ -72,6 +74,10 @@ function normalise(raw: unknown): Outpost | null {
     checkedTs: typeof d.checkedTs === 'number' ? d.checkedTs : null,
     detail: typeof d.detail === 'string' ? d.detail : null,
     redacted: d.redacted === true,
+    actions: Array.isArray(d.actions)
+      ? d.actions.filter((a): a is NonNullable<typeof d.actions>[number] =>
+          typeof a?.id === 'string' && a.id.length > 0)
+      : undefined,
   }
 }
 

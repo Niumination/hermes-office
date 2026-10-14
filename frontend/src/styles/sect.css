@@ -1317,3 +1317,101 @@ body {
   }
   .sect-rail { display: none; }
 }
+
+/* ---- Pos Jaga tahap 2: action buttons ----------------------------------- */
+.sect-post--has-actions { border: 1px solid color-mix(in oklch, var(--sect-mist) 15%, transparent); }
+
+.sect-post__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  padding-top: 0.4rem;
+  border-top: 1px dashed color-mix(in oklch, var(--sect-mist) 20%, transparent);
+}
+
+.sect-post__action {
+  font-size: 0.62rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--sect-jade);
+  color: var(--sect-jade);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sect-post__action:hover:not(:disabled) {
+  background: color-mix(in oklch, var(--sect-jade) 12%, transparent);
+}
+.sect-post__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  border-color: color-mix(in oklch, var(--sect-mist) 40%, transparent);
+  color: color-mix(in oklch, var(--sect-mist) 60%, transparent);
+}
+.sect-post__action--busy {
+  border-color: var(--sect-gold);
+  color: var(--sect-gold);
+}
+
+.sect-dialog {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.sect-dialog::backdrop { background: color-mix(in oklch, var(--sect-ink) 55%, transparent); }
+.sect-dialog__inner {
+  background: var(--sect-paper);
+  border: 1px solid color-mix(in oklch, var(--sect-mist) 30%, transparent);
+  border-radius: 0.5rem;
+  padding: 1rem 1.25rem;
+  max-width: 28rem;
+  width: 90%;
+  box-shadow: 0 8px 32px color-mix(in oklch, var(--sect-ink) 40%, transparent);
+}
+.sect-dialog__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--sect-mist);
+}
+.sect-dialog__body {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  color: var(--sect-ink);
+  line-height: 1.5;
+}
+.sect-dialog__cooldown {
+  margin: 0 0 0.75rem;
+  font-size: 0.7rem;
+  color: var(--sect-gold);
+}
+.sect-dialog__acts {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+.sect-dialog__cancel,
+.sect-dialog__confirm {
+  font-size: 0.72rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.25rem;
+  border: 1px solid;
+  cursor: pointer;
+}
+.sect-dialog__cancel {
+  border-color: color-mix(in oklch, var(--sect-mist) 40%, transparent);
+  color: var(--sect-mist);
+  background: transparent;
+}
+.sect-dialog__cancel:hover { background: color-mix(in oklch, var(--sect-mist) 10%, transparent); }
+.sect-dialog__confirm {
+  border-color: var(--sect-cinnabar);
+  color: var(--sect-cinnabar);
+  background: transparent;
+}
+.sect-dialog__confirm:hover { background: color-mix(in oklch, var(--sect-cinnabar) 12%, transparent); }
