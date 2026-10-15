@@ -1293,6 +1293,67 @@ body {
 .sect-entry--offline { opacity: 0.55; }
 .sect-entry--offline .sect-entry__t { filter: grayscale(1); }
 
+
+/* --- 12b. warrant (owner sign-in) ----------------------------------------
+
+   The office shipped without a login: GET / mints a guest cookie and
+   POST /auth/session was never called from the browser, so every
+   requireOwner surface — ledger, dossier, replay, the Pos Jaga buttons —
+   was unreachable by construction. This is the door.
+
+   Anchored relative so the panel hangs off the chip the same way the seal's
+   panel does, rather than off the header bar. */
+.sect-warrant { position: relative; display: inline-flex; }
+
+.sect-warrant__panel {
+  position: absolute; top: calc(100% + 0.5rem); right: 0; z-index: 40;
+  width: min(23rem, 80vw);
+  padding: 0.8rem 0.9rem;
+  display: grid; gap: 0.5rem;
+  background: color-mix(in oklch, var(--sect-ink-1) 92%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-radius: 10px;
+  box-shadow: 0 18px 44px oklch(0% 0 0 / 0.5);
+}
+
+.sect-warrant__label {
+  font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--sect-mist);
+}
+
+.sect-warrant__input {
+  width: 100%;
+  padding: 0.44rem 0.56rem;
+  background: color-mix(in oklch, var(--sect-ink-2) 80%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-radius: 7px;
+  color: var(--sect-paper);
+  font-family: inherit; font-size: 0.8rem;
+  letter-spacing: 0.08em;
+}
+.sect-warrant__input:focus-visible {
+  outline: none;
+  border-color: var(--sect-gold);
+}
+.sect-warrant__input:disabled { opacity: 0.6; }
+
+.sect-warrant__actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.7rem;
+}
+
+.sect-warrant__note {
+  font-size: 0.64rem; line-height: 1.35;
+  color: color-mix(in oklch, var(--sect-mist) 78%, transparent);
+}
+
+/* Cinnabar, the same colour the rest of the theme uses for a real failure.
+   The text is the server's wording — see Warrant.tsx refusalFor(). */
+.sect-warrant__refused {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--sect-cinnabar);
+}
+
 /* --- 13. breakpoints -----------------------------------------------------
 
    These live at the END of the file on purpose. A media query adds no

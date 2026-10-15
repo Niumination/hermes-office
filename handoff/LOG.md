@@ -2400,3 +2400,63 @@ Tes: backend 377→383, frontend 135→140. Gerbang 17/17.
 **Terbuka:** `roomForEvent()` masih menebak di klien dan sekarang bersaing
 dengan kebenaran server; belum dihapus karena menghapusnya mengubah perilaku
 untuk agen yang belum ter-assign. Jalur login owner belum ada.
+
+## 027 — pintu masuk pemilik, yang tidak pernah ada
+
+Lanjutan 026. Sebab ke-3 dari keluhan "kenapa aku masuk sebagai tamu".
+
+`GET /` dirangkai ke `autoGuestSession`, jadi setiap peramban yang membuka
+halaman dicetakkan cookie tamu dan tetap tamu selamanya: `POST /auth/session`
+satu-satunya rute yang menaikkan identitas, ia butuh Bearer, dan tidak ada
+satu baris pun di `frontend/src` yang pernah memanggilnya.
+
+Biayanya bukan kosmetik. Semua yang dijaga `requireOwner` — ledger, dossier,
+replay, dan tombol aksi Pos Jaga yang dibangun, diuji, dan ter-deploy di Fase
+14 — tidak terjangkau dari peramban secara struktural. Seluruh permukaan owner
+produk ini hanya ada untuk `curl`.
+
+### `Warrant`
+
+Tiga aturan, semuanya warisan cara UI ini memperlakukan jawaban server:
+
+- **Token tidak pernah disimpan.** Dibaca dari field, dikirim sekali, dibuang.
+  Server membalas cookie `HttpOnly` — menaruh bearer di localStorage berarti
+  memberi setiap XSS kunci permanen ke armada.
+- **Penolakan dilaporkan dengan kata-kata server.** 401 berarti token salah,
+  429 berarti tabel sesi penuh; dua masalah berbeda dengan perbaikan berbeda.
+  Meleburnya jadi "gagal masuk" membuat operator mengejar hal yang salah.
+- **Tidak menggambar apa pun untuk yang sudah punya kedudukan.** Owner tidak
+  butuh pintu yang sudah ia lewati.
+
+Kegagalan jaringan dibedakan dari penolakan: server tidak pernah menjawab, jadi
+mengatakan tokennya ditolak berarti mengarang penolakan — persis yang dilarang.
+
+### CSS
+
+Aturan `.sect-warrant*` disisipkan **di atas** penanda breakpoints. Komentar di
+`sect.css` §13 menjelaskan kenapa: media query tidak menambah specificity, jadi
+aturan komponen yang ditulis di bawahnya kalah oleh urutan sumber. Itu pernah
+membuat kedua breakpoint tidak pernah menyala sama sekali.
+
+### Uji mutasi
+
+Empat, semuanya merah lalu dipulihkan: token tetap disimpan setelah dipakai;
+semua kegagalan jadi satu pesan seragam; pintu ditampilkan juga ke owner;
+kegagalan jaringan dilaporkan sebagai token ditolak.
+
+### Bukti di server sungguhan
+
+Bukan hanya unit + curl — keduanya pernah terbukti tidak cukup. Server lokal
+dijalankan dengan token uji: event bridge masuk → `/policy` menampilkan `cloud`
+dan `peneliti` di lobby dengan `grantedBy=auto`; tamu melihat penghuni yang
+sama dengan anggaran disensor; `POST /auth/session` ber-Bearer menukar token
+jadi cookie yang membuka `/ledger`, `/dossier`, `/desks`; token salah menjawab
+401 `{"error":"Tidak terotorisasi"}` — persis string yang diharapkan tes.
+
+### Catatan serah-terima
+
+`handoff/TUGAS-HERMES-lightvela.md` ditambahkan: lima butir yang tidak bisa
+dikerjakan dari sandbox Arena karena butuh mesin, kredensial produksi, atau
+keputusan operasional. Nomor 1 (restart backend) memblokir sisanya.
+
+Tes: frontend 140→148. Klaim dokumen 102→103. Gerbang 17/17.

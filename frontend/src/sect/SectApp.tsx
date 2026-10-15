@@ -36,6 +36,7 @@ import { useOutposts } from './useOutposts'
 import { useSabda } from './useSabda'
 import QiRing from './QiRing'
 import Seal from './Seal'
+import Warrant from './Warrant'
 import Writ from './Writ'
 
 /**
@@ -290,6 +291,8 @@ export const SectApp: React.FC = () => {
         </div>
 
         <Seal />
+
+        <Warrant isGuest={isGuest} />
 
         <button
           type="button"
