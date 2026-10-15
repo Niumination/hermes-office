@@ -1022,8 +1022,8 @@ def main() -> int:
     # versions. 3% absorbs that; it does not absorb a major-version jump.
     TOL = 0.03
     BUNDLE = {
-        "README.md": r"\| Bundle \| ([\d.,]+) kB JS Â· ([\d.,]+) kB CSS \|",
-        "README.id.md": r"\| Bundel \| ([\d.,]+) kB JS Â· ([\d.,]+) kB CSS \|",
+        "README.md": r"\| Bundle \| ([\d.,]+) kB JS · ([\d.,]+) kB CSS \|",
+        "README.id.md": r"\| Bundel \| ([\d.,]+) kB JS · ([\d.,]+) kB CSS \|",
     }
     for rel, pattern in BUNDLE.items():
         if text.get(rel) is None:
