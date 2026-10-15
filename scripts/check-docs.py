@@ -120,7 +120,7 @@ def _abi_hint(blob: str) -> str:
         built, want = m.group(1), m.group(2)
         detail = (" (addon built for Node %s, running Node %s)"
                   % (abi.get(built, "ABI " + built), abi.get(want, "ABI " + want)))
-    return ("the tests are fine â a native addon was built against a "
+    return ("the tests are fine — a native addon was built against a "
             "different Node version%s. Run `npm rebuild` (or reinstall) "
             "with the Node you are testing on" % detail)
 
@@ -252,7 +252,7 @@ def pkg_scripts(root: str) -> dict:
 def pkg_engines_major(root: str):
     """The supported Node floor, as a single integer, or None.
 
-    Declared in exactly one place â package.json â engines.node â so that
+    Declared in exactly one place — package.json → engines.node — so that
     verify.sh's preflight, SUPPORT.md's prose and this checker cannot each
     hold a different opinion about what the floor is.
     """
@@ -276,7 +276,7 @@ def want(label: str, pattern: str, haystack: str, where: str, flags=0):
     Every optional `if m:` in this file used to be a check that could vanish:
     reword the prose, the regex stops matching, the check stops running, and
     the run still prints PASS with a quietly smaller total. That happened to
-    the shipped-sprite count, and nearly happened to the provenance table â
+    the shipped-sprite count, and nearly happened to the provenance table —
     where a bare substring test stayed green on a coincidence.
 
     So no pattern here is optional. A pattern that stops matching is a
@@ -288,7 +288,7 @@ def want(label: str, pattern: str, haystack: str, where: str, flags=0):
     if m is None:
         checks += 1
         failures.append(
-            f"{where} no longer states {label} in the form {pattern!r} â "
+            f"{where} no longer states {label} in the form {pattern!r} — "
             f"that check silently stopped running")
     return m
 
@@ -309,7 +309,7 @@ def _test_files() -> list[str]:
     """
     hits = sorted(glob.glob(os.path.join(ROOT, "tests", "*.test.js")))
     if not hits:
-        raise SystemExit("FAIL: no tests/*.test.js found â nothing to count")
+        raise SystemExit("FAIL: no tests/*.test.js found — nothing to count")
     return hits
 
 
@@ -327,7 +327,7 @@ def want_all(label: str, pattern: str, haystack: str, where: str,
         checks += 1
         failures.append(
             f"{where}: expected at least {minimum} {label} row(s), found "
-            f"{len(hits)} â the table was renamed, reformatted or deleted")
+            f"{len(hits)} — the table was renamed, reformatted or deleted")
     return hits
 
 
@@ -360,7 +360,7 @@ def main() -> int:
     # Anchored on "dikirim" rather than "distilisasi": the sentence used to say
     # 250 sprites were programmatically stylized, which was false (only 100
     # ever were). Rewording it silently un-matched this regex and the check
-    # stopped running without failing â a check that can vanish is not a check,
+    # stopped running without failing — a check that can vanish is not a check,
     # so a missing pattern is now a loud failure rather than a skip.
     m = want("the shipped sprite count", r"\*\*(\d+) sprite\*\* dikirim", doc,
              "ARCHITECTURE.md")
@@ -418,12 +418,12 @@ def main() -> int:
         # doc lies" is how a checker teaches people to ignore it, so the two
         # cases are separated explicitly.
         if not os.path.isdir(os.path.join(ROOT, "node_modules")):
-            print("SKIP: backend test count â node_modules missing, run `npm ci` first")
+            print("SKIP: backend test count — node_modules missing, run `npm ci` first")
         else:
             blob, total, _passed, _failed = _backend_counts()
             if "ERR_MODULE_NOT_FOUND" in blob:
                 failures.append(
-                    "backend suite could not load (ERR_MODULE_NOT_FOUND) â "
+                    "backend suite could not load (ERR_MODULE_NOT_FOUND) — "
                     "run `npm ci`; this is an environment problem, not a doc problem"
                 )
                 checks += 1
@@ -433,7 +433,7 @@ def main() -> int:
                 # Staying silent here used to shift the total claim count,
                 # so the run reported "checked 85" alongside the real
                 # failure and buried it. Count the check, name the cause.
-                failures.append("backend test count â could not read the runner")
+                failures.append("backend test count — could not read the runner")
                 checks += 1
 
     m = re.search(r"\| Frontend \| \*\*(\d+)\*\*", doc)
@@ -451,20 +451,20 @@ def main() -> int:
         # wrong is worse than one that takes four seconds.
         fe = os.path.join(ROOT, "frontend")
         if not os.path.isdir(os.path.join(fe, "node_modules")):
-            print("SKIP: frontend test count â frontend/node_modules missing, "
+            print("SKIP: frontend test count — frontend/node_modules missing, "
                   "run `npm ci` in frontend/ first")
         else:
             blob, total, _passed, _failed = _frontend_counts(fe)
             if "ERR_MODULE_NOT_FOUND" in blob or "failed to load config" in blob:
                 failures.append(
-                    "frontend suite could not start â run `npm ci` in frontend/; "
+                    "frontend suite could not start — run `npm ci` in frontend/; "
                     "this is an environment problem, not a doc problem"
                 )
                 checks += 1
             elif total is not None:
                 check("frontend test count", m.group(1), total)
             else:
-                failures.append("frontend test count â vitest wrote no JSON report")
+                failures.append("frontend test count — vitest wrote no JSON report")
                 checks += 1
 
     # --- 5. PRD.md --------------------------------------------------------
@@ -485,7 +485,7 @@ def main() -> int:
             # endpoint nobody then reviews.
             top = set(re.findall(
                 r"app\.(get|post|put|delete)\(\s*[\"']([^\"']+)", index))
-            # The chat router is named `r`, not `router` â match any receiver
+            # The chat router is named `r`, not `router` — match any receiver
             # so renaming the variable cannot silently zero this check.
             sub = set(re.findall(
                 r"\b\w+\.(get|post|put|delete)\(\s*[\"'](/[^\"']*)", chat))
@@ -535,7 +535,7 @@ def main() -> int:
                        encoding="utf-8").read()
             check("UI-SPEC OKLCH token count", m.group(1), css.count("oklch("))
 
-        # "**1 `!important`**" â the number must stay honest.
+        # "**1 `!important`**" — the number must stay honest.
         # Comments are stripped first: donghua.css now explains in prose WHY
         # the flags were removed, and counting the word inside that
         # explanation reported three flags in a file that has one.
@@ -557,7 +557,7 @@ def main() -> int:
                 actual = sum(1 for _ in open(hits[0], encoding="utf-8"))
                 check(f"UI-SPEC {name}.tsx line count", claimed, actual)
 
-        # LIGHT_DX, LIGHT_DY = -2, -3 â the shader rake and the baked rim
+        # LIGHT_DX, LIGHT_DY = -2, -3 — the shader rake and the baked rim
         # light must agree or the whole 3D illusion collapses. The doc calls
         # this the one number nobody may change unilaterally, so it is pinned.
         m = want("the pinned light direction",
@@ -657,7 +657,7 @@ def main() -> int:
     # The supported runtime is a security statement, not a style note.
     # Node 20 reached end of life on 2026-04-30 and receives no patches, so
     # a README still advertising it is exactly the kind of claim that
-    # outruns reality â the failure this file exists to catch. Read the
+    # outruns reality — the failure this file exists to catch. Read the
     # number from package.json instead of trusting the prose.
     with open(os.path.join(ROOT, "package.json"), encoding="utf-8") as fh:
         engines = (json.load(fh).get("engines") or {}).get("node", "")
@@ -673,9 +673,9 @@ def main() -> int:
                     f"{rel} advertises Node >= {m_doc.group(1)} but "
                     f"package.json engines says '{engines}'")
 
-    # ââ verify.sh gate count ââââââââââââââââââââââââââââââââââââââââââ
+    # ── verify.sh gate count ──────────────────────────────────────────
     # AGENTS.md and HANDOFF.md are the two files a new agent reads first, and
-    # neither was in this checker's reach â so both quoted a gate count that
+    # neither was in this checker's reach — so both quoted a gate count that
     # went stale the moment a gate was added, with nothing to complain. The
     # truth comes from verify.sh itself: unique gate names, with the
     # parenthetical stripped so "sprites (hash only)" and "sprites (+rebuild)"
@@ -686,7 +686,7 @@ def main() -> int:
             names = re.findall(r'^\s*gate\s+"([^"]+)"', fh.read(), re.M)
         actual = len({re.sub(r"\s*\(.*", "", n) for n in names})
         # HANDOFF.md's pattern used to be a bare `(\d+) gerbang`, which swept
-        # up every number in the file that looked like a gate count â
+        # up every number in the file that looked like a gate count —
         # including "13/14 gerbang hijau", a dated record of how a particular
         # run went. Adding a gate then demanded that the historical note be
         # edited to say something that never happened. A checker that forces
@@ -709,9 +709,9 @@ def main() -> int:
                     f"{rel} claims {'/'.join(sorted(claimed))} gates but "
                     f"verify.sh runs {actual}")
 
-    # ââ sect theme covers every governed room âââââââââââââââââââââââââ
+    # ── sect theme covers every governed room ─────────────────────────
     # frontend/src/theme/sect.ts names a hall per room. A room the policy
-    # governs but the theme forgot would render as a blank rung â the kind of
+    # governs but the theme forgot would render as a blank rung — the kind of
     # gap that only shows up when someone finally clicks it. The room ids come
     # from the policy itself rather than a second list.
     _sect_path = os.path.join(ROOT, "frontend/src/theme/sect.ts")
@@ -761,14 +761,14 @@ def main() -> int:
             blob, _total, passed, failing = _frontend_counts(
                 os.path.join(ROOT, "frontend"))
         # A failing suite lowers the pass count, which this check would
-        # otherwise report as "the doc lies" â sending the reader to edit a
+        # otherwise report as "the doc lies" — sending the reader to edit a
         # number when the real problem is a broken test. It misled the
         # author of this very function once, which is how it got written.
         if name == "backend" and passed:
             BACKEND_PASSES[0] = passed
         if failing is not None and failing != "0":
             failures.append(
-                f"{name} suite has {failing} failing test(s) â "
+                f"{name} suite has {failing} failing test(s) — "
                 + _abi_hint(blob)
                 + _which_failed(blob) + _keep_evidence(name, blob))
         elif passed is None:
@@ -797,7 +797,7 @@ def main() -> int:
     #
     # The first version searched the whole file for each tier. It passed a
     # table that had been mutated to $2,400 because the correct $2,000 still
-    # appeared two paragraphs later in prose â a green check over a document
+    # appeared two paragraphs later in prose — a green check over a document
     # quoting the wrong price, which is worse than having no check at all.
     TIERS_EN = ["$0", "$39", "$299", "$2,000"]
     TIERS_ID = ["$0", "$39", "$299", "$2.000"]
@@ -814,7 +814,7 @@ def main() -> int:
         if row is None:
             failures.append(
                 f"{rel} has no single line quoting all four tiers "
-                f"({', '.join(tiers)}) â the price table drifted or was reworded")
+                f"({', '.join(tiers)}) — the price table drifted or was reworded")
 
     # Each language version must point at the other, and at its own-language
     # pricing page. A dead language switcher is how a translation starts
@@ -867,7 +867,7 @@ def main() -> int:
         man = _json.loads(_slurp("frontend/public/rooms/PLATES.json"))
         entries = man["plates"] if isinstance(man, dict) else man
         # This used to compare the manifest against a literal 18 typed into
-        # this file. That is not a documentation check â it is the checker
+        # this file. That is not a documentation check — it is the checker
         # holding its own private copy of the number, free to disagree with
         # every document while still reporting PASS. The claim belongs to the
         # doc; this reads it from there.
@@ -910,7 +910,7 @@ def main() -> int:
                     f"docs/SPRITES.md provenance table does not state "
                     f"{kind} = {claimed}")
         # Until 2026-10-10 this file checked that *every* character sprite was
-        # unsourced â it was documenting a known gap and making sure the prose
+        # unsourced — it was documenting a known gap and making sure the prose
         # did not outlive it. The gap is now closed the other way: the 150
         # legacy cast sprites were deleted, 108 of them recognisable likenesses
         # from a television series, shipped inside a product priced at $2,000+
@@ -943,7 +943,7 @@ def main() -> int:
         if "art/donghua-cast" not in sd:
             failures.append(
                 "docs/SPRITES.md never names art/donghua-cast as the source "
-                "the 32 `built` sprites rebuild from â without it the "
+                "the 32 `built` sprites rebuild from — without it the "
                 "reproducibility claim has no stated input")
         # The old cast is shipped but no longer rendered. If anyone re-wires
         # the app back to it, this prose becomes wrong in the other direction.
@@ -969,11 +969,11 @@ def main() -> int:
         if '"/home/user' in sty or "'/home/user" in sty:
             failures.append(
                 "scripts/stylize-donghua.py hardcodes an absolute /home/user "
-                "path again â on any other machine it treats shipped art as "
+                "path again — on any other machine it treats shipped art as "
                 "the pristine original and double-filters it")
 
     # The sales files quote the backend test count in prose, not a table.
-    # Same number, same runner, different sentence â so it gets the same
+    # Same number, same runner, different sentence — so it gets the same
     # treatment rather than being trusted because it reads like marketing.
     for rel in PRICINGS.values():
         if text.get(rel) is None:
@@ -1005,7 +1005,7 @@ def main() -> int:
     #
     # An absent frontend/dist is a failure here, not a skip. Skipping would
     # drop the check count below the self-count the READMEs publish, and the
-    # run would die on "README.md claims 94 ... this run checked 92" â a red
+    # run would die on "README.md claims 94 ... this run checked 92" — a red
     # that names the wrong problem, which is the exact defect this file
     # exists to prevent. Both CI (it builds dist for the static-serving test)
     # and verify.sh (the frontend-build gate runs first) reach this point
@@ -1033,7 +1033,7 @@ def main() -> int:
             failures.append(
                 f"{rel} states a bundle size but frontend/dist is absent, so "
                 f"the claim cannot be checked. Run "
-                f"`cd frontend && npm ci && npm run build` first â or use "
+                f"`cd frontend && npm ci && npm run build` first — or use "
                 f"`bash scripts/verify.sh`, which builds before it asks.")
             continue
         m = re.search(pattern, text[rel])
@@ -1062,7 +1062,7 @@ def main() -> int:
     #
     # The count is taken by RUNNING the gate rather than by counting entries
     # in its source, because the source has two lists and one of them is
-    # measured twice (once per palette) â a reader of the source gets it
+    # measured twice (once per palette) — a reader of the source gets it
     # wrong, and so would a regex.
     out, err = _run(["python3", os.path.join("scripts", "check-contrast.py")], ROOT)
     m = re.search(r"PASS: (\d+) token pairs", out + err)
@@ -1084,8 +1084,8 @@ def main() -> int:
             checks += 1
 
     # --- the ledger load test ---------------------------------------------
-    # FLIGHT-RECORDER.md Â§9a prints a concurrency figure â 50 agents x 40
-    # decisions â and a throughput that was measured at exactly that shape.
+    # FLIGHT-RECORDER.md §9a prints a concurrency figure — 50 agents x 40
+    # decisions — and a throughput that was measured at exactly that shape.
     # Change the shape in the script and the documented numbers stop
     # describing the run that produced them, which is a subtler lie than a
     # wrong number: both the figure and the method look plausible, and only
@@ -1131,8 +1131,8 @@ def main() -> int:
     # deployment around, and it rots in three independent ways: the CI matrix
     # changes, the floor in `engines` changes, or a date simply arrives.
     #
-    # All three are bound here. The dates are not fetched â nothing in this
-    # checker reaches the network â they are read out of the table and
+    # All three are bound here. The dates are not fetched — nothing in this
+    # checker reaches the network — they are read out of the table and
     # compared against the clock, so an EOL that has passed turns the build
     # red on the day it passes rather than whenever someone next reads the
     # page.
@@ -1143,7 +1143,7 @@ def main() -> int:
     wf_text = open(wf, encoding="utf-8").read() if os.path.exists(wf) else ""
 
     if sup is None:
-        failures.append("docs/SUPPORT.md is missing â the support matrix "
+        failures.append("docs/SUPPORT.md is missing — the support matrix "
                         "cannot be verified")
         checks += 4
     else:
@@ -1282,17 +1282,17 @@ def main() -> int:
     }
     # Both language versions must quote the SAME total, so every self-claim
     # is counted before any is compared. Incrementing inside the loop gave
-    # the English file 70 and the Indonesian 71 â a number that is correct
+    # the English file 70 and the Indonesian 71 — a number that is correct
     # in one file and wrong in the other is not a number worth printing.
     # This block is the backstop for every check above: if one of them stops
     # running, the total drops and the READMEs' figure no longer matches. So
-    # the backstop must not be allowed to vanish the same way â if BOTH files
+    # the backstop must not be allowed to vanish the same way — if BOTH files
     # lost their row, `found` was empty, the comparison loop did nothing, and
     # a run missing checks printed PASS. Now a missing row is a failure.
     found = {}
     for rel, pattern in SELF.items():
         if text.get(rel) is None:
-            failures.append(f"{rel} is missing â its self-count cannot be verified")
+            failures.append(f"{rel} is missing — its self-count cannot be verified")
             checks += 1
             continue
         m = want("its machine-verified claim count", pattern, text[rel], rel)
