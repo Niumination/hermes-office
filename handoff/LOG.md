@@ -2329,3 +2329,74 @@ keluaran reporter, bukan sumber. Dilepas dan dimasukkan ke `.gitignore`.
 
 Tes 377 backend / 135 frontend. Uji mutasi: kedua perbaikan dikembalikan satu
 per satu, masing-masing membuat tes barunya merah.
+
+## 026 — kantor yang kosong: agen bekerja tapi tidak pernah berdiri di mana pun
+
+Dua iterasi penelusuran atas keluhan "aku masuk sebagai tamu, karakter tidak
+muncul, UI tidak mencerminkan agen yang ada". Tiga sebab terpisah, bukan satu.
+
+**Sebab 1 — selalu tamu.** `app.get("/", autoGuestSession)` mencetak cookie
+tamu saat halaman dibuka. Satu-satunya jalan ke owner adalah
+`POST /auth/session` ber-Bearer, dan `frontend/src/` tidak pernah memanggilnya
+— nol kemunculan. Tidak ada layar masuk. Belum diperbaiki pada commit ini.
+
+**Sebab 2 — tidak ada yang pernah menempatkan agen.** `occupants` dibangun
+dari `assignments`; `assignments.set()` hanya ada di `assign()`; `assign()`
+hanya dipanggil dari `POST /agents/:agent/room` yang `requireOwner`. Di
+instance live tidak ada yang pernah memanggilnya, jadi setiap ruangan
+melaporkan nol penghuni selamanya sementara agen bekerja.
+
+**Sebab 3 — dua model ruangan yang tidak pernah bertemu.** Frontend
+mengabaikan `occupants` sepenuhnya (nol komponen membacanya) dan menebak ulang
+ruangan di klien lewat `roomForEvent()`: `mac`→`mac-studio`,
+`cloud`→`server-room`. Keduanya ruangan ber-`entryApproval: true` — UI
+menggambar agen di tempat yang menurut kebijakan perlu tanda tangan dulu. Itu
+persis "UI mengarang lokasi" yang dilarang AGENTS.md.
+
+### Yang diperbaiki
+
+`policy.js` dapat `isAssigned()`, sengaja dipisah dari `roomFor()`. Keduanya
+menjawab pertanyaan berbeda: `roomFor()` menjawab tata kelola dan karena itu
+tidak pernah menjawab "tidak di mana-mana", `isAssigned()` menjawab
+keterlihatan. Jarak antara keduanya persis yang membuat kantor tampak kosong
+sementara mesin kebijakan menganggapnya terisi.
+
+`index.js` menempatkan agen ke `defaultRoom` saat pertama terlihat, disambung
+ke listener presence yang sudah menormalkan nama agen dari segala bentuk
+event. **Tata kelola tidak berubah** — `roomFor()` sudah memperlakukan agen
+tak-terdaftar sebagai penghuni lobby, jadi yang berubah hanya keterlihatan.
+Penempatan hanya ke `defaultRoom`; naik ke ruangan ber-privilese tetap
+owner-only.
+
+`policyClient.ts` berhenti membuang `occupants` — datanya sudah di kawat untuk
+tamu maupun owner. `SectApp.tsx` menyemai aula dari penempatan server saat
+dimuat, dengan `seen: 0` supaya agen tergambar `away` sampai ada bukti nyata:
+denah mengatakan di mana ia berdiri, tidak pernah bahwa ia bangun.
+
+### Kenapa 377 tes tidak menangkapnya
+
+Tidak ada satu pun tes yang menanyakan "setelah sebuah event masuk, apakah
+agennya muncul di `/policy`?". Setiap bagian benar sendiri-sendiri. Yang
+kosong adalah jahitannya, dan jahitan itu tidak punya pemilik. Tiga tes baru
+di `integration.test.js` menembak server sungguhan ujung-ke-ujung, bukan papan
+palsu.
+
+### Uji mutasi
+
+Lima, semuanya merah lalu dipulihkan: hapus penempatan otomatis; `isAssigned`
+selalu `true`; penempatan otomatis ke `main-office` alih-alih `defaultRoom`
+(menangkap eskalasi privilese lewat event); `placements` selalu kosong;
+penjaga `SECT_HALLS` dihapus.
+
+### Catatan
+
+`server-room`, `mac-studio`, dan `ceo-office` punya `entryApproval: true` —
+`assign()` ke sana mengembalikan `pending`, tidak komit. Sebuah tes sempat
+salah karena mengira `assign` ke `server-room` berhasil; tesnya yang dibetulkan,
+bukan kodenya.
+
+Tes: backend 377→383, frontend 135→140. Gerbang 17/17.
+
+**Terbuka:** `roomForEvent()` masih menebak di klien dan sekarang bersaing
+dengan kebenaran server; belum dihapus karena menghapusnya mengubah perilaku
+untuk agen yang belum ter-assign. Jalur login owner belum ada.

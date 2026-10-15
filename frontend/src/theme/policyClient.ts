@@ -38,12 +38,28 @@ export interface PolicySnapshot {
   viewerTier: number
   /** True when the server redacted the budgets. Caps are 0 and must be hidden. */
   redacted: boolean
+  /**
+   * Who the SERVER says is standing in each hall, agent id -> room.
+   *
+   * The socket carries no history, so a hall drawn only from live events is
+   * empty on every page load and stays empty until something happens to move
+   * — which on a quiet fleet can be minutes. The floor plan is the one place
+   * that already knows, and it was being fetched and thrown away: `occupants`
+   * arrives on the wire for guest and owner alike and nothing read it.
+   *
+   * This is the server's answer, not a guess assembled from event shapes.
+   */
+  placements: Record<string, RoomId>
 }
 
 interface ServerRoom {
   room: string
   trust?: string
   budgetHourlyUsd?: number
+  occupants?: Array<{ agent?: string }>
+  /** The server marks redaction per ROOM, not on the document — see the note
+   *  in ladderFromPolicy. Declared here so callers stop casting to reach it. */
+  redacted?: boolean
 }
 
 interface ServerPolicy {
@@ -63,8 +79,27 @@ const GUEST_VIEWER_TIER = -1
  * disappear, which is exactly the "a check that stops running is not a check"
  * failure this repo has already paid for once.
  */
+/**
+ * agent -> room, for every room the mountain actually draws.
+ *
+ * Rooms with no hall are skipped on purpose: the ladder already drops them,
+ * and seeding an agent into a hall that is not rendered would put it nowhere
+ * visible while still counting as "placed".
+ */
+function placementsFrom(rooms: ServerRoom[]): Record<string, RoomId> {
+  const out: Record<string, RoomId> = {}
+  for (const r of rooms) {
+    if (!SECT_HALLS[r.room as RoomId]) continue
+    for (const o of r.occupants ?? []) {
+      if (typeof o?.agent === 'string' && o.agent) out[o.agent] = r.room as RoomId
+    }
+  }
+  return out
+}
+
 export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
   const rooms = policy.rooms ?? []
+  const placements = placementsFrom(rooms)
   // The server puts `redacted: true` on each ROOM for a guest, not on the
   // document — see server/index.js `GET /policy`. Reading only the top-level
   // flag meant the guest took the owner path, found every budget dropped, and
@@ -81,7 +116,7 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
     // An owner may go anywhere the policy lets the kiosk go: the top of the
     // ladder. canEnter() is tier<=viewerTier, so the highest tier opens all.
     const top = rungs.reduce((m, r) => Math.max(m, r.tier), GUEST_VIEWER_TIER)
-    return { rungs, viewerTier: top, redacted: false }
+    return { rungs, viewerTier: top, redacted: false, placements }
   }
 
   // Guest: rooms without a hall name are still dropped, same rule as the owner
@@ -99,7 +134,7 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
     // the room id breaks ties deterministically.
     .sort((a, b) => a.tier - b.tier || a.room.localeCompare(b.room))
 
-  return { rungs, viewerTier: GUEST_VIEWER_TIER, redacted: true }
+  return { rungs, viewerTier: GUEST_VIEWER_TIER, redacted: true, placements }
 }
 
 /** Fetch /policy with credentials and adapt it to the ladder. Never throws:

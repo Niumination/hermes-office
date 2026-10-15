@@ -19,9 +19,14 @@ function hall(id: keyof typeof SECT_HALLS) {
   return h
 }
 
+// `placements` joined PolicySnapshot when the halls started being seeded from
+// the server's floor plan instead of only from live socket events. The rail
+// does not read it — it draws altitude, not occupancy — so the fixture carries
+// an empty map rather than the rail growing an opinion about who stands where.
 const ladder = (over: Partial<PolicySnapshot> = {}): PolicySnapshot => ({
   viewerTier: 1,
   redacted: false,
+  placements: {},
   rungs: [
     { room: 'lobby', tier: 0, capUsd: 0.25, hall: hall('lobby') },
     { room: 'meeting-room', tier: 1, capUsd: 1, hall: hall('meeting-room') },

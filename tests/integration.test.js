@@ -1104,3 +1104,72 @@ test("presence: an object-form agent is keyed by id/name, not [object Object]", 
   assert.ok(!keys.includes("[object Object]"), "the object must never become a Map key");
   assert.ok(keys.includes("objectform"), `object-form agent should be present, got: ${keys.join(", ")}`);
 });
+
+// --- an agent that works shows up on the floor plan -------------------------
+//
+// Nothing but the owner-only POST /agents/:agent/room ever called assign(), so
+// on a live instance every room reported zero occupants while agents worked.
+// The office rendered empty and the floor plan described a building nobody was
+// in. These exercise the real server end to end: a bridge posts an event, and
+// the policy document must then place that agent.
+
+test("an event from a bridge places its agent in the default room", async () => {
+  const before = await getAs("/policy", TOKENS.owner);
+  const lobbyBefore = before.rooms.find((r) => r.room === "lobby");
+  assert.ok(
+    !lobbyBefore.occupants.some((o) => o.agent === "freshling"),
+    "precondition: agent is not on the floor yet",
+  );
+
+  const res = await post("/event", { type: "tool_call", agentId: "freshling", tool: "bash" }, TOKENS.cloud);
+  assert.equal(res.status, 200);
+
+  await waitFor(async () => {
+    const snap = await getAs("/policy", TOKENS.owner);
+    const lobby = snap.rooms.find((r) => r.room === "lobby");
+    return lobby.occupants.some((o) => o.agent === "freshling");
+  });
+
+  const after = await getAs("/policy", TOKENS.owner);
+  const placed = after.rooms
+    .find((r) => r.room === "lobby")
+    .occupants.find((o) => o.agent === "freshling");
+  assert.equal(placed.grantedBy, "auto", "the placement records that nobody signed for it");
+});
+
+test("auto-placement never promotes an agent out of the room it was put in", async () => {
+  // The whole safety argument for auto-placement is that it only ever writes
+  // defaultRoom, so it cannot grant scope. If a later event could re-place an
+  // agent, a bridge could walk itself upstairs by emitting events.
+  await post("/event", { type: "tool_call", agentId: "climber", tool: "bash" }, TOKENS.cloud);
+  await waitFor(async () => {
+    const s = await getAs("/policy", TOKENS.owner);
+    return s.rooms.find((r) => r.room === "lobby").occupants.some((o) => o.agent === "climber");
+  });
+
+  const moved = await fetch(BASE + "/agents/climber/room", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKENS.owner}` },
+    body: JSON.stringify({ room: "main-office" }),
+  });
+  assert.equal(moved.status, 200);
+
+  // More events arrive after the owner moved it. It must stay where it was put.
+  await post("/event", { type: "tool_done", agentId: "climber" }, TOKENS.cloud);
+  await post("/event", { type: "tool_call", agentId: "climber", tool: "bash" }, TOKENS.cloud);
+
+  const snap = await getAs("/policy", TOKENS.owner);
+  const lobby = snap.rooms.find((r) => r.room === "lobby");
+  const office = snap.rooms.find((r) => r.room === "main-office");
+  assert.ok(!lobby.occupants.some((o) => o.agent === "climber"), "not dragged back to lobby");
+  assert.ok(office.occupants.some((o) => o.agent === "climber"), "stays where the owner put it");
+});
+
+test("the watchdog's own away event does not place a forgotten agent", async () => {
+  // agent_status/away is emitted by the server itself with source 'system'.
+  // Treating it as proof of life would both revive offline agents and, now,
+  // re-place agents the operator had removed.
+  const snap = await getAs("/policy", TOKENS.owner);
+  const everyone = snap.rooms.flatMap((r) => r.occupants.map((o) => o.agent));
+  assert.ok(!everyone.includes("[object Object]"), "object-form agents are normalised, not stringified");
+});

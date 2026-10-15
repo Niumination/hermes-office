@@ -308,3 +308,50 @@ test("the snapshot is a complete, readable description of the floor plan", () =>
   assert.deepEqual(office.occupants.map((o) => o.agent), ["x"]);
   assert.equal(office.budgetHourlyUsd, 2);
 });
+
+// --- floor visibility vs floor governance ----------------------------------
+//
+// roomFor() and isAssigned() answer different questions and the gap between
+// them is what left every room's `occupants` empty on a live instance while
+// the policy engine happily governed those same agents as lobby residents.
+
+test("isAssigned separates 'placed on the floor' from 'governed somewhere'", () => {
+  const { p } = mk();
+
+  // Never seen: governed as lobby, but not standing anywhere.
+  assert.equal(p.roomFor("ghost"), "lobby");
+  assert.equal(p.isAssigned("ghost"), false);
+
+  p.assign("ghost", "lobby", "auto");
+
+  // Governance answer is unchanged — that is the point. Only visibility moved.
+  assert.equal(p.roomFor("ghost"), "lobby");
+  assert.equal(p.isAssigned("ghost"), true);
+});
+
+test("isAssigned is false when the recorded room no longer exists", () => {
+  // Mirrors roomFor()'s own guard: a policy reload can delete a room out from
+  // under an assignment, and a stale pointer must not read as a placement.
+  // main-office, not server-room: the privileged rooms carry entryApproval, so
+  // assign() parks the move as a pending approval instead of committing it —
+  // which is correct, and would make this test assert the wrong thing.
+  const { p } = mk();
+  p.assign("drifter", "main-office", "owner");
+  assert.equal(p.isAssigned("drifter"), true);
+
+  p.assignments.set("drifter", { room: "room-that-was-deleted", since: 0, grantedBy: "owner" });
+  assert.equal(p.isAssigned("drifter"), false);
+  assert.equal(p.roomFor("drifter"), "lobby");
+});
+
+test("placing an agent in the default room puts it in that room's occupants", () => {
+  const { p } = mk();
+  const before = p.snapshot().rooms.find((r) => r.room === "lobby");
+  assert.equal(before.occupants.length, 0);
+
+  p.assign("cloud", p.defaultRoom(), "auto");
+
+  const after = p.snapshot().rooms.find((r) => r.room === "lobby");
+  assert.deepEqual(after.occupants.map((o) => o.agent), ["cloud"]);
+  assert.equal(after.occupants[0].grantedBy, "auto");
+});

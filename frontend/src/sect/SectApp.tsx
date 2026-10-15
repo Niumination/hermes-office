@@ -151,7 +151,34 @@ export const SectApp: React.FC = () => {
         try { await fetch('/kiosk', { credentials: 'include' }) } catch { /* offline */ }
         l = await fetchLadder()
       }
-      if (alive) setLadder(l)
+      if (!alive || !l) { if (alive) setLadder(l); return }
+
+      // Seed the halls from the server's floor plan before trusting the
+      // socket. Without this the mountain is deserted on every page load and
+      // only fills as events happen to arrive, so a fleet that is working but
+      // quiet looks like a fleet that is dead. The placement is the server's,
+      // not a guess from event shapes.
+      //
+      // Anyone the socket has ALREADY told us about is left alone: a live
+      // event is fresher than a snapshot taken during the fetch, and
+      // overwriting it would make an agent jump back to where it was.
+      let seeded = false
+      for (const [id, room] of Object.entries(l.placements)) {
+        if (agentsRef.current.has(id)) continue
+        agentsRef.current.set(id, {
+          id,
+          room,
+          task: undefined,
+          // Not a sighting. `seen: 0` keeps the agent out of the "present"
+          // window so it renders as away until something real arrives — the
+          // floor plan says where it stands, never that it is awake.
+          seen: 0,
+          working: false,
+        })
+        seeded = true
+      }
+      setLadder(l)
+      if (seeded) tick((n) => n + 1)
     })()
     return () => { alive = false }
   }, [])

@@ -61,7 +61,7 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 | `sect.css` | 1417 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
 | 36 token OKLCH | seluruh sistem desain
-| `SectApp` (374 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
+| `SectApp` (401 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
 | `Hall` (112 baris) | aula, awan, Murid, tabir Lenyap di Balik Kabut |
 | `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |

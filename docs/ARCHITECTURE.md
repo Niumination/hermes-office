@@ -36,8 +36,8 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1282   entry: HTTP + WS + static, semua rute, shutdown bersih
-policy.js     585   Fase 3 — denah lantai sebagai kebijakan, persetujuan
+index.js      1306   entry: HTTP + WS + static, semua rute, shutdown bersih
+policy.js     602   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   412   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       403   Fase 1 — OTel GenAI → event Hermes
@@ -254,8 +254,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **377** | `npm test` |
-| Frontend | **135** | `cd frontend && npx vitest run` |
+| Backend | **383** | `npm test` |
+| Frontend | **140** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

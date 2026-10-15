@@ -117,3 +117,57 @@ describe('ladderFromPolicy — guest', () => {
     expect(snap2.viewerTier).toBe(-1)
   })
 })
+
+// --- placements: the server says where, the socket says when ----------------
+//
+// `occupants` was already arriving on the wire for both viewers and was being
+// discarded, which is why the mountain rendered deserted on every page load.
+
+describe('placements', () => {
+  it('reads occupants for an owner policy', () => {
+    const snap = ladderFromPolicy({
+      rooms: [
+        { room: 'lobby', budgetHourlyUsd: 0.25, occupants: [{ agent: 'cloud' }, { agent: 'mac' }] },
+        { room: 'ceo-office', budgetHourlyUsd: 10, occupants: [{ agent: 'boss' }] },
+      ],
+    })
+    expect(snap.placements).toEqual({ cloud: 'lobby', mac: 'lobby', boss: 'ceo-office' })
+  })
+
+  it('reads occupants for a guest policy too', () => {
+    // The guest document is redacted but keeps occupant names (server/index.js
+    // GET /policy), so a guest sees a populated mountain, not an empty one.
+    const snap = ladderFromPolicy({
+      rooms: [
+        { room: 'lobby', trust: 'untrusted', redacted: true, occupants: [{ agent: 'cloud' }] },
+      ],
+    })
+    expect(snap.redacted).toBe(true)
+    expect(snap.placements).toEqual({ cloud: 'lobby' })
+  })
+
+  it('skips rooms the mountain does not draw', () => {
+    // A room with no sect hall is dropped from the ladder; seeding an agent
+    // into it would mark it placed while rendering it nowhere.
+    const snap = ladderFromPolicy({
+      rooms: [
+        { room: 'lobby', budgetHourlyUsd: 0.25, occupants: [{ agent: 'cloud' }] },
+        { room: 'not-a-hall', budgetHourlyUsd: 1, occupants: [{ agent: 'ghost' }] },
+      ],
+    })
+    expect(snap.placements).toEqual({ cloud: 'lobby' })
+  })
+
+  it('is an empty map when nobody is placed, never undefined', () => {
+    // Callers iterate it unguarded; undefined here would white-screen the app.
+    const snap = ladderFromPolicy({ rooms: [{ room: 'lobby', budgetHourlyUsd: 0.25 }] })
+    expect(snap.placements).toEqual({})
+  })
+
+  it('ignores occupant entries with no usable agent id', () => {
+    const snap = ladderFromPolicy({
+      rooms: [{ room: 'lobby', budgetHourlyUsd: 0.25, occupants: [{ agent: '' }, {}, { agent: 'cloud' }] }],
+    })
+    expect(snap.placements).toEqual({ cloud: 'lobby' })
+  })
+})

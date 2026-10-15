@@ -184,6 +184,23 @@ export class FloorPlanPolicy {
   }
 
   /**
+   * Whether this agent has an explicit placement on the floor.
+   *
+   * Deliberately distinct from `roomFor()`, which answers the governance
+   * question and therefore never returns "nowhere" — an unplaced agent is
+   * governed as if it were in the default room. This answers the *visibility*
+   * question instead: has anyone actually put it on the floor plan?
+   *
+   * The two drifted apart in practice. Every agent was governed as a lobby
+   * occupant while `occupants` stayed empty for every room, so the office
+   * rendered empty while the policy engine considered it staffed.
+   */
+  isAssigned(agent) {
+    const a = this.assignments.get(agent);
+    return Boolean(a && this.room(a.room));
+  }
+
+  /**
    * Move an agent. This IS the act of granting scope, so it is recorded with
    * who did it — that record is the audit answer to "why was this allowed?".
    */

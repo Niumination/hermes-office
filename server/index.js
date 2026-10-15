@@ -1153,6 +1153,30 @@ bus.on("event", (ev) => {
   const ts = ev.ts || Date.now();
   lastHeartbeat.set(agent, ts);
   lastSeenTs.set(agent, ts);
+
+  // An agent that is demonstrably working belongs on the floor plan.
+  //
+  // Until now nothing ever called floor.assign() except the owner-only
+  // POST /agents/:agent/room, so `occupants` was empty for every room on a
+  // live instance while agents worked away. The office rendered deserted and
+  // the floor plan — which the README calls the policy itself — described a
+  // building nobody was in.
+  //
+  // Placement goes to defaultRoom and nowhere else. That is not a compromise:
+  // roomFor() ALREADY governs unplaced agents as if they were in the default
+  // room, so writing the assignment down changes what is *visible* and
+  // nothing about what is *allowed*. Moving an agent anywhere with more
+  // privilege stays owner-only, which is the whole reason assign() is
+  // owner-only, and that is untouched.
+  //
+  // Re-entrancy: assign() emits agent_moved through onEvent -> emitInternal,
+  // which lands back in this very listener. isAssigned() is true by then, so
+  // it stops at depth two. The guard is written as an explicit early return
+  // rather than relying on that, because a future caller should be able to
+  // see the recursion is handled without tracing the event bus.
+  if (!floor.isAssigned(agent)) {
+    floor.assign(agent, floor.defaultRoom(), "auto");
+  }
 });
 
 // Intervals are configurable so the away-transition is actually testable;
