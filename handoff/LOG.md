@@ -2283,3 +2283,49 @@ Alasannya ditulis di atas tesnya.
 `summarize()` belum menghitung `desk_action` sama sekali, jadi ringkasan
 dossier diam soal aksi meskipun narasi per-rekaman memuatnya. Bukan
 ketidakbenaran, tapi kelalaian — dicatat untuk fase berikutnya.
+
+## 025 — 2026-10-15 — Pos Jaga tahap 2 tidak pernah tampil di layar
+
+Diperiksa setelah laporan bahwa situs live tidak sesuai harapan. Dua cacat
+nyata, satu masalah penyebaran.
+
+**Cacat A — `snapshot()` menyembunyikan daftar aksi.** `server/desks.js`
+menghitung `safeActions` untuk tiap pos lalu menempelkannya **hanya** pada
+objek cadangan `result ?? {...}` yang dipakai sebelum probe pertama. Karena
+`start()` memanggil `tick()` seketika, `result` hampir selalu ada, dan muatan
+yang sampai ke peramban tidak punya `actions` sama sekali. UI menggerbangi
+tombolnya pada `o.actions?.length`, jadi **tombol tahap 2 tak pernah
+dirender di penyebaran mana pun**. Diperbaiki dengan memisahkan `base` lalu
+`return { ...base, actions: safeActions }`.
+
+Kenapa 377 tes tidak menangkapnya: `tests/desks-router.test.js` menyuntik
+papan palsu sehingga tak pernah melewati `snapshot()`, dan satu-satunya
+asersi snapshot kebetulan menguji cabang `DESK_UNKNOWN` — satu-satunya cabang
+yang benar. Ditutup dengan tes pada pos **sesudah** `refresh()`, plus asersi
+bahwa `run` tidak ikut terserialisasi dan bahwa `redactDesk` membuang
+`actions` untuk tamu.
+
+**Cacat B — cooldown tak pernah terlihat.** `startCooldown()` di
+`Outposts.tsx` didefinisikan dan tidak pernah dipanggil, sehingga `cooldownMs`
+selalu 0. Lebih buruk, cabang `result.ok ? 0 : …` menolkan jeda ketika aksi
+**berhasil** — bertentangan dengan keputusan P0 bahwa jeda dihitung dari saat
+mulai dan berlaku apa pun hasilnya. Akibatnya tombol tampak aktif sementara
+server menjawab 429.
+
+Diperbaiki dengan menyimpan **tenggat** (`cooldownUntil`), bukan durasi:
+durasi yang disimpan tidak pernah menyusut, jadi hitung mundur 250 ms hanya
+merender ulang angka beku dan tombol takkan pernah terbuka kembali. Ticker
+kini juga berhenti saat tidak ada yang dihitung.
+
+**Penyebaran.** `dash.abstract.biz.id` menyajikan bundel frontend terbaru,
+tetapi `/desks` dan `/proof` menjawab HTML, bukan JSON — kedua router itu
+belum terpasang pada proses yang berjalan. `/health` melaporkan uptime 61 jam
+(nyala 12 Okt 14:55 UTC), yaitu sebelum kedua rute itu ada. Berkas statis
+ter-deploy, proses Node tidak pernah di-restart. Perbaikan kode mana pun
+tidak akan terlihat sampai layanan dijalankan ulang.
+
+Kebersihan: `frontend/.vitest/json/output.json` (44 kB) ikut terlacak git —
+keluaran reporter, bukan sumber. Dilepas dan dimasukkan ke `.gitignore`.
+
+Tes 377 backend / 135 frontend. Uji mutasi: kedua perbaikan dikembalikan satu
+per satu, masing-masing membuat tes barunya merah.

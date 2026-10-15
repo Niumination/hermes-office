@@ -9,8 +9,14 @@
  *      outposts did not vanish; our view of them did.
  *   3. A guest must not be shown `detail` — the server nulls it, and the UI
  *      must not reconstruct anything in its place.
- *   4. No control may appear here. Phase one is observation only; a button
- *      that cannot work is worse than no button.
+ *   4. A guest sees no control of any kind. Phase two gave the owner buttons,
+ *      so the old blanket "no buttons here" rule was rewritten rather than
+ *      deleted: the part that still binds is that a guest gets no button at
+ *      all — not a disabled one, which would advertise a capability and
+ *      invite a support ticket.
+ *   5. A cooldown is visible before the click, and survives a successful run.
+ *      The server reserves the slot before it awaits, so a UI that clears the
+ *      cooldown on success offers a button the server answers with 429.
  */
 import React from 'react'
 import { render, screen, waitFor, act } from '@testing-library/react'
@@ -82,15 +88,105 @@ describe('Outposts — panel', () => {
     expect(screen.getByText('Mitigasi Pagi')).toBeTruthy()
   })
 
-  it('offers no control of any kind — phase one is observation only', () => {
+  /**
+   * Rewritten 2026-10-15. This test used to assert that the panel had no
+   * controls at all, which was the phase-one contract. Phase two gives the
+   * owner action buttons, so the assertion was re-aimed at the half that still
+   * binds — and it is the more important half. A guest must not see a disabled
+   * button: that advertises a capability they cannot have.
+   */
+  it('gives a guest no button at all, even when the desk has actions', () => {
     render(
       <Outposts
         isOwner={false}
-        outposts={[post({ state: 'failed' })]} problems={[]} loaded stale={false} lastOkTs={1}
+        outposts={[post({
+          state: 'failed',
+          actions: [{ id: 'restart', label: 'Mulai ulang', confirm: true, cooldownMs: 60_000 }],
+        })]}
+        problems={[]} loaded stale={false} lastOkTs={1}
       />,
     )
     expect(screen.queryAllByRole('button')).toHaveLength(0)
-    expect(screen.queryAllByRole('link')).toHaveLength(0)
+    expect(screen.queryByTestId('outpost-actions')).toBeNull()
+    expect(screen.queryByText('Mulai ulang')).toBeNull()
+  })
+
+  /**
+   * Regression for 2026-10-15: the server attached the action list only to
+   * desks it had not probed yet, so this button never appeared in production
+   * even though every backend test passed. The UI half is asserted here.
+   */
+  it('shows the owner a button for each declared action', () => {
+    render(
+      <Outposts
+        isOwner
+        outposts={[post({
+          actions: [{ id: 'restart', label: 'Mulai ulang', confirm: true, cooldownMs: 60_000 }],
+        })]}
+        problems={[]} loaded stale={false} lastOkTs={1}
+      />,
+    )
+    expect(screen.getByTestId('action-restart')).toBeTruthy()
+    expect(screen.getByText('Mulai ulang')).toBeTruthy()
+  })
+
+  /**
+   * The binding decision from phase 14 P0: the cooldown is counted from the
+   * moment the action starts, not from when it finishes, and it applies
+   * whatever the outcome. A run that succeeds in 40 ms still holds the slot.
+   * The UI used to clear the cooldown on success, which left an enabled
+   * button in front of a server that would answer 429.
+   */
+  it('keeps the cooldown visible after a run that succeeded', async () => {
+    vi.useFakeTimers()
+    try {
+      const onRunAction = vi.fn().mockResolvedValue({ ok: true, exitCode: 0, ms: 40 })
+      render(
+        <Outposts
+          isOwner
+          outposts={[post({
+            actions: [{ id: 'restart', label: 'Mulai ulang', confirm: false, cooldownMs: 60_000 }],
+          })]}
+          problems={[]} loaded stale={false} lastOkTs={1}
+          onRunAction={onRunAction}
+        />,
+      )
+
+      const btn = screen.getByTestId('action-restart') as HTMLButtonElement
+      expect(btn.disabled).toBe(false)
+
+      await act(async () => { btn.click() })
+      await act(async () => { await Promise.resolve() })
+
+      expect(onRunAction).toHaveBeenCalledWith('a', 'restart')
+      const after = screen.getByTestId('action-restart') as HTMLButtonElement
+      expect(after.disabled).toBe(true)
+      expect(after.getAttribute('title')).toMatch(/^Jeda:/)
+
+      // ...and it releases by itself once the window has actually passed,
+      // which a stored duration (rather than a deadline) would never do.
+      await act(async () => { vi.advanceTimersByTime(61_000) })
+      expect((screen.getByTestId('action-restart') as HTMLButtonElement).disabled).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('reports the exit code as it came back, not as a verdict', async () => {
+    const onRunAction = vi.fn().mockResolvedValue({ ok: false, exitCode: 2, ms: 11 })
+    render(
+      <Outposts
+        isOwner
+        outposts={[post({
+          actions: [{ id: 'restart', label: 'Mulai ulang', confirm: false, cooldownMs: 0 }],
+        })]}
+        problems={[]} loaded stale={false} lastOkTs={1}
+        onRunAction={onRunAction}
+      />,
+    )
+    await act(async () => { (screen.getByTestId('action-restart') as HTMLButtonElement).click() })
+    await waitFor(() => expect(screen.getByText(/exit 2/)).toBeTruthy())
+    expect(screen.queryByText(/Berhasil/)).toBeNull()
   })
 
   it('tells the owner how to configure outposts when there are none', () => {

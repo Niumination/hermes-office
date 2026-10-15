@@ -293,11 +293,17 @@ export class DeskBoard {
         confirm: a.confirm,
         cooldownMs: a.cooldownMs,
       }));
-      return result ?? {
+      // The action list belongs to the desk's configuration, not to the probe
+      // result, so it has to be spliced onto whichever of the two we return.
+      // Attaching it only to the unprobed fallback — as this did until
+      // 2026-10-15 — meant the owner saw actions for the few milliseconds
+      // before the first probe landed and never again, because start() ticks
+      // immediately. The buttons were unreachable in every real deployment.
+      const base = result ?? {
         id: d.id, label: d.label, hall: d.hall, note: d.note, kind: d.probe.kind,
         state: DESK_UNKNOWN, lastTs: null, checkedTs: null, detail: "not probed yet",
-        actions: safeActions,
       };
+      return { ...base, actions: safeActions };
     });
   }
 

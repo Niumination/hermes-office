@@ -225,6 +225,64 @@ describe("DeskBoard", () => {
     assert.equal(board.snapshot()[0].state, DESK_UNKNOWN);
   });
 
+  /**
+   * Regression for 2026-10-15. snapshot() attached the serialised action list
+   * only to the fallback object used before the first probe, so the owner
+   * could see actions for a few milliseconds at boot and never afterwards —
+   * and start() probes immediately. The UI gates its buttons on this field,
+   * so the entire feature was unreachable in production while every test
+   * passed: the router tests inject a fake board and never call snapshot(),
+   * and the only snapshot assertion happened to cover the unprobed branch.
+   *
+   * The assertion that matters is therefore "after refresh()", not "before".
+   */
+  test("a probed desk still carries its actions, with run never serialised", async () => {
+    const board = new DeskBoard({
+      file: "/desks.json",
+      deps: {
+        readFileImpl: async () => JSON.stringify({
+          desks: [{
+            id: "a",
+            probe: { kind: "http", url: "http://x/" },
+            actions: [{ id: "restart", label: "Mulai ulang", run: ["echo", "RAHASIA"], cooldownMs: 60000 }],
+          }],
+        }),
+        fetchImpl: async () => res(200, {}),
+      },
+    });
+    await board.load();
+    await board.refresh();
+
+    const snap = board.snapshot()[0];
+    assert.equal(snap.state, DESK_OK, "precondition: the desk really was probed");
+    assert.deepEqual(snap.actions, [
+      { id: "restart", label: "Mulai ulang", confirm: true, cooldownMs: 60000 },
+    ]);
+    // The argv is the dangerous half: it names binaries and paths on the host.
+    assert.ok(!JSON.stringify(snap).includes("RAHASIA"), "run must never reach a client");
+  });
+
+  test("a guest sees no actions at all, not an empty list", async () => {
+    const board = new DeskBoard({
+      file: "/desks.json",
+      deps: {
+        readFileImpl: async () => JSON.stringify({
+          desks: [{
+            id: "a",
+            probe: { kind: "http", url: "http://x/" },
+            actions: [{ id: "restart", label: "Mulai ulang", run: ["echo", "hi"] }],
+          }],
+        }),
+        fetchImpl: async () => res(200, {}),
+      },
+    });
+    await board.load();
+    await board.refresh();
+
+    const guestView = redactDesk(board.snapshot()[0]);
+    assert.equal("actions" in guestView, false);
+  });
+
   test("removing a desk from config drops its stale result", async () => {
     let cfg = { desks: [{ id: "a", probe: { kind: "http", url: "http://x/" } }] };
     const board = new DeskBoard({

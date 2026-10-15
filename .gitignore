@@ -33,3 +33,6 @@ upstream/
 __pycache__/
 *.pyc
 *.env.office.bak*
+
+# Keluaran reporter vitest — artefak jalannya tes, bukan sumber.
+frontend/.vitest/

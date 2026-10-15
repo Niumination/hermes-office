@@ -75,7 +75,18 @@ export interface OutpostsProps {
 interface ActionState {
   running: boolean
   result: { ok: boolean; exitCode: number; ms: number } | null
-  cooldownMs: number
+  /**
+   * Epoch ms at which the cooldown expires, not a duration. A stored duration
+   * never shrinks on its own, so the ticker below would re-render a frozen
+   * number for ever and the button would never unlock. A deadline compared
+   * against Date.now() at render time counts down by itself.
+   *
+   * Set when the action is launched, never when it finishes: the server
+   * reserves the cooldown slot before it awaits the child process, so a run
+   * that fails in one second still holds the slot for the full window. The UI
+   * has to agree with that, or it offers a button the server answers with 429.
+   */
+  cooldownUntil: number
 }
 
 export default function Outposts(props: OutpostsProps) {
@@ -83,7 +94,7 @@ export default function Outposts(props: OutpostsProps) {
   const [actionStates, setActionStates] = useState<Record<string, ActionState>>({})
   const [confirmTarget, setConfirmTarget] = useState<{ deskId: string; action: { id: string; label: string; cooldownMs: number } } | null>(null)
 
-  const runAction = useCallback(async (deskId: string, actionId: string) => {
+  const runAction = useCallback(async (deskId: string, actionId: string, cooldownMs: number) => {
     const fn = onRunAction ?? ((d, a) =>
       fetch(`/desks/${encodeURIComponent(d)}/actions/${encodeURIComponent(a)}`, {
         method: 'POST',
@@ -93,46 +104,50 @@ export default function Outposts(props: OutpostsProps) {
         return r.json() as Promise<{ ok: boolean; exitCode: number; ms: number }>
       })
     )
-    setActionStates((prev) => ({
-      ...prev,
-      [`${deskId}::${actionId}`]: { running: true, result: null, cooldownMs: (prev[`${deskId}::${actionId}`]?.cooldownMs ?? 0) },
-    }))
-    try {
-      const result = await fn(deskId, actionId)
-      const remaining = result.ok ? 0 : (actionStates[`${deskId}::${actionId}`]?.cooldownMs ?? 0)
-      setActionStates((prev) => ({
-        ...prev,
-        [`${deskId}::${actionId}`]: { running: false, result, cooldownMs: remaining },
-      }))
-    } catch {
-      setActionStates((prev) => ({
-        ...prev,
-        [`${deskId}::${actionId}`]: { running: false, result: { ok: false, exitCode: -1, ms: 0 }, cooldownMs: 0 },
-      }))
-    }
-  }, [onRunAction, actionStates])
-
-  const startCooldown = useCallback((deskId: string, actionId: string, ms: number) => {
+    // Start the cooldown here, at launch, to mirror the server reserving its
+    // slot before the await. Both outcomes below keep this deadline.
+    const until = Date.now() + Math.max(0, cooldownMs)
     const key = `${deskId}::${actionId}`
     setActionStates((prev) => ({
       ...prev,
-      [key]: { ...(prev[key] ?? { running: false, result: null }), cooldownMs: ms },
+      [key]: { running: true, result: null, cooldownUntil: until },
     }))
-  }, [])
+    try {
+      const result = await fn(deskId, actionId)
+      setActionStates((prev) => ({
+        ...prev,
+        [key]: { running: false, result, cooldownUntil: until },
+      }))
+    } catch {
+      // A transport error is not proof the action did not run — the request may
+      // have reached the server and been recorded. Holding the cooldown is the
+      // cautious reading, and caution is the right failure direction here.
+      setActionStates((prev) => ({
+        ...prev,
+        [key]: { running: false, result: { ok: false, exitCode: -1, ms: 0 }, cooldownUntil: until },
+      }))
+    }
+  }, [onRunAction])
 
-  // Ticker to drive the cooldown countdown visible in the UI.
+  // Ticker to drive the cooldown countdown visible in the UI. It runs only
+  // while something is actually counting down — keying it on "any action has
+  // ever been clicked" would leave a 250 ms timer running for the rest of the
+  // session after the last cooldown expired.
   const [, setTick] = useState(0)
+  const counting = Object.values(actionStates).some(
+    (s) => s.running || s.cooldownUntil > Date.now(),
+  )
   React.useEffect(() => {
-    if (Object.keys(actionStates).length === 0) return
+    if (!counting) return
     const id = setInterval(() => setTick((n) => n + 1), 250)
     return () => clearInterval(id)
-  }, [actionStates])
+  }, [counting])
 
   const handleRun = useCallback((deskId: string, action: { id: string; label: string; confirm: boolean; cooldownMs: number }) => {
     if (action.confirm) {
       setConfirmTarget({ deskId, action })
     } else {
-      void runAction(deskId, action.id)
+      void runAction(deskId, action.id, action.cooldownMs)
     }
   }, [runAction])
 
@@ -140,7 +155,7 @@ export default function Outposts(props: OutpostsProps) {
     if (!confirmTarget) return
     const { deskId, action } = confirmTarget
     setConfirmTarget(null)
-    void runAction(deskId, action.id)
+    void runAction(deskId, action.id, action.cooldownMs)
   }, [confirmTarget, runAction])
 
   return (
@@ -196,8 +211,9 @@ export default function Outposts(props: OutpostsProps) {
                 <div className="sect-post__actions" data-testid="outpost-actions">
                   {o.actions!.map((a) => {
                     const key = `${o.id}::${a.id}`
-                    const state = actionStates[key] ?? { running: false, result: null, cooldownMs: 0 }
-                    const canRun = !state.running && state.cooldownMs <= 0
+                    const state = actionStates[key] ?? { running: false, result: null, cooldownUntil: 0 }
+                    const remainingMs = Math.max(0, state.cooldownUntil - Date.now())
+                    const canRun = !state.running && remainingMs <= 0
                     return (
                       <button
                         key={a.id}
@@ -208,8 +224,8 @@ export default function Outposts(props: OutpostsProps) {
                         title={
                           state.running
                             ? 'Sedang berjalan…'
-                            : state.cooldownMs > 0
-                              ? `Jeda: ${cooldownLabel(state.cooldownMs)}`
+                            : remainingMs > 0
+                              ? `Jeda: ${cooldownLabel(remainingMs)}`
                               : `Jalankan ${a.label}`
                         }
                         data-testid={`action-${a.id}`}
