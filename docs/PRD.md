@@ -295,7 +295,7 @@ kepatuhan menuntutnya, chat karena pengguna mengharapkannya.
 
 ## 8. Spesifikasi API
 
-26 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
+27 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
 beserta guard tiap rute, dan `scripts/check-docs.py` memverifikasi tabel itu
 dua arah** — rute di `index.js` tanpa baris tabel gagal, rute terdokumentasi
 yang tidak ada juga gagal.
@@ -308,7 +308,7 @@ Ringkasan per-pilar:
 | Tata kelola | `GET /policy`, `POST /policy/check`, `POST /budget/check`, `GET /burn`, `POST /agents/:agent/room` |
 | Persetujuan | `GET /approvals`, `GET /approvals/:id`, `POST /approvals/:id` |
 | Kepatuhan | `GET /replay`, `GET /ledger`, `GET /ledger/head`, `GET /ledger/verify`, `GET /ledger/anchors`, `POST /ledger/anchor`, `GET /dossier` |
-| Kantor | `GET /`, `GET /roster`, `GET /presence`, `GET /desks`, `GET /health`, `GET /debug/events`, `POST /auth/session` |
+| Kantor | `GET /`, `GET /roster`, `GET /presence`, `GET /tasks`, `GET /desks`, `GET /health`, `GET /debug/events`, `POST /auth/session` |
 | Chat | `GET /chat`, `POST /chat`, `POST /chat/completions`, `POST /chat/reply`, `POST /chat/react`, `POST /chat/typing`, `POST /chat/seen` |
 
 ---

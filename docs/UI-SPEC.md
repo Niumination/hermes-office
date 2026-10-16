@@ -58,10 +58,10 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 
 ## 3. Bahasa visual
 
-| `sect.css` | 1596 | seluruh sistem desain — token, tata letak, komponen, gerak |
+| `sect.css` | 1742 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
 | 37 token OKLCH | seluruh sistem desain
-| `SectApp` (459 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
+| `SectApp` (490 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
 | `Hall` (160 baris) | aula, awan, Murid, tabir Lenyap di Balik Kabut |
 | `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |

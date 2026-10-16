@@ -114,14 +114,33 @@ if [ -z "$served" ]; then
   bad "could not find the JS bundle name in the served HTML"
 else
   local_bundle=$(ls frontend/dist/assets/index-*.js 2>/dev/null | head -1 | xargs -r basename)
+
+  # A mismatch means two very different things, and calling both a failure
+  # would make this gate red for the whole of normal development — which is
+  # how a gate stops being read.
+  #
+  #   - tree clean AND at the published commit  -> live should match us, so a
+  #     mismatch is the "pulled without rebuilding" bug this check exists for.
+  #   - anything else (dirty tree, local commits ahead) -> we are simply not
+  #     deployed yet. Worth saying, not worth failing.
+  shipped=0
+  if [ -z "$(git status --porcelain 2>/dev/null)" ] &&
+     git rev-parse --verify -q origin/dev >/dev/null 2>&1 &&
+     [ "$(git rev-parse HEAD 2>/dev/null)" = "$(git rev-parse origin/dev 2>/dev/null)" ]; then
+    shipped=1
+  fi
+
   if [ -z "$local_bundle" ]; then
     ok "live serves $served"
     note "no local build to compare — run 'cd frontend && npm run build' for the binding check"
   elif [ "$served" = "$local_bundle" ]; then
     ok "live bundle matches this tree ($served)"
-  else
+  elif [ "$shipped" -eq 1 ]; then
     bad "live serves $served but this tree builds $local_bundle"
-    note "the server was restarted without rebuilding the frontend"
+    note "this tree IS the published commit, so the server was restarted without rebuilding the frontend"
+  else
+    ok "live serves $served; this tree builds $local_bundle"
+    note "not a deploy failure — this tree is ahead of what is published"
   fi
 fi
 

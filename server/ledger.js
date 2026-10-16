@@ -69,6 +69,16 @@ export const LEDGER_TYPES = Object.freeze([
   // policy_decision — a command that exited non-zero was not "refused by a
   // rule", and recording it as one puts a false denial in the auditor's hands.
   "desk_action",
+  // Amanat: a task changed lifecycle state. Only transitions are recorded,
+  // never progress, so the chain cost is bounded by work *started* rather
+  // than work done — a task has a handful of these in its life, an agent has
+  // thousands of tool calls.
+  //
+  // This is in the chain rather than a side table because the board is
+  // rebuilt by folding these forward on boot. That is what makes a running
+  // task survive a restart, and what makes "what was being worked on at
+  // 02:14" answerable beside the governance decisions of that same minute.
+  "task_transition",
 ]);
 
 /**

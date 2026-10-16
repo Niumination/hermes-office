@@ -24,6 +24,7 @@ import { buildStandup, renderText as renderStandupText, renderMarkdown as render
 import { renderMarkdown, renderJson } from "./dossier.js";
 import { BurnRateTracker, parsePerAgentBudget } from "./burnrate.js";
 import { FloorPlanPolicy, loadPolicy } from "./policy.js";
+import { TaskBoard } from "./tasks.js";
 import { readFileSync } from "fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -206,11 +207,32 @@ function recordGovernance(type, payload, meta) {
   try {
     ledger.record(type, payload, meta);
   } catch (err) {
-    console.error(`[ledger] FAILED to record ${type}: ${err.message}`);
+      console.error(`[ledger] FAILED to record ${type}: ${err.message}`);
+    }
   }
-}
 
-const burn = new BurnRateTracker(
+  /**
+   * Amanat — the board of what the fleet is working on (server/tasks.js).
+   *
+   * Rebuilt by folding `task_transition` records forward, so a task that was
+   * running when the process died is still on the board when it comes back.
+   * Without the ledger the board still works; it just starts empty after a
+   * restart, which is the documented degraded mode rather than a silent one.
+   */
+  const taskBoard = new TaskBoard({ record: recordGovernance });
+  if (ledger) {
+    try {
+      const rows = ledger.query({ type: "task_transition", limit: 5000 });
+      const folded = taskBoard.rebuildFrom(rows);
+      if (folded) {
+        console.log(`[tasks] rebuilt ${taskBoard.size} task(s) from ${folded} ledger record(s)`);
+      }
+    } catch (err) {
+      console.error(`[tasks] rebuild failed, starting empty: ${err.message}`);
+    }
+  }
+
+  const burn = new BurnRateTracker(
   {
     globalHourlyUsd: config.budget.globalHourlyUsd,
     globalDailyUsd: config.budget.globalDailyUsd,
@@ -234,6 +256,28 @@ const burn = new BurnRateTracker(
 
 // Every event carrying a realized cost feeds the tracker. This sits on the bus
 // rather than inside the OTLP route so bridge events with cost data count too.
+/**
+ * Fold task-bearing events onto the board.
+ *
+ * No extra broadcast happens here on purpose. The event itself already goes
+ * out through `bus.on("event", broadcast)` above, already guest-sanitized, so
+ * a client knows a task moved by watching the traffic it is receiving anyway.
+ * Emitting a second `tasks_changed` frame would mean two wire formats that
+ * can disagree, and a fold implemented once on the server and again in the
+ * browser. The server stays authoritative; the client refetches.
+ */
+bus.on("event", (ev) => {
+  if (ev.type !== "task_update" && ev.type !== "a2a_task_in" && ev.type !== "a2a_task_out") {
+    return;
+  }
+  try {
+    taskBoard.ingest(ev);
+  } catch (err) {
+    // A malformed task must never take the event pipeline down with it.
+    console.error(`[tasks] ingest failed: ${err.message}`);
+  }
+});
+
 bus.on("event", (ev) => {
   if (ev.type === "budget_state") return; // never recurse
   const cost = Number(ev.costUsd);
@@ -840,6 +884,18 @@ const PERMANENT_CAST = [
   { name: "mac", role: "generalist" },
   { name: "boss", role: "reviewer" },
 ];
+
+/**
+ * Amanat — what the fleet is working on.
+ *
+ * `requireAny`, like /policy and /roster: a visitor is allowed to see that
+ * work is moving and that something is blocked. The titles and repo names are
+ * redacted for guests inside `snapshot`, matching how a2a summaries are
+ * already handled — the shape of the work is public, its subject is not.
+ */
+app.get("/tasks", requireAny, (req, res) => {
+  res.json(taskBoard.snapshot({ isGuest: req.identity?.role === "guest" }));
+});
 
 app.get("/roster", requireAny, (_req, res) => {
   // The permanent cast plus anything currently alive — otherwise an agent that

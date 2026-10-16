@@ -55,7 +55,11 @@ const API_PORT = process.env.OFFICE_PORT || '7333'
   // terdaftar di server/index.js tetapi tidak pernah diproxy, jadi selama ini
   // 404 di `npm run dev` tanpa seorang pun menyadarinya. Tak ada gerbang yang
   // bisa melihatnya sebelum ada gerbang yang benar-benar menjalankan servernya.
-  '/replay', '/standup', '/debug',
+    '/replay', '/standup', '/debug',
+    // Amanat — the board of what the fleet is working on (server/tasks.js).
+    // Caught by the same gate within a minute of the route being added, which
+    // is the whole argument for that gate existing.
+    '/tasks',
 ]
 
 export default defineConfig({

@@ -79,6 +79,7 @@ __all__ = [
     "emit_mcp_call",
     "emit_a2a_task_in",
     "emit_a2a_task_out",
+    "emit_task_update",
     "emit_git_push",
     "emit_cron_fired",
 ]
@@ -100,11 +101,28 @@ BRIDGE_EVENT_TYPES = frozenset(
         "mcp_call",
         "a2a_task_in",
         "a2a_task_out",
+        "task_update",
         "cron_fired",
         "git_push",
         "channel_msg",
         "agent_status",
         "service_status",
+    }
+)
+
+#: A2A v1.0 lifecycle, mirrored from A2A_STATES in server/eventbus.js. An
+#: unknown state is dropped here rather than earning a 400 nobody reads.
+TASK_STATES = frozenset(
+    {
+        "sent",  # legacy, == submitted
+        "submitted",
+        "working",
+        "input_required",
+        "auth_required",
+        "completed",
+        "failed",
+        "canceled",
+        "rejected",
     }
 )
 
@@ -515,6 +533,41 @@ def emit_a2a_task_out(
         peer=peer,
         taskId=task_id,
         summary=summary,
+    )
+
+
+def emit_task_update(
+    task_id: str,
+    state: str = "working",
+    title: Optional[str] = None,
+    agent: Optional[str] = None,
+    origin: Optional[str] = None,
+    repo: Optional[str] = None,
+) -> None:
+    """
+    Put a task on the Amanat board, or move one along.
+
+    This is the event that answers "working on *what*". Everything else the
+    office draws describes posture — who is online, which room, which tool.
+    Without this the board stays empty no matter how busy the fleet looks.
+
+    `origin` should say where the order came from (`telegram`, `whatsapp`,
+    `desktop`, `a2a`, `cron`), not which machine relayed it. The office uses
+    it to show how you actually give orders.
+
+    `title` is displayed verbatim to the owner and redacted for guests, so a
+    short label is right — "repo X: fix build", never the whole prompt.
+    """
+    if state not in TASK_STATES:
+        return
+    emit(
+        "task_update",
+        taskId=task_id,
+        state=state,
+        title=title,
+        agent=agent,
+        origin=origin,
+        repo=repo,
     )
 
 

@@ -1472,6 +1472,152 @@ body {
   color: var(--sect-cinnabar);
 }
 
+/* --- 12b. Amanat — the board of what the fleet is working on -------------
+
+   Above every @media block on purpose, same as the Sabda and Warrant rules.
+   A media query adds no specificity, so component rules written below the
+   breakpoints would quietly win over them.
+
+   Lanes are stacked, not columned: the rail is ~320px and five Kanban
+   columns there would be five unreadable slivers. `blocked` carries the only
+   loud colour in the panel, because it is the only lane the operator can
+   act on. */
+
+.sect-amanat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sect-sp-3);
+  padding: var(--sect-sp-3);
+  overflow-y: auto;
+}
+
+.sect-amanat__strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sect-sp-2);
+  align-items: baseline;
+  font-size: var(--sect-t-xs);
+  color: var(--sect-mist);
+}
+
+.sect-amanat__total {
+  font-weight: 600;
+  color: var(--sect-gold);
+}
+
+.sect-amanat__alert {
+  color: var(--sect-cinnabar);
+  font-weight: 600;
+}
+
+.sect-amanat__veil,
+.sect-amanat__stale {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.sect-amanat__lane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sect-sp-2);
+}
+
+.sect-amanat__laneHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0;
+  font-size: var(--sect-t-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sect-mist);
+}
+
+.sect-amanat__lane--blocked .sect-amanat__laneHead {
+  color: var(--sect-cinnabar);
+}
+
+.sect-amanat__laneCount {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.sect-amanat__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--sect-sp-2) var(--sect-sp-3);
+  border-left: 2px solid transparent;
+  border-radius: 0 4px 4px 0;
+  background: rgb(255 255 255 / 3%);
+}
+
+/* The one loud element in the panel. */
+.sect-amanat__row--blocked {
+  border-left-color: var(--sect-cinnabar);
+  background: color-mix(in oklch, var(--sect-cinnabar) 9%, transparent);
+}
+
+.sect-amanat__lane--active .sect-amanat__row {
+  border-left-color: var(--sect-jade);
+}
+
+.sect-amanat__lane--done .sect-amanat__row,
+.sect-amanat__lane--stopped .sect-amanat__row {
+  opacity: 0.62;
+}
+
+.sect-amanat__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sect-sp-2);
+}
+
+.sect-amanat__title {
+  font-size: var(--sect-t-sm);
+  color: var(--sect-paper, #e8eef2);
+  overflow-wrap: anywhere;
+}
+
+.sect-amanat__age {
+  flex: none;
+  font-size: var(--sect-t-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--sect-mist);
+  opacity: 0.8;
+}
+
+.sect-amanat__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sect-sp-2);
+  font-size: var(--sect-t-xs);
+  color: var(--sect-mist);
+}
+
+.sect-amanat__agent {
+  font-weight: 600;
+  color: var(--sect-gold);
+}
+
+.sect-amanat__repo {
+  opacity: 0.85;
+  overflow-wrap: anywhere;
+}
+
+.sect-amanat__hint {
+  display: block;
+  margin-top: var(--sect-sp-2);
+  font-size: var(--sect-t-xs);
+  opacity: 0.75;
+}
+
+.sect-amanat__hint code {
+  font-size: 0.95em;
+}
+
 /* --- 13. breakpoints -----------------------------------------------------
 
    These live at the END of the file on purpose. A media query adds no

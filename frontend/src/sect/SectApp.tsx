@@ -35,6 +35,8 @@ import Chronicle from './Chronicle'
 import Sabda from './Sabda'
 import Outposts from './Outposts'
 import { useOutposts } from './useOutposts'
+import Amanat from './Amanat'
+import { useAmanat } from './useAmanat'
 import { useSabda } from './useSabda'
 import QiRing from './QiRing'
 import Seal from './Seal'
@@ -106,11 +108,28 @@ export const SectApp: React.FC = () => {
   // look asleep; yanking the view around after someone has deliberately
   // navigated is worse. So: follow by default, stop following on first click.
   const followRef = useRef(true)
-  const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda' | 'posts'>('chronicle')
+  const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda' | 'posts' | 'amanat'>('chronicle')
   const [, tick] = useState(0)
   const agentsRef = useRef<Map<string, Tracked>>(new Map())
 
+  /**
+   * Counter the Amanat board watches. Bumped when a task-bearing event lands
+   * so the board refetches immediately instead of waiting out its 15s poll.
+   *
+   * A counter rather than the parsed task: the server owns the lifecycle fold
+   * (server/tasks.js), and re-deriving lanes here would be a second
+   * implementation of the same rules, free to disagree with the chain.
+   */
+  const [taskNudge, setTaskNudge] = useState(0)
+
   const onEvent = useCallback((e: HermesEnvelope) => {
+    // Task-bearing events move the Amanat board. Checked before the agent
+    // lookup below, because `task_update` need not name an agent and would
+    // otherwise be dropped by the early return.
+    if (e.type === 'task_update' || e.type === 'a2a_task_in' || e.type === 'a2a_task_out') {
+      setTaskNudge((n) => n + 1)
+    }
+
     const who = agentForEnvelope(e)
     if (!who) return
     const prev = agentsRef.current.get(who)
@@ -136,6 +155,7 @@ export const SectApp: React.FC = () => {
   // socket so there is one connection, not a second one for chat.
   const sabda = useSabda()
   const posts = useOutposts()
+  const amanat = useAmanat({ nudge: taskNudge })
   const { connected, offline, events, serverVersion, rttMs } = useOfficeSocket({
     onEvent,
     onChatDelta: sabda.onChatDelta,
@@ -403,9 +423,20 @@ export const SectApp: React.FC = () => {
             aria-selected={tab === 'posts'}
             onClick={() => setTab('posts')}
           >Pos Jaga</button>
+          <button
+            type="button" role="tab" className="sect-tab"
+            aria-selected={tab === 'amanat'}
+            onClick={() => setTab('amanat')}
+          >
+            {/* The blocked count rides on the tab so a task waiting on the
+                operator is visible without opening the panel. */}
+            Amanat{amanat.blocked > 0 ? ` (${amanat.blocked})` : ''}
+          </button>
         </div>
 
-        {tab === 'posts' ? (
+        {tab === 'amanat' ? (
+          <Amanat board={amanat} />
+        ) : tab === 'posts' ? (
           <Outposts
             outposts={posts.outposts}
             problems={posts.problems}

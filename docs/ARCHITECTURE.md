@@ -36,12 +36,12 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1306   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1362   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     602   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
-eventbus.js   431   validasi, clamp, REDAKSI, rate limit, ring buffer
+eventbus.js   458   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       403   Fase 1 — OTel GenAI → event Hermes
-ledger.js     383   Fase 4 — rantai hash append-only
+ledger.js     393   Fase 4 — rantai hash append-only
 standup.js    465   Fase 14 — bacaan pagi; deterministik, tanpa panggilan model
 kiosk.js      269   Fase 13 — layar dinding, teredaksi-tamu saat dibangun
 replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
@@ -139,6 +139,7 @@ dan keduanya harus diperiksa saat menambah endpoint.
 | GET | `/burn` | `requireAny` | angka USD **dinolkan** untuk guest |
 | POST | `/budget/check` | `requireAuth` | **200 walau ditolak** |
 | GET | `/policy` | `requireAny` | guest: room/label/trust/state/occupants saja |
+| GET | `/tasks` | `requireAny` | Amanat; guest: judul & repo **diredaksi**, jumlah per jalur tetap terlihat |
 | POST | `/policy/check` | `requireAuth` | rate limit 600/mnt, dicatat ke ledger |
 | GET | `/approvals` | `requireAny` | guest: tanpa `agent`/`tool`, `redacted:true` |
 | GET | `/approvals/:id` | `requireAuth` | bridge+owner; guest **403** |
@@ -256,8 +257,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **383** | `npm test` |
-| Frontend | **184** | `cd frontend && npx vitest run` |
+| Backend | **407** | `npm test` |
+| Frontend | **195** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

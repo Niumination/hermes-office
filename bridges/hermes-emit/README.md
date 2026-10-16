@@ -166,6 +166,38 @@ perintah.
 Sudah ada `bridges/mac-relay/` yang merelay audit A2A dari berkas log. Modul
 ini untuk kode yang bisa Anda sunting langsung; keduanya bisa jalan bersamaan.
 
+### 4b. Papan Amanat — "sedang mengerjakan apa"
+
+Ini yang mengisi tab **Amanat**. Tanpa ini kantor bisa menunjukkan agen Anda
+sibuk, tapi tidak pernah sedang mengerjakan apa.
+
+```python
+# perintah masuk → amanat lahir
+he.emit_task_update("T-401", "submitted",
+                    title="repo lightvela: perbaiki build",
+                    agent="cloud", origin="telegram", repo="lightvela")
+
+he.emit_task_update("T-401", "working", agent="cloud")
+
+# agen berhenti menunggu jawaban Anda — muncul di jalur TERTAHAN
+he.emit_task_update("T-401", "input_required", agent="cloud")
+
+he.emit_task_update("T-401", "completed", agent="cloud")
+```
+
+`task_id` boleh apa saja asal stabil sepanjang hidup amanat — id pesan
+Telegram, id tugas A2A, atau UUID Anda sendiri.
+
+`origin` menjawab **dari mana perintah datang** (`telegram`, `whatsapp`,
+`desktop`, `a2a`, `cron`) — bukan mesin mana yang merelainya. Kantor memakainya
+untuk memperlihatkan cara Anda sebenarnya memberi perintah.
+
+`title` tampil apa adanya bagi pemilik dan **diredaksi untuk tamu**, jadi isi
+label pendek — bukan seluruh prompt.
+
+Amanat bertahan melewati restart: transisinya dicatat ke rantai dan papan
+dibangun ulang dengan melipatnya saat boot.
+
 ### 5. Alat yang dipakai agen
 
 Kalau runtime agen Anda punya kait sebelum/sesudah pemanggilan alat:

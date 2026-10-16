@@ -17,6 +17,12 @@ export const KNOWN_EVENT_TYPES = [
   "mcp_call",
   "a2a_task_in",
   "a2a_task_out",
+  // Amanat: what the fleet is working on. A2A already carries task identity,
+  // but most work in this ecosystem starts from a Telegram or WhatsApp
+  // message, which has no A2A envelope. This is the shape a gateway uses to
+  // say "that message became task T" so the board is not blind to the way the
+  // operator actually gives orders.
+  "task_update",
   "cron_fired",
   "git_push",
   "channel_msg",
@@ -39,13 +45,19 @@ export const KNOWN_EVENT_TYPES = [
 const KNOWN_SET = new Set(KNOWN_EVENT_TYPES);
 
 // office_chat is internal-only, never accepted from /event (EVENTS.md §2)
-const INTERNAL_ONLY = new Set([
+// Exported so the contract has exactly one definition. bridges/hermes-emit
+// keeps a parallel allow-list of what a bridge may post, and tests/tasks.test.js
+// asserts the two agree — a drift here once meant every `task_update` was
+// silently discarded by the emitter while the server was ready to accept it.
+export const INTERNAL_ONLY_TYPES = [
   "office_chat",
   "budget_state",
   "agent_moved",
   "approval_requested",
   "approval_resolved",
-]);
+];
+
+const INTERNAL_ONLY = new Set(INTERNAL_ONLY_TYPES);
 
 // ---------------------------------------------------------------------------
 // Clamping (EVENTS.md §1: strings max 500, chat text max 4000)
@@ -145,7 +157,12 @@ const SCHEMAS = {
   mcp_call: (b) => (b.server && b.tool ? null : "server + tool required"),
   a2a_task_in: (b) => (b.dest ? null : "dest required"),
   a2a_task_out: (b) => (b.origin ? null : "origin required"),
-  cron_fired: (b) => (b.job ? null : "job required"),
+    task_update: (b) => {
+      if (!b.taskId) return "taskId required";
+      if (b.state && !A2A_STATES.has(b.state)) return `Invalid task_update.state: ${b.state}`;
+      return null;
+    },
+    cron_fired: (b) => (b.job ? null : "job required"),
   git_push: (b) => (b.repo ? null : "repo required"),
   channel_msg: (b) => (b.platform ? null : "platform required"),
   agent_status: (b) => (b.agent ? null : "agent required"),
@@ -332,6 +349,16 @@ export function sanitizeForGuest(ev) {
   }
   if (ev.type === "a2a_task_in" || ev.type === "a2a_task_out") {
     return { ...ev, summary: "[redacted]" };
+  }
+  // A task title is usually "<client repo>: <what is wrong with it>", which is
+  // the most commercially sensitive string the office handles. A guest may see
+  // that work is moving and that something is blocked; never what it is.
+  if (ev.type === "task_update") {
+    const out = { ...ev };
+    if (out.title) out.title = "[redacted]";
+    if (out.summary) out.summary = "[redacted]";
+    if (out.repo) out.repo = "[redacted]";
+    return out;
   }
   if (ev.type === "office_chat") {
     return { type: "office_chat", activity: true, source: ev.source, ts: ev.ts };

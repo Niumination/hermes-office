@@ -24,6 +24,14 @@ test("validates every known event type with golden payload", () => {
     mcp_call: { server: "github-mcp", tool: "list_issues", agentId: "cloud" },
     a2a_task_in: { dest: "cloud", peer: "mac", taskId: "task-1", summary: "s" },
     a2a_task_out: { origin: "mac", peer: "cloud", state: "completed", summary: "s" },
+    task_update: {
+      taskId: "T-1",
+      state: "input_required",
+      title: "repo x: perbaiki build",
+      agent: "cloud",
+      origin: "telegram",
+      repo: "x",
+    },
     cron_fired: { job: "price-monitor", dest: "telegram", ok: true },
     git_push: { repo: "brain", privat: true, author: "zaryu", commits: 2, message: "m", url: "https://github.com/x/y" },
     channel_msg: { platform: "telegram", channelType: "group", direction: "in", agent: "cloud" },
@@ -66,7 +74,19 @@ test("unknown type rejected; office_chat internal-only; missing fields rejected"
   assert.match(validateEvent({ type: "office_chat" }), /internal-only/);
   assert.match(validateEvent({ type: "agent_spawned" }), /agent.name required/);
   assert.match(validateEvent({ type: "channel_msg", platform: "t", text: "secret" }), /must not contain text/);
-  assert.match(validateEvent({ type: "a2a_task_out", origin: "mac", state: "bogus" }), /Invalid/);
+    assert.match(validateEvent({ type: "a2a_task_out", origin: "mac", state: "bogus" }), /Invalid/);
+    assert.match(validateEvent({ type: "task_update" }), /taskId required/);
+    assert.match(validateEvent({ type: "task_update", taskId: "T", state: "bogus" }), /Invalid/);
+    // A guest must not learn what a task is about — the title is usually
+    // "<client repo>: <what is wrong with it>".
+    {
+      const veiled = sanitizeForGuest({
+        type: "task_update", taskId: "T", title: "repo rahasia: bocor", repo: "rahasia",
+      });
+      assert.equal(veiled.title, "[redacted]");
+      assert.equal(veiled.repo, "[redacted]");
+      assert.equal(veiled.taskId, "T", "the task must still be countable");
+    }
   assert.match(validateEvent({ type: "agent_status", agent: "mac", state: "bogus" }), /Invalid/);
   assert.match(validateEvent({ type: "service_status", host: "cloud" }), /host \+ unit \+ state required/);
   assert.match(validateEvent({ type: "service_status", host: "cloud", unit: "u", state: "bogus" }), /Invalid/);
