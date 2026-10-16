@@ -95,9 +95,10 @@ export function sectLadder(rooms: Record<string, PolicyRoomLike>): SectRung[] {
 /**
  * Can a viewer holding `viewerTier` enter this rung?
  *
- * The office already does this server-side: a guest token gets 403 on
- * /ledger, /dossier, /standup, /approvals and /replay, and the kiosk
- * downgrades itself. This is the same rule, so the UI can refuse to draw a
+ * The office already does this server-side, and since 9c894ba it does it in
+ * one place rather than a dozen: there is no guest token and no kiosk to
+ * downgrade itself, so a request either carries the owner session or gets
+ * 401. This is the same rule client-side, letting the UI refuse to draw a
  * hall it would not be allowed to read — rather than drawing it and hoping
  * the fetch fails.
  */

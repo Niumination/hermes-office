@@ -22,15 +22,15 @@ const API_PORT = process.env.OFFICE_PORT || '7333'
   // Keeping it as one explicit list, rather than scattered entries, is what
   // makes an omission visible on review.
   //
-  // Third time: /kiosk. The sect interface calls it to bootstrap a guest
-  // session, and `GET /kiosk` is one of only TWO routes that mint one — the
-  // other is `GET /`, which Vite itself serves in dev and which therefore
-  // never reaches the office server. Without this entry the fetch returned
-  // Vite's index.html with a 200 and no Set-Cookie, so the ladder stayed null
-  // and the entire redacted-guest surface was dead under `npm run dev` while
-  // working in production. Proven, not guessed: through Vite the response was
-  // 200 text/html with zero Set-Cookie headers; straight to :7333 it was 200
-  // with one.
+  // Third time it was /kiosk, and that entry has now been deleted along with
+  // the route (guest mode was withdrawn in 9c894ba). The lesson outlived the
+  // route and is the reason this comment stays: a path missing from this list
+  // is served Vite's own index.html with a 200, so the caller receives HTML
+  // where it expected JSON and no Set-Cookie where it expected a session —
+  // a failure that looks like working software in dev and is invisible to
+  // every gate that only reads files at rest.
+  //
+  // Session minting is now `POST /auth/session` under '/auth', below.
   const HTTP_ROUTES = [
     // core
     '/chat', '/roster', '/event', '/health', '/presence', '/github', '/auth',
@@ -41,8 +41,6 @@ const API_PORT = process.env.OFFICE_PORT || '7333'
     // Fase 6 — permukaan bukti (gerbang 17 menangkap ketiadaannya
     // dalam hitungan detik, yang memang gunanya).
     '/proof',
-    // session: the only proxied route that can mint an auto-guest cookie
-    '/kiosk',
   // Fase 1 — OTLP ingest
   '/v1',
   // Fase 2 — burn rate

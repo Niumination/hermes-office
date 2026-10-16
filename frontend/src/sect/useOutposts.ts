@@ -96,8 +96,10 @@ export function useOutposts(opts: UseOutpostsOptions = {}): OutpostsState {
       const res = await doFetch('/desks', { credentials: 'include' })
       if (!alive.current) return
       if (!res.ok) {
-        // 401 on a cold load means no session has been minted yet
-        // (SectApp touches /kiosk for that), not that we are forbidden.
+        // 401 on a cold load means no session has been minted yet — the
+        // owner has not signed in through Warrant — not that we are
+        // forbidden. Either way the honest reading is "not known", never
+        // "none": `stale` is set and no count is invented.
         failures.current += 1
         setStale(true)
         return

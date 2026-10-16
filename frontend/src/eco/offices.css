@@ -1,0 +1,413 @@
+/*
+ * offices.css — the two workplaces.
+ *
+ * The donghua palette survives: jade, cinnabar, gold, and the quiet dark the
+ * office already had. What does not survive is donghua as STRUCTURE. Place
+ * names now come from the owner's filesystem, so the theme is free to be what
+ * it always should have been — colour and calm, not a claim about the world.
+ */
+
+.eco-app {
+  --jade: oklch(76% 0.145 168);
+  --cinnabar: oklch(70.5% 0.185 28);
+  --gold: oklch(83% 0.14 86);
+
+  --ink-0: oklch(15.5% 0.012 250);
+  --ink-1: oklch(19% 0.013 250);
+  --ink-2: oklch(23% 0.015 250);
+  --line: oklch(32% 0.017 250);
+  --line-soft: oklch(27% 0.015 250);
+  --txt: oklch(91% 0.008 250);
+  --dim: oklch(66% 0.012 250);
+  --faint: oklch(50% 0.012 250);
+
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  background: var(--ink-0);
+  color: var(--txt);
+  font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  padding: 22px 26px 60px;
+}
+
+/* ---------- office switch ---------- */
+
+.eco-top {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.eco-switch {
+  display: flex;
+  gap: 6px;
+  padding: 5px;
+  background: var(--ink-1);
+  border: 1px solid var(--line);
+  border-radius: 11px;
+}
+
+.eco-switch__tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 17px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--dim);
+  font: 600 14px/1 inherit;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+
+.eco-switch__tab:hover { color: var(--txt); }
+
+.eco-switch__tab.is-on {
+  background: var(--jade);
+  color: var(--ink-0);
+}
+
+.eco-switch__icon { font-size: 16px; }
+
+.eco-top__meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font: 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--faint);
+}
+
+.eco-top__meta code { color: var(--dim); }
+.eco-sep { color: var(--line); }
+
+.eco-purpose {
+  color: var(--dim);
+  font-size: 13.5px;
+  margin-bottom: 14px;
+}
+
+.eco-banner {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 9px;
+  background: var(--ink-1);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--dim);
+  margin-bottom: 20px;
+  max-width: 96ch;
+}
+
+.eco-banner b { color: var(--txt); }
+
+/* ---------- layout ---------- */
+
+.eco-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 286px;
+  gap: 20px;
+  align-items: start;
+}
+
+.eco-floor {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  min-width: 0;
+}
+
+/* ---------- room ---------- */
+
+.eco-room {
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--ink-1);
+  padding: 14px 16px 16px;
+}
+
+.eco-room--root {
+  border-color: color-mix(in oklab, var(--jade) 42%, var(--line));
+  background: linear-gradient(
+    168deg,
+    color-mix(in oklab, var(--jade) 7%, var(--ink-1)),
+    var(--ink-1) 62%
+  );
+}
+
+.eco-room__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.eco-room__icon { font-size: 17px; }
+
+.eco-room__name {
+  font-size: 16px;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+}
+
+.eco-room--root .eco-room__name { color: var(--jade); }
+
+.eco-room__badge {
+  font: 600 10px/1 ui-monospace, monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: var(--jade);
+  color: var(--ink-0);
+}
+
+.eco-room__path {
+  font: 11.5px/1 ui-monospace, monospace;
+  color: var(--faint);
+}
+
+.eco-room__count {
+  margin-left: auto;
+  font: 11.5px/1 ui-monospace, monospace;
+  color: var(--faint);
+}
+
+.eco-room__note {
+  font-size: 12px;
+  color: var(--faint);
+  margin-top: 5px;
+}
+
+.eco-room__empty {
+  margin-top: 11px;
+  font-size: 12.5px;
+  color: var(--faint);
+  font-style: italic;
+}
+
+.eco-room__desks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(206px, 1fr));
+  gap: 9px;
+  margin-top: 12px;
+}
+
+/* ---------- desk ---------- */
+
+.eco-desk {
+  border: 1px solid var(--line-soft);
+  border-radius: 9px;
+  background: var(--ink-2);
+  padding: 10px 11px 9px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 92px;
+}
+
+.eco-desk--seated {
+  border-color: var(--jade);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--jade) 32%, transparent);
+}
+
+.eco-desk--private {
+  border-style: dashed;
+  border-color: color-mix(in oklab, var(--gold) 38%, var(--line));
+  background: repeating-linear-gradient(
+    135deg,
+    var(--ink-2),
+    var(--ink-2) 7px,
+    oklch(21% 0.014 250) 7px,
+    oklch(21% 0.014 250) 14px
+  );
+}
+
+.eco-desk__top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.eco-desk__name {
+  font: 600 13px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--txt);
+  word-break: break-word;
+}
+
+.eco-desk__lock { font-size: 11px; }
+
+.eco-desk__port {
+  margin-left: auto;
+  font: 11px/1 ui-monospace, monospace;
+  color: var(--gold);
+}
+
+.eco-desk__note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--faint);
+}
+
+.eco-desk__sealed {
+  font-size: 11px;
+  color: var(--gold);
+  font-style: italic;
+}
+
+.eco-desk__seat {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 7px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.eco-seat__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--jade);
+  flex: none;
+}
+
+.eco-seat__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--jade);
+}
+
+.eco-seat__pin { font-size: 10px; }
+
+.eco-desk__seat--empty .eco-seat__name {
+  font-weight: 400;
+  font-style: italic;
+  color: var(--faint);
+}
+
+/* ---------- roster rail ---------- */
+
+.eco-rail {
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--ink-1);
+  padding: 15px 15px 17px;
+  position: sticky;
+  top: 0;
+}
+
+.eco-rail__title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 640;
+}
+
+.eco-rail__n {
+  margin-left: auto;
+  font: 600 12px/1 ui-monospace, monospace;
+  color: var(--faint);
+}
+
+.eco-rail__sub {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--faint);
+  margin: 6px 0 12px;
+}
+
+.eco-rail__sub code {
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.eco-rail__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eco-agent {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  background: var(--ink-2);
+  border: 1px solid transparent;
+  flex-wrap: wrap;
+}
+
+.eco-agent--primary { border-color: color-mix(in oklab, var(--gold) 40%, transparent); }
+.eco-agent.is-seated { border-color: var(--jade); }
+
+.eco-agent__name {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.eco-agent--primary .eco-agent__name { color: var(--gold); }
+.eco-agent.is-seated .eco-agent__name { color: var(--jade); }
+
+.eco-agent__tag {
+  font: 600 9.5px/1 ui-monospace, monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--gold) 20%, var(--ink-1));
+  color: var(--gold);
+}
+
+.eco-agent__tag--pin {
+  background: color-mix(in oklab, var(--cinnabar) 20%, var(--ink-1));
+  color: var(--cinnabar);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.eco-agent__topic {
+  margin-left: auto;
+  font: 11px/1 ui-monospace, monospace;
+  color: var(--faint);
+}
+
+.eco-rail__says {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.eco-rail__says h4 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 8px;
+}
+
+.eco-says {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--jade);
+  padding: 7px 9px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--jade) 9%, var(--ink-2));
+}
+
+.eco-says--none {
+  color: var(--faint);
+  background: var(--ink-2);
+  font-style: italic;
+}
+
+@media (max-width: 1080px) {
+  .eco-cols { grid-template-columns: minmax(0, 1fr); }
+  .eco-rail { position: static; }
+}
