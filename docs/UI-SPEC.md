@@ -52,17 +52,21 @@ Grid tiga kolom. Rail memakai `flex-direction: column-reverse` sehingga aula
 berperingkat tertinggi berada di atas secara harfiah — urutan DOM tetap dari
 rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 
-**Breakpoint.** 1180 px (rail menyempit), 860 px (kolom bertumpuk).
+**Breakpoint.** 1180 px (rail menyempit, panel kanan tersembunyi), 860 px (rail tersembunyi, lajur papan menggulir mendatar).
+
+**Kerangka.** Kantor adalah halaman. Kedua rail dapat ditutup lewat tombol mengambang di atas kanvas; kolom grid `auto` sehingga lebar yang dilepas rail jatuh ke panggung, bukan jadi celah. Status bar duduk di kaki panggung. Amanat dibuka sebagai hamparan mengambang, bukan tab.
 
 ---
 
 ## 3. Bahasa visual
 
-| `sect.css` | 1742 | seluruh sistem desain — token, tata letak, komponen, gerak |
+| `sect.css` | 2214 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
-| 37 token OKLCH | seluruh sistem desain
-| `SectApp` (490 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
-| `Hall` (160 baris) | aula, awan, Murid, tabir Lenyap di Balik Kabut |
+| 43 token OKLCH | seluruh sistem desain
+| `SectApp` (575 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
+| `Hall` (222 baris) | aula, awan, Murid berdiri di denah, papan nama, tabir Lenyap di Balik Kabut |
+| `AmanatBoard` (160 baris) | papan amanat mengambang — lajur mendatar, backdrop redup |
+| `stations` (135 baris) | peta stasiun per arketipe: koordinat lantai, skala kedalaman, urutan gambar |
 | `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |
 | `QiRing` (95 baris) | cincin Tenaga, tiga keadaan |

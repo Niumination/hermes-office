@@ -28,14 +28,14 @@ import { platePath } from '../theme/plates'
 import { ROOMS, type RoomId } from '../rooms'
 import { useNiuMode, toggleNiuMode, useLang, toggleLang, getStrings } from '../hermes/niu'
 import { fetchRoster, type RosterAgent } from './rosterClient'
-import { spriteFor } from './cast'
+import { spriteFor, archetypeFor } from './cast'
 import RealmRail from './RealmRail'
 import Hall, { type Cultivator } from './Hall'
 import Chronicle from './Chronicle'
 import Sabda from './Sabda'
 import Outposts from './Outposts'
 import { useOutposts } from './useOutposts'
-import Amanat from './Amanat'
+import AmanatBoard from './AmanatBoard'
 import { useAmanat } from './useAmanat'
 import { useSabda } from './useSabda'
 import QiRing from './QiRing'
@@ -108,7 +108,7 @@ export const SectApp: React.FC = () => {
   // look asleep; yanking the view around after someone has deliberately
   // navigated is worse. So: follow by default, stop following on first click.
   const followRef = useRef(true)
-  const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda' | 'posts' | 'amanat'>('chronicle')
+  const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda' | 'posts'>('chronicle')
   const [, tick] = useState(0)
   const agentsRef = useRef<Map<string, Tracked>>(new Map())
 
@@ -121,6 +121,23 @@ export const SectApp: React.FC = () => {
    * implementation of the same rules, free to disagree with the chain.
    */
   const [taskNudge, setTaskNudge] = useState(0)
+
+  /**
+   * Panel visibility, following The-Office's shell: the office is the page,
+   * and the side panels are furniture you can move out of the way. Both rails
+   * used to be permanent, which left the hall — the only part that shows the
+   * ecosystem actually working — squeezed into the middle third of a 1440px
+   * screen.
+   */
+  const [railOpen, setRailOpen] = useState(true)
+  const [scrollOpen, setScrollOpen] = useState(true)
+
+  /**
+   * Amanat opens as a floating overlay rather than a tab. A board wants
+   * horizontal lanes and the right rail is ~330px; as a modal it gets the
+   * full width and the lanes can finally sit side by side.
+   */
+  const [boardOpen, setBoardOpen] = useState(false)
 
   const onEvent = useCallback((e: HermesEnvelope) => {
     // Task-bearing events move the Amanat board. Checked before the agent
@@ -297,6 +314,7 @@ export const SectApp: React.FC = () => {
         state,
         qi: burn,
         sprite: spriteFor(t.id, state, roleOf[t.id]),
+        archetype: archetypeFor(t.id, roleOf[t.id]),
       }
     })
 
@@ -322,6 +340,7 @@ export const SectApp: React.FC = () => {
         state: 'ghost' as const,
         qi: burn,
         sprite: spriteFor(a.id, 'ghost', a.role),
+        archetype: archetypeFor(a.id, a.role),
       }))
   }, [rosterAgents, tracked, presence, room, ladder, burn])
 
@@ -382,23 +401,94 @@ export const SectApp: React.FC = () => {
         </button>
       </header>
 
-      <RealmRail
-        ladder={ladder}
-        current={room}
-        occupancy={occupancy}
-        onEnter={(r) => { followRef.current = false; setRoom(r) }}
-      />
+      {railOpen && (
+        <RealmRail
+          ladder={ladder}
+          current={room}
+          occupancy={occupancy}
+          onEnter={(r) => { followRef.current = false; setRoom(r) }}
+        />
+      )}
 
-      <Hall
-        room={room}
-        hall={hall}
-        plate={plate}
-        locked={locked}
-        guest={isGuest}
-        cultivators={cultivators}
-        ghosts={ghosts}
-      />
+      {/* The office is the page. Everything else is furniture around it. */}
+      <div className="sect-main">
+        <Hall
+          room={room}
+          hall={hall}
+          plate={plate}
+          locked={locked}
+          guest={isGuest}
+          cultivators={cultivators}
+          ghosts={ghosts}
+        />
 
+        {/* Floating controls over the hall, as in The-Office's shell. */}
+        <div className="sect-float sect-float--left">
+          <button
+            type="button"
+            className="sect-float__btn"
+            aria-pressed={railOpen}
+            onClick={() => setRailOpen((v) => !v)}
+            title={railOpen ? 'Sembunyikan Tataran' : 'Tampilkan Tataran'}
+          >
+            {railOpen ? '◀' : '▶'} Tataran
+          </button>
+        </div>
+
+        <div className="sect-float sect-float--right">
+          <button
+            type="button"
+            className={`sect-float__btn${amanat.blocked > 0 ? ' sect-float__btn--alert' : ''}`}
+            onClick={() => setBoardOpen(true)}
+            title="Papan Amanat — apa yang sedang dikerjakan"
+          >
+            Amanat
+            <span className="sect-float__count">{amanat.total}</span>
+            {amanat.blocked > 0 && (
+              <span className="sect-float__alert">{amanat.blocked} menunggu</span>
+            )}
+          </button>
+          <button
+            type="button"
+            className="sect-float__btn"
+            aria-pressed={scrollOpen}
+            onClick={() => setScrollOpen((v) => !v)}
+            title={scrollOpen ? 'Sembunyikan panel' : 'Tampilkan panel'}
+          >
+            {scrollOpen ? '▶' : '◀'} Panel
+          </button>
+        </div>
+
+        {/* Status strip along the foot of the office. */}
+        <footer className="sect-status">
+          <span className={`sect-status__dot ${connected ? 'is-live' : 'is-dead'}`} />
+          <span className="sect-status__item">
+            {connected ? 'terhubung' : offline ? 'luring' : 'menyambung…'}
+            {connected && rttMs != null && ` · ${rttMs} ms`}
+          </span>
+          <span className="sect-status__sep" />
+          <span className="sect-status__item">
+            {cultivators.length} di balai ini
+          </span>
+          {ghosts.length > 0 && (
+            <span className="sect-status__item sect-status__item--dim">
+              {ghosts.length} belum terlihat
+            </span>
+          )}
+          <span className="sect-status__sep" />
+          <span className="sect-status__item">
+            {amanat.total} amanat
+            {amanat.blocked > 0 && (
+              <strong className="sect-status__alert"> · {amanat.blocked} menunggu Anda</strong>
+            )}
+          </span>
+          {amanat.stale && (
+            <span className="sect-status__item sect-status__item--dim">papan tak tersambung</span>
+          )}
+        </footer>
+      </div>
+
+      {scrollOpen && (
       <aside className="sect-scroll">
         <Writ />
 
@@ -423,20 +513,9 @@ export const SectApp: React.FC = () => {
             aria-selected={tab === 'posts'}
             onClick={() => setTab('posts')}
           >Pos Jaga</button>
-          <button
-            type="button" role="tab" className="sect-tab"
-            aria-selected={tab === 'amanat'}
-            onClick={() => setTab('amanat')}
-          >
-            {/* The blocked count rides on the tab so a task waiting on the
-                operator is visible without opening the panel. */}
-            Amanat{amanat.blocked > 0 ? ` (${amanat.blocked})` : ''}
-          </button>
         </div>
 
-        {tab === 'amanat' ? (
-          <Amanat board={amanat} />
-        ) : tab === 'posts' ? (
+        {tab === 'posts' ? (
           <Outposts
             outposts={posts.outposts}
             problems={posts.problems}
@@ -482,9 +561,15 @@ export const SectApp: React.FC = () => {
             })}
           </div>
         )}
-      </aside>
-    </div>
-  )
-}
+        </aside>
+      )}
+
+      {/* Amanat as a floating board — the pattern The-Office uses for its
+          Kanban. A modal gets the full width, so the lanes finally sit side
+          by side instead of stacking in a 330px rail. */}
+      {boardOpen && <AmanatBoard board={amanat} onClose={() => setBoardOpen(false)} />}
+      </div>
+    )
+  }
 
 export default SectApp

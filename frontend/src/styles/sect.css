@@ -178,9 +178,17 @@ body {
 /* The app frame: rail, stage, scroll. One grid, no floats, no absolute
    positioning for layout — the old office positioned everything by percentage,
    which is why it could never be responsive. */
+/* The shell, following The-Office: the office is the page, the rails are
+   furniture you can move out of the way.
+
+   Was a fixed `252px 1fr 332px` grid, which spent 584px of every screen on
+   chrome and left the hall — the only surface that shows the ecosystem
+   actually working — squeezed into the middle third. Columns are now `auto`
+   so a closed rail gives its width back to the office instead of leaving a
+   gap. */
 .sect-app {
   display: grid;
-  grid-template-columns: 252px minmax(0, 1fr) 332px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-rows: 52px minmax(0, 1fr);
   grid-template-areas:
     'bar bar bar'
@@ -297,6 +305,7 @@ body {
 
 .sect-rail {
   grid-area: rail;
+  width: 252px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -429,8 +438,19 @@ body {
 
 /* --- 5. hall: the stage -------------------------------------------------- */
 
-.sect-stage {
+/* The-Office's `.pixel-office-main`: flex:1, position:relative, with the
+   canvas filling it and controls floating on top. */
+.sect-main {
   grid-area: stage;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sect-stage {
+  flex: 1;
   position: relative;
   min-width: 0;
   min-height: 0;
@@ -493,16 +513,32 @@ body {
     radial-gradient(46% 22% at 48% 86%, oklch(92% 0.01 240 / 0.26), transparent 74%);
 }
 
-/* The hall's own title, set into the scene rather than floating over it. */
+/* The hall's own title, set into the scene rather than floating over it.
+
+   Moved off the bottom-left once disciples started standing on the floor:
+   the plate sat exactly where the front row stands, so the room name and the
+   nearest agent's label overprinted each other. It now sits below the
+   floating controls, where the scene is sky and architecture. */
 .sect-hall__plate {
   position: absolute;
   left: var(--sect-sp-5);
-  bottom: var(--sect-sp-5);
+  top: calc(var(--sect-sp-5) + 34px);
   display: flex;
   align-items: flex-end;
   gap: var(--sect-sp-3);
   z-index: 3;
   pointer-events: none;
+  padding: 6px 16px 9px;
+  border-radius: 14px;
+  /* At the foot of the scene the plate had dark floor behind it. At the top
+     it can land on a sunlit roof, so it carries its own scrim rather than
+     relying on whatever the artwork happens to put there. */
+  background: radial-gradient(
+    120% 150% at 10% 50%,
+    oklch(0% 0 0 / 0.62) 0%,
+    oklch(0% 0 0 / 0.34) 55%,
+    oklch(0% 0 0 / 0) 100%
+  );
 }
 
 .sect-hall__name {
@@ -520,7 +556,7 @@ body {
   font-family: var(--sect-face-display);
   font-size: var(--sect-t-lg);
   color: var(--sect-paper);
-  text-shadow: 0 1px 12px oklch(0% 0 0 / 0.9);
+  text-shadow: 0 1px 12px oklch(0% 0 0 / 0.9), 0 1px 3px oklch(0% 0 0 / 0.95);
 }
 
 .sect-hall__band {
@@ -554,16 +590,27 @@ body {
    with an aura whose colour is their qi. Presence is the fact; the position is
    just a layout. */
 
+/* The court is the floor, not a shelf.
+
+   It used to be a centred flex row pinned to the bottom edge: every agent on
+   one line, shoulder to shoulder, with the painted room behind them as a
+   backdrop nobody stood in. Following The-Office, each archetype now holds a
+   fixed station across the floor (see sect/stations.ts) so the hall reads as
+   a place that is occupied, and so an agent is always where you last found
+   it.
+
+   The element itself spans the whole hall; the children are absolutely
+   positioned inside it by percentage. */
 .sect-court {
   position: absolute;
-  left: 0; right: 0; bottom: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: center;
-  gap: var(--sect-sp-4);
-  padding: 0 var(--sect-sp-5) calc(var(--sect-sp-6) + 30px);
+  inset: 0;
   z-index: 3;
+  pointer-events: none;
+}
+
+/* Children opt back in — the floor must not eat clicks meant for the hall. */
+.sect-court > * {
+  pointer-events: auto;
 }
 
 .sect-cul {
@@ -574,6 +621,34 @@ body {
   gap: 6px;
   width: 104px;
   animation: sect-arrive var(--sect-slow) var(--sect-ease) both;
+}
+
+/* A disciple standing at a station on the floor.
+
+   `left`/`top` come from stations.ts and mark the *feet*, so the figure is
+   translated up by its own height — otherwise everyone stands with their
+   navel on the floor line. `--cul-scale` is the depth cue: ~0.78 at the far
+   wall, 1.0 at the front edge. transform-origin is bottom centre so scaling
+   never lifts anyone off the ground. */
+.sect-cul--placed {
+  position: absolute;
+  transform: translate(-50%, -100%) scale(var(--cul-scale, 1));
+  transform-origin: bottom center;
+  margin: 0;
+  /* `.sect-cul` runs `sect-arrive` with fill-mode `both`, and that animation
+     ends on `transform: none`. An animated value beats a declared one in the
+     cascade, so the line above was silently discarded and every figure stood
+     half its own width to the right of its station — visible only once the
+     nameplates were measured against the feet. Placed figures therefore
+     animate with keyframes that carry the placement through. */
+  animation-name: sect-arrive-placed;
+}
+
+/* The ghost strip keeps the old flow layout: those agents are off the floor
+   on purpose, so they must not inherit station positioning. */
+.sect-court--ghosts .sect-cul {
+  position: relative;
+  transform: none;
 }
 
 .sect-cul__aura {
@@ -617,6 +692,29 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The nameplate layer: one chip per disciple, above every figure, anchored
+   to the same foot line so a plate always reads against its own feet. */
+.sect-court__plates {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+}
+
+.sect-court__plate {
+  position: absolute;
+  transform: translate(-50%, 5px);
+  padding: 1px 7px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--sect-paper);
+  text-shadow: 0 1px 6px oklch(0% 0 0 / 0.9);
+  background: oklch(0% 0 0 / 0.5);
+  border-radius: 999px;
+  backdrop-filter: blur(2px);
 }
 
 .sect-cul__task {
@@ -752,18 +850,26 @@ body {
   line-height: 1.35;
 }
 
+/* The court is now `inset: 0`, so the empty caption has to place itself
+   rather than ride a flex row's centring. Sits on the floor line, not the
+   middle of the wall. */
 .sect-court__empty {
+  position: absolute;
+  left: 50%;
+  top: 76%;
+  transform: translate(-50%, -50%);
+  margin: 0;
   font-family: var(--sect-face-script);
   font-size: var(--sect-t-lg);
   color: var(--sect-mist);
   text-shadow: 0 1px 12px oklch(0% 0 0 / 0.9);
-  padding-bottom: var(--sect-sp-5);
 }
 
 /* --- 7. chronicle -------------------------------------------------------- */
 
 .sect-scroll {
   grid-area: scroll;
+  width: 332px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -912,6 +1018,19 @@ body {
 @keyframes sect-arrive {
   from { opacity: 0; transform: translateY(10px) scale(0.96); }
   to   { opacity: 1; transform: none; }
+}
+
+/* Same arrival, but every keyframe keeps the station offset and depth scale
+   so the end state matches `.sect-cul--placed` instead of resetting it. */
+@keyframes sect-arrive-placed {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%) translateY(10px) scale(calc(var(--cul-scale, 1) * 0.96));
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(var(--cul-scale, 1));
+  }
 }
 
 @keyframes sect-enter {
@@ -1618,6 +1737,355 @@ body {
   font-size: 0.95em;
 }
 
+/* --- 12c. floating controls, status strip, amanat board -------------------
+
+   Three pieces lifted from The-Office's shell, adapted:
+
+   - `.sect-float`  — buttons that sit ON the office rather than beside it
+                      (their `📊 Task Board` button, absolutely positioned
+                      over `.pixel-office-main`). Keeps chrome off the rails.
+   - `.sect-status` — their StatusBar along the foot of the canvas: live
+                      state, who is here, what is waiting. The one place
+                      a number appears without opening anything.
+   - `.amanat-*`    — their Kanban modal: fixed overlay, dimmed backdrop,
+                      board at 90% / max 1200px / max-height 80vh, fade-in
+                      plus slide-up, horizontal columns.
+   -------------------------------------------------------------------- */
+
+.sect-float {
+  position: absolute;
+  top: 14px;
+  z-index: 40;
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.sect-float--left { left: 14px; }
+.sect-float--right { right: 14px; }
+
+.sect-float__btn {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sect-mist);
+  background: color-mix(in oklch, var(--sect-ink-0) 82%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.sect-float__btn:hover {
+  color: var(--sect-gold);
+  border-color: color-mix(in oklch, var(--sect-gold) 46%, transparent);
+  background: color-mix(in oklch, var(--sect-ink-0) 94%, transparent);
+}
+
+.sect-float__btn:focus-visible {
+  outline: 2px solid var(--sect-gold);
+  outline-offset: 2px;
+}
+
+.sect-float__count {
+  min-width: 18px;
+  padding: 1px 5px;
+  font-size: 11px;
+  text-align: center;
+  color: var(--sect-ink-0);
+  background: var(--sect-mist);
+  border-radius: 999px;
+}
+
+/* A task waiting on the operator is the one thing allowed to shout. */
+.sect-float__btn--alert {
+  border-color: color-mix(in oklch, var(--sect-cinnabar) 60%, transparent);
+}
+
+.sect-float__btn--alert .sect-float__count {
+  color: var(--sect-ink-0);
+  background: var(--sect-cinnabar);
+}
+
+.sect-float__alert {
+  font-size: 11px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--sect-cinnabar);
+}
+
+/* --- status strip ------------------------------------------------------- */
+
+.sect-status {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 16px;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: color-mix(in oklch, var(--sect-mist) 78%, transparent);
+  border-top: 1px solid var(--sect-rule);
+  background: color-mix(in oklch, var(--sect-ink-1) 92%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.sect-status__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.sect-status__dot.is-live {
+  background: var(--sect-jade);
+  box-shadow: 0 0 7px color-mix(in oklch, var(--sect-jade) 70%, transparent);
+}
+
+.sect-status__dot.is-dead { background: var(--sect-cinnabar); }
+
+.sect-status__item--dim { opacity: 0.6; }
+
+.sect-status__sep {
+  width: 1px;
+  height: 12px;
+  background: var(--sect-rule);
+}
+
+.sect-status__alert { color: var(--sect-cinnabar); font-weight: 600; }
+
+/* --- amanat board (overlay) ---------------------------------------------- */
+
+.amanat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgb(0 0 0 / 0.68);
+  backdrop-filter: blur(3px);
+  animation: amanat-fade 160ms ease;
+}
+
+@keyframes amanat-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.amanat-board {
+  display: flex;
+  flex-direction: column;
+  width: 90%;
+  max-width: 1200px;
+  max-height: 80vh;
+  background: var(--sect-ink-1);
+  border: 1px solid var(--sect-rule);
+  border-radius: 12px;
+  box-shadow: 0 24px 72px rgb(0 0 0 / 0.55);
+  animation: amanat-rise 200ms cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+@keyframes amanat-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.amanat-board__head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 16px 20px 13px;
+  border-bottom: 1px solid var(--sect-rule);
+}
+
+.amanat-board__head h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--sect-gold);
+}
+
+.amanat-board__sub {
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: color-mix(in oklch, var(--sect-mist) 70%, transparent);
+}
+
+.amanat-board__alert { color: var(--sect-cinnabar); }
+.amanat-board__veil { opacity: 0.62; }
+
+.amanat-board__close {
+  margin-left: auto;
+  padding: 3px 9px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--sect-mist);
+  background: none;
+  border: 1px solid var(--sect-rule);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.amanat-board__close:hover {
+  color: var(--sect-cinnabar);
+  border-color: color-mix(in oklch, var(--sect-cinnabar) 50%, transparent);
+}
+
+.amanat-board__close:focus-visible {
+  outline: 2px solid var(--sect-gold);
+  outline-offset: 2px;
+}
+
+.amanat-board__empty {
+  padding: 46px 20px;
+  text-align: center;
+  color: color-mix(in oklch, var(--sect-mist) 62%, transparent);
+}
+
+.amanat-board__empty p { margin: 0 0 7px; }
+.amanat-board__hint { font-size: 12px; opacity: 0.74; }
+.amanat-board__hint code { font-size: 11px; opacity: 0.9; }
+
+/* The payoff: lanes side by side. */
+.amanat-board__cols {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  min-height: 0;
+}
+
+.amanat-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 192px;
+  min-height: 0;
+  background: color-mix(in oklch, var(--sect-ink-0) 54%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-radius: 9px;
+}
+
+.amanat-col__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--sect-rule);
+}
+
+.amanat-col__head h4 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--sect-mist) 84%, transparent);
+}
+
+.amanat-col__count {
+  margin-left: auto;
+  font-size: 11px;
+  color: color-mix(in oklch, var(--sect-mist) 58%, transparent);
+}
+
+/* Blocked is the lane that needs a human; it carries the only warm border. */
+.amanat-col--blocked { border-color: color-mix(in oklch, var(--sect-cinnabar) 42%, transparent); }
+.amanat-col--blocked .amanat-col__head h4 { color: var(--sect-cinnabar); }
+.amanat-col--done .amanat-col__head h4 { color: var(--sect-jade); }
+
+.amanat-col__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.amanat-col__empty {
+  margin: 10px 0;
+  text-align: center;
+  color: color-mix(in oklch, var(--sect-mist) 34%, transparent);
+}
+
+.amanat-card {
+  padding: 9px 11px;
+  background: color-mix(in oklch, var(--sect-ink-1) 92%, transparent);
+  border: 1px solid var(--sect-rule);
+  border-left: 2px solid color-mix(in oklch, var(--sect-mist) 28%, transparent);
+  border-radius: 7px;
+}
+
+.amanat-card--blocked { border-left-color: var(--sect-cinnabar); }
+
+.amanat-card__title {
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--sect-mist);
+  overflow-wrap: anywhere;
+}
+
+.amanat-card__foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 11px;
+  color: color-mix(in oklch, var(--sect-mist) 62%, transparent);
+}
+
+.amanat-card__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.amanat-card__avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0;
+  color: var(--sect-ink-0);
+  background: color-mix(in oklch, var(--sect-jade) 76%, transparent);
+  border-radius: 50%;
+}
+
+.amanat-card__age { margin-left: auto; flex: none; opacity: 0.72; }
+
+.amanat-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 5px;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: color-mix(in oklch, var(--sect-mist) 46%, transparent);
+}
+
+.amanat-card__repo { opacity: 0.82; }
+
 /* --- 13. breakpoints -----------------------------------------------------
 
    These live at the END of the file on purpose. A media query adds no
@@ -1631,16 +2099,20 @@ body {
    -------------------------------------------------------------------- */
 
 @media (max-width: 1180px) {
-  .sect-app { grid-template-columns: 212px minmax(0, 1fr) 0; }
+  /* Columns are `auto` now, so narrowing is a width change on the rail
+     itself rather than a template rewrite. */
+  .sect-rail { width: 212px; }
   .sect-scroll { display: none; }
+  .amanat-board { width: 95%; max-height: 86vh; }
 }
 
 @media (max-width: 860px) {
-  .sect-app {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'bar' 'stage';
-  }
   .sect-rail { display: none; }
+  .sect-float__btn { font-size: 11px; padding: 6px 10px; }
+  .sect-status { font-size: 11px; gap: 7px; }
+  /* Lanes scroll horizontally rather than crushing to unreadable widths. */
+  .amanat-board__cols { gap: 9px; padding: 11px; }
+  .amanat-col { min-width: 168px; flex: 0 0 168px; }
 }
 
 /* ---- Pos Jaga tahap 2: action buttons ----------------------------------- */

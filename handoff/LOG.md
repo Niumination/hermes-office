@@ -2549,3 +2549,57 @@ melampaui itu.
 
 Tes: frontend 148→178 (11 mutasi diuji, 11 tertangkap). Klaim dokumen
 103→114. Gerbang 17/17.
+
+## 029 · 2026-10-16 · Kantor jadi halaman: lantai, nameplate, dan papan yang mengambang
+
+Dua giliran sebelumnya menambah **Amanat** sebagai tab kelima di rail kanan.
+Koreksi pemilik: *"UI juga mengikuti pola seperti yang ada di the-office. Yang
+bisa digunakan dari UI saat ini hanya background office, yang lainnya perlu
+disesuaikan ulang."* Tab bukan kurang bagus — ia **bentuk yang salah**.
+
+### Apa yang diambil dari The-Office
+
+Klon `booya1986/The-Office` `500be1d` dibaca ulang untuk polanya, bukan
+kodenya (34 galat tipe, 0 tes — lihat BANDING-the-office). Tiga hal dipakai:
+
+| mereka | di sini |
+|---|---|
+| `.pixel-office` flex layar penuh, sidebar collapsible | `.sect-app` kolom grid `auto`; rail kiri/kanan dapat ditutup |
+| agen pada posisi tetap per peran di lantai | `stations.ts` — stasiun per **arketipe**, skala kedalaman 0,78→1,0 |
+| Kanban sebagai modal, bukan panel | `AmanatBoard` — hamparan, lajur mendatar, backdrop redup |
+| `StatusBar` di kaki kanvas | `.sect-status` — sambungan, siapa hadir, apa yang menunggu |
+
+Yang **tidak** diambil: seret-lepas antar kolom. Di sana papan itu milik
+operator, jadi menyeret kartu adalah perintah sungguhan. Di sini papan adalah
+**cermin** — lajur diturunkan dari daur hidup A2A yang dilaporkan agen. Kartu
+yang bisa diseret akan menyiratkan kantor dapat mengubah pekerjaan agen;
+janji yang tidak ditepati produk ini.
+
+### Dua bug yang hanya muncul setelah agen berdiri di lantai
+
+**1. `animation: … both` menelan penempatan.** `.sect-cul` menjalankan
+`sect-arrive` yang berakhir pada `transform: none`. Nilai teranimasi
+mengalahkan nilai terdeklarasi di cascade, jadi `translate(-50%, -100%)
+scale(var(--cul-scale))` pada `.sect-cul--placed` **tidak pernah berlaku**.
+Akibatnya setiap figur berdiri separuh lebarnya ke kanan dari stasiunnya, dan
+skala kedalaman mati total — kedelapan figur berlebar 132 px, bukan 112→131.
+Tidak terlihat mata: lantai luas, semua meleset seragam. Ketahuan hanya
+setelah nameplate diukur terhadap kaki (`delta=-66` untuk kedelapan agen).
+Perbaikan: `@keyframes sect-arrive-placed` yang membawa penempatan di setiap
+keyframe.
+
+**2. Nameplate terpotong figur di depannya.** Caption hidup di dalam figur,
+jadi ia mewarisi kedalaman figur itu; `code-reviewer` terbaca `e-reviewer`
+karena tertimpa murid baris depan. Nama kini digambar di lapisan sendiri
+(`.sect-court__plates`, z 70). Badan tetap saling menutupi menurut kedalaman;
+hanya namanya yang bebas. Figur yang ditempatkan tidak lagi merender
+`figcaption` — nama yang sama dua kali di DOM adalah gagap bagi pembaca layar;
+`aria-label` menggantikannya. Tes `Hall` menangkap duplikasi itu.
+
+Papan nama aula pindah dari kiri-bawah ke kiri-atas: ia persis di tempat baris
+depan berdiri. Ia kini membawa scrim sendiri, karena di atas ia bisa mendarat
+di atap yang tersorot matahari.
+
+Tes: `AmanatBoard` 10 (6 mutasi ditanam, 6 tertangkap). Panel `Amanat` lama
+dan 11 tesnya dihapus — komponen mati tidak disimpan. Frontend 194.
+Klaim dokumen 114→115. Gerbang 18/18.

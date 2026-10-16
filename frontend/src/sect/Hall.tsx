@@ -14,6 +14,8 @@ import React from 'react'
 import type { RoomId } from '../rooms'
 import type { SectHall } from '../theme/sect'
 import type { BurnState } from '../hermes/burnTypes'
+import type { Archetype } from './cast'
+import { placeAll } from './stations'
 
 export interface Cultivator {
   id: string
@@ -27,6 +29,12 @@ export interface Cultivator {
    * is exactly how this component behaved before the cast came back.
    */
   sprite?: string
+  /**
+   * Which station on the floor this disciple occupies (sect/stations.ts).
+   * Optional for the same reason `sprite` is: without it the figure falls
+   * back to the shared station rather than vanishing.
+   */
+  archetype?: Archetype
 }
 
 const QI_VAR: Record<BurnState, string> = {
@@ -46,15 +54,37 @@ const QI_VAR: Record<BurnState, string> = {
  * mountain a second time for a completely different reason. On error this
  * falls back to the mark, and the hall still reports who is in it.
  */
-const Disciple: React.FC<{ c: Cultivator }> = ({ c }) => {
+const Disciple: React.FC<{
+  c: Cultivator
+  /**
+   * Floor placement. Absent for the ghost strip, which is deliberately NOT on
+   * the floor — those agents have no station because the server placed them
+   * nowhere, and giving them one would re-tell the lie the floor plan exists
+   * to stop telling.
+   */
+  placed?: { station: { x: number; y: number }; scale: number; z: number }
+}> = ({ c, placed }) => {
   const [failed, setFailed] = React.useState(false)
   const showSprite = Boolean(c.sprite) && !failed
   return (
-    <figure
-      className={`sect-cul sect-cul--${c.state}${showSprite ? ' sect-cul--art' : ''}`}
-      style={{ ['--qi' as string]: QI_VAR[c.qi] }}
-      title={c.task ? `${c.name} — ${c.task}` : c.name}
-    >
+      <figure
+        className={`sect-cul sect-cul--${c.state}${showSprite ? ' sect-cul--art' : ''}${
+          placed ? ' sect-cul--placed' : ''
+        }`}
+        style={{
+          ['--qi' as string]: QI_VAR[c.qi],
+          ...(placed
+            ? {
+                left: `${placed.station.x}%`,
+                top: `${placed.station.y}%`,
+                ['--cul-scale' as string]: placed.scale,
+                zIndex: placed.z,
+              }
+            : null),
+        }}
+          title={c.task ? `${c.name} — ${c.task}` : c.name}
+          aria-label={placed ? (c.task ? `${c.name} — ${c.task}` : c.name) : undefined}
+        >
       <div className="sect-cul__aura">
         {showSprite ? (
           <img
@@ -69,9 +99,14 @@ const Disciple: React.FC<{ c: Cultivator }> = ({ c }) => {
           <span className="sect-cul__glyph">{c.glyph}</span>
         )}
       </div>
-      <figcaption className="sect-cul__name">{c.name}</figcaption>
-      {c.task && <p className="sect-cul__task">{c.task}</p>}
-    </figure>
+        {/* A placed disciple carries no caption of its own: the nameplate
+            layer draws the name once, above every figure. Rendering it here
+            too would put the same name in the document twice — a stutter for
+            a screen reader, and ambiguity for a test. The figure keeps an
+            accessible name through aria-label instead. */}
+        {!placed && <figcaption className="sect-cul__name">{c.name}</figcaption>}
+        {!placed && c.task && <p className="sect-cul__task">{c.task}</p>}
+      </figure>
   )
 }
 
@@ -105,12 +140,39 @@ export const Hall: React.FC<{
       <div className="sect-hall__vig" aria-hidden="true" />
       <div className="sect-hall__frame" aria-hidden="true" />
 
-      {!locked && (
-        <div className="sect-court">
-          {cultivators.length === 0 ? (
-            <p className="sect-court__empty sect-script">Balai kosong</p>
-          ) : (
-            cultivators.map((c) => <Disciple key={c.id} c={c} />)
+        {!locked && (
+          <div className="sect-court">
+            {cultivators.length === 0 ? (
+              <p className="sect-court__empty sect-script">Balai kosong</p>
+            ) : (
+            // placeAll returns back-to-front, so painting in order gives
+            // correct overlap without any per-figure z juggling here.
+            placeAll(cultivators).map((c) => (
+              <Disciple
+                key={c.id}
+                c={c}
+                placed={{ station: c.station, scale: c.scale, z: c.z }}
+              />
+            ))
+          )}
+
+          {/* Nameplates ride in their own layer above every figure.
+              Inside the figure they inherited that figure's depth, so a
+              disciple standing in front cropped the name of the one behind
+              — `code-reviewer` read as `e-reviewer`. Bodies still occlude
+              each other by depth; only the captions float clear. */}
+          {cultivators.length > 0 && (
+            <div className="sect-court__plates" aria-hidden="true">
+              {placeAll(cultivators).map((c) => (
+                <span
+                  key={c.id}
+                  className="sect-court__plate"
+                  style={{ left: `${c.station.x}%`, top: `${c.station.y}%` }}
+                >
+                  {c.name}
+                </span>
+              ))}
+            </div>
           )}
         </div>
       )}
