@@ -78,6 +78,26 @@ export const KNOWN_TYPES = new Set([
 ])
 
 /**
+ * A2A v1.0 lifecycle states that end a task. Reaching one of these means the
+ * agent stopped, so the office must stop animating it — mirrored from
+ * `A2A_STATES` in server/eventbus.js. `completed` is handled separately
+ * because it carries the task summary as its result.
+ */
+export const TERMINAL_A2A_STATES = new Set(['failed', 'canceled', 'rejected'])
+
+/**
+ * Plain-language captions for the two states that mean "the peer is blocked on
+ * a human". Showing the raw spec token here would make the office look broken
+ * at precisely the moment it has something useful to say.
+ */
+export const A2A_WAITING_LABELS: Record<string, string> = {
+  input_required: 'a2a: menunggu jawaban',
+  auth_required: 'a2a: menunggu izin',
+  submitted: 'a2a: terkirim',
+  sent: 'a2a: terkirim',
+}
+
+/**
  * Map a Hermes envelope to zero or more internal office events.
  * Returns [] for unknown types (tolerant) and for events with no visual.
  */
@@ -130,16 +150,27 @@ export function mapHermesEvent(env: HermesEnvelope): OfficeEvent[] {
         status: `a2a: ${d.summary ?? 'task in'}`,
       }]
 
-    case 'a2a_task_out': {
-      const origin = d.origin ? String(d.origin) : undefined
-      if (d.state === 'completed') {
-        return [{ type: 'agent_completed', agentId: origin ?? '', result: d.summary ? String(d.summary) : 'a2a done' }]
+      case 'a2a_task_out': {
+        const origin = d.origin ? String(d.origin) : undefined
+        const state = d.state ? String(d.state) : 'working'
+
+        // A2A v1.0 has eight lifecycle states, four of which are terminal. The
+        // office used to treat everything except `completed` and `failed` as
+        // "still working", so a task the peer had *canceled* kept its agent
+        // animated indefinitely — the UI inventing activity that had stopped,
+        // which the product rules forbid.
+        if (state === 'completed') {
+          return [{ type: 'agent_completed', agentId: origin ?? '', result: d.summary ? String(d.summary) : 'a2a done' }]
+        }
+        if (TERMINAL_A2A_STATES.has(state)) {
+          return [{ type: 'agent_completed', agentId: origin ?? '', result: `a2a ${state}` }]
+        }
+        // Non-terminal. `input_required` / `auth_required` mean the peer has
+        // stopped and is waiting on a human — worth saying plainly rather than
+        // leaving it as a raw spec token.
+        const label = A2A_WAITING_LABELS[state] ?? `a2a: ${state}`
+        return [{ type: 'agent_working', agentId: origin, status: label }]
       }
-      if (d.state === 'failed') {
-        return [{ type: 'agent_working', agentId: origin, status: 'a2a failed' }]
-      }
-      return [{ type: 'agent_working', agentId: origin, status: `a2a: ${d.state ?? 'working'}` }]
-    }
 
     case 'cron_fired':
       return [{

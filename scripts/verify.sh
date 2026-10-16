@@ -114,6 +114,15 @@ else
   gate "sprites (+rebuild)"  python3 scripts/check-sprites.py --regen
 fi
 
+# The only gate that leaves the repository. Everything above proves the tree is
+# self-consistent; this one asks the running site whether any of that reached a
+# user. Set SKIP_LIVE=1 to work offline.
+#
+# Keep this list at one. The failure this project actually suffered was an
+# apparatus growing faster than the product, so a second live gate should
+# replace a question here rather than be appended to it.
+gate "live site"           bash scripts/check-live.sh
+
 echo
 # The report is written on every full run, pass or fail. A report that only
 # appears when everything is green is a marketing asset, not evidence: the

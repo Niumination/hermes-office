@@ -89,7 +89,7 @@ git clone https://github.com/Niumination/hermes-office
 cd hermes-office && npm ci && npm run verify
 ```
 
-17 gerbang, sekitar 4 menit di mesin 2 inti. Daftar gerbang dan apa yang
+18 gerbang, sekitar 4 menit di mesin 2 inti. Daftar gerbang dan apa yang
 dibuktikan masing-masing ada di [README](../README.id.md#verifikasi-sendiri).
 
 Inilah produk yang sebenarnya. Kantor isometrik bisa ditiru dalam seminggu;

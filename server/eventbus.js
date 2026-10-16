@@ -174,7 +174,26 @@ const BURN_STATE_SET = new Set(["normal", "warm", "hot", "critical", "tripped"])
 const SERVICE_STATES = new Set(["active", "failed", "inactive"]);
 const SERVICE_HOSTS = new Set(["cloud", "mac"]);
 
-const A2A_STATES = new Set(["sent", "working", "completed", "failed"]);
+// A2A v1.0 (Linux Foundation, spec v1.0.1) defines eight task lifecycle states,
+// and the state transition *is* the observability surface — it is how a mirror
+// knows the difference between "the peer is thinking" and "the peer is waiting
+// on a human". Accepting only four meant a real A2A peer emitting
+// `input_required` got a 400, so the office silently under-reported exactly the
+// moments an operator most needs to see.
+//
+// `sent` predates the spec and is kept: mac-relay in this repo already emits it,
+// and widening an allow-list can break nothing that worked before.
+const A2A_STATES = new Set([
+  "sent", // legacy, == submitted
+  "submitted",
+  "working",
+  "input_required",
+  "auth_required",
+  "completed",
+  "failed",
+  "canceled",
+  "rejected",
+]);
 const STATUS_STATES = new Set(["idle", "working", "away"]);
 const DIRECTIONS = new Set(["in", "out"]);
 

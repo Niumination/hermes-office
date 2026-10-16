@@ -39,7 +39,7 @@ Tiga pilar yang sudah berdiri:
 index.js      1306   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     602   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
-eventbus.js   412   validasi, clamp, REDAKSI, rate limit, ring buffer
+eventbus.js   431   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       403   Fase 1 — OTel GenAI → event Hermes
 ledger.js     383   Fase 4 — rantai hash append-only
 standup.js    465   Fase 14 — bacaan pagi; deterministik, tanpa panggilan model
@@ -257,7 +257,7 @@ terdegradasi teruji secara gratis).
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
 | Backend | **383** | `npm test` |
-| Frontend | **178** | `cd frontend && npx vitest run` |
+| Frontend | **184** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

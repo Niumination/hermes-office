@@ -244,7 +244,7 @@ Aturan yang membuatnya berguna, bukan seremonial:
 | `docs/ARCHITECTURE.md` · `PRD.md` · `UI-SPEC.md` | spesifikasi, semuanya diperiksa mesin |
 | `docs/SPRITES.md` · `ROOM-PLATES.md` | provenance aset + apa yang menangkap apa |
 | `docs/PRICING.md` · `.id.md` | halaman harga, angkanya kini ikut diperiksa |
-| `scripts/verify.sh` | satu perintah, 17 gerbang |
+| `scripts/verify.sh` | satu perintah, 18 gerbang |
 | `scripts/check-handoff.sh` | integritas transfer |
 | `MANIFEST.sha256` | 561 berkas, sha256 |
 | `art/originals/sprites/` | 100 original — **jangan pernah ditimpa** |

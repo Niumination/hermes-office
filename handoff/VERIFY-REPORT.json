@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-10-15T16:01:35Z",
-  "commit": "e0d70dd454dd6d1dca6ed3da063e400141272b95",
+  "generatedAt": "2026-10-16T12:57:25Z",
+  "commit": "ab4bb86fb6040f455f551c226810e950cb4dce3d",
   "branch": "dev",
   "dirty": true,
   "gates": [
     {
       "gate": "handoff integrity",
-      "ok": true
+      "ok": false
     },
     {
       "gate": "eslint",
@@ -66,15 +66,19 @@
     },
     {
       "gate": "doc claims",
-      "ok": true
+      "ok": false
     },
     {
       "gate": "sprites (+rebuild)",
       "ok": true
+    },
+    {
+      "gate": "live site",
+      "ok": true
     }
   ],
-  "gatesGreen": 17,
-  "gatesTotal": 17,
+  "gatesGreen": 16,
+  "gatesTotal": 18,
   "bundle": {
     "file": "index-CgypfiGl.js",
     "sha256": "b9725b3c54a83110d2faf6718946105230ef250ecec2e2388e82f7fa7ff8b6cc"

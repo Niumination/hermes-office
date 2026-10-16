@@ -130,7 +130,7 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 | | |
 |---|---|
 | Test backend | **383** |
-| Test frontend | **178** |
+| Test frontend | **184** |
 | Klaim dokumen yang diverifikasi mesin | **114** (`scripts/check-docs.py`) |
 | Bundel | 278,8 kB JS · 31,6 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
@@ -153,7 +153,7 @@ npm ci
 npm run verify
 ```
 
-**17 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
+**18 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
 melewati dua gerbang pembangunan ulang dan selesai sekitar satu menit. Exit
 code 0 berarti semua gerbang lolos — dan tidak ada gerbang yang mencetak baris
 hijau yang tidak ia dapatkan, karena setiap vonis berasal dari exit status
@@ -180,6 +180,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |
 | sprites (+rebuild) | 32 sprite cast dibangun ulang byte-for-byte, dan seninya terikat pada kode yang memuatnya |
+| live site | situs yang berjalan menjawab, mencetak sesi tamu, tetap menolak tamu di rute pemilik, dan menyajikan bundel dari pohon ini |
 
 Tiga di antaranya layak disebut khusus, karena merekalah yang menangkap apa
 yang tidak bisa ditangkap hash:

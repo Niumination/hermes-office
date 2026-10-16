@@ -199,11 +199,11 @@ Selesai. Lihat §2 di atas.
 ### 4.4 Halaman bukti/keandalan untuk penjualan
 
 `/proof` sudah ada (`server/proof.js`). Tiga klaim dilaporkan terpisah:
-**LANGSUNG** (rantai ledger), **TERCATAT** (17/17 gerbang), **PENGIKATAN**
+**LANGSUNG** (rantai ledger), **TERCATAT** (18/18 gerbang), **PENGIKATAN**
 (`bundleMatches` — sha256 bundel yang disajikan vs yang diuji).
 
 Sisa: masukkan ke README/PRICING sebagai "verifikasi sendiri" — pembeli
-menjalankan satu perintah dan mendapat 17/17.
+menjalankan satu perintah dan mendapat 18/18.
 
 ---
 
