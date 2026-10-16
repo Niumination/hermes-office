@@ -26,7 +26,8 @@ export interface Outpost {
   lastTs: number | null
   checkedTs: number | null
   detail?: string | null
-  /** Owner-declared actions. Tamu tidak melihat field ini. */
+  /** Owner-declared actions. Hanya ada bila sesi pemilik sah; tanpa sesi
+   *  permintaannya 401 dan field ini tidak pernah sampai. */
   actions?: Array<{ id: string; label: string; confirm: boolean; cooldownMs: number }>
 }
 

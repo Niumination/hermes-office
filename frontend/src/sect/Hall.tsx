@@ -111,7 +111,9 @@ const Disciple: React.FC<{
 }
 
 export const Hall: React.FC<{
-  room: RoomId
+  // A room id from the ecosystem model, so this is a plain string: the fork's
+  // RoomId union no longer describes any place the owner actually works.
+  room: string
   hall: SectHall | undefined
   plate: string
   locked: boolean

@@ -23,13 +23,15 @@ import { useBurnState } from '../hermes/useBurnState'
 import { targetRoomFor, agentForEnvelope } from '../hermes/eventMap'
 import type { HermesEnvelope } from '../hermes/types'
 import { fetchLadder, type PolicySnapshot } from '../theme/policyClient'
-import { SECT_HALLS } from '../theme/sect'
 import { platePath } from '../theme/plates'
 import { ROOMS, type RoomId } from '../rooms'
 import { useNiuMode, toggleNiuMode, useLang, toggleLang, getStrings } from '../hermes/niu'
 import { fetchRoster, type RosterAgent } from './rosterClient'
 import { spriteFor, archetypeFor } from './cast'
-import RealmRail from './RealmRail'
+import EcoRail from './EcoRail'
+import {
+  OFFICES, roomsOf, roomAt, desksOf, type OfficeId,
+} from '../eco/ecosystem'
 import Hall, { type Cultivator } from './Hall'
 import Chronicle from './Chronicle'
 import Sabda from './Sabda'
@@ -102,7 +104,12 @@ export const SectApp: React.FC = () => {
   // SHOULD be here, which is the only source that knows about an agent that
   // has never emitted an event. See sect/rosterClient.ts.
   const [rosterAgents, setRosterAgents] = useState<RosterAgent[]>([])
-  const [room, setRoom] = useState<RoomId>('lobby')
+  // Which workplace is on screen. LightVela first: this office runs there,
+  // so the default view is the machine the viewer is already talking to.
+  const [office, setOffice] = useState<OfficeId>('lightvela')
+  // A room id from the ecosystem model, never a fork RoomId. 'root' exists
+  // in both offices, which is why switching office cannot land nowhere.
+  const [room, setRoom] = useState<string>('root')
   // Follow the activity until the operator picks a hall themselves. Opening on
   // an empty Gerbang Gunung while three disciples work two halls up makes the product
   // look asleep; yanking the view around after someone has deliberately
@@ -164,7 +171,13 @@ export const SectApp: React.FC = () => {
       seen: e.ts ?? Date.now(),
       working: e.type !== 'agent_finished' && e.type !== 'tool_done',
     })
-    if (followRef.current) setRoom(where)
+    // Follow the action only when the server's room name resolves to a room
+    // that exists in the office on screen. The server still speaks the fork's
+    // vocabulary (`lobby`, `server-room`), which names nothing in the owner's
+    // ecosystem; jumping the camera to it would move the viewer somewhere that
+    // does not exist. Staying put is the honest failure — and the mismatch is
+    // a real open seam, not a bug in this guard.
+    if (followRef.current && where && roomAt(office, where)) setRoom(where)
     tick((n) => n + 1)
   }, [])
 
@@ -347,8 +360,24 @@ export const SectApp: React.FC = () => {
   // who HAS standing and still lacks enough of it for one particular hall.
   const signedOut = !ladder
   const locked = Boolean(rung && ladder && rung.tier > ladder.viewerTier)
-  const hall = SECT_HALLS[room]
-  const plate = platePath(room, 'sect', ROOMS[room]?.background?.day ?? '')
+  // The hall's name is now a FACT about the owner's filesystem, not a mood:
+  // `nameId` is what they call the folder, `nameEn` is where it lives on disk.
+  // An unknown room resolves to undefined and Hall falls back to the raw id —
+  // which is the honest outcome, not a fabricated name.
+  const ecoRoom = roomAt(office, room)
+  const hall = ecoRoom
+    ? { nameId: ecoRoom.label, nameEn: ecoRoom.path, band: OFFICES[office].label }
+    : undefined
+  // Background art only. The eight plates were drawn for the fork's rooms and
+  // carry no ecosystem meaning, so they are dealt out by a stable hash of the
+  // room id: a room keeps the same backdrop between renders and the backdrop
+  // claims nothing. Same rule as the left/right facing in cast.ts — decoration
+  // is allowed to be arbitrary, but it must never be mistaken for a fact.
+  const PLATES: RoomId[] = ['lobby', 'main-office', 'meeting-room', 'mac-studio', 'server-room', 'ceo-office', 'kitchen', 'nap-room']
+  let h = 2166136261
+  for (let i = 0; i < room.length; i++) { h ^= room.charCodeAt(i); h = Math.imul(h, 16777619) }
+  const backdrop = PLATES[Math.abs(h) % PLATES.length]
+  const plate = platePath(backdrop, 'sect', ROOMS[backdrop]?.background?.day ?? '')
 
   return (
     <div className="sect-app">
@@ -397,10 +426,17 @@ export const SectApp: React.FC = () => {
       </header>
 
       {railOpen && (
-        <RealmRail
-          ladder={ladder}
-          current={room}
+        <EcoRail
+          office={office}
+          room={room}
           occupancy={occupancy}
+          onOffice={(o) => {
+            followRef.current = false
+            setOffice(o)
+            // 'root' is the one room id both offices share, so the switch can
+            // never strand the viewer in a room that does not exist here.
+            setRoom('root')
+          }}
           onEnter={(r) => { followRef.current = false; setRoom(r) }}
         />
       )}
@@ -534,7 +570,7 @@ export const SectApp: React.FC = () => {
           <div className="sect-log">
             {roster.length === 0 && <p className="sect-log__empty">Belum ada murid.</p>}
             {roster.map((r) => {
-              const h = r.room ? SECT_HALLS[r.room] : undefined
+              const h = r.room ? roomAt(office, r.room) : undefined
               return (
                 <article
                   key={r.id}
@@ -545,7 +581,7 @@ export const SectApp: React.FC = () => {
                     <div className="sect-entry__who">{r.id}</div>
                     <div className="sect-entry__what">
                       {r.online
-                        ? (h ? `${h.nameId} · ${h.nameEn}` : 'belum menampakkan diri')
+                        ? (h ? `${h.label} · ${h.path}` : 'belum menampakkan diri')
                         : `sunyi · terakhir aktif ${formatLastSeen(r.lastSeenTs)}`}
                       {r.online && r.task ? ` — ${r.task}` : ''}
                     </div>

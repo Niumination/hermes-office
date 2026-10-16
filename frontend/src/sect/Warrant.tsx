@@ -111,7 +111,7 @@ export const Warrant: React.FC<Props> = ({ signedOut, fetchImpl, onEntered }) =>
         onClick={() => setState({ kind: 'open' })}
         title="Masuk sebagai pemilik dengan token"
       >
-        Tamu · masuk
+        Masuk
       </button>
     )
   }
@@ -124,7 +124,7 @@ export const Warrant: React.FC<Props> = ({ signedOut, fetchImpl, onEntered }) =>
         aria-expanded="true"
         onClick={() => setState({ kind: 'shut' })}
       >
-        Tamu · masuk
+        Tutup
       </button>
       <form className="sect-warrant__panel" onSubmit={submit}>
         <label className="sect-warrant__label" htmlFor="sect-warrant-token">

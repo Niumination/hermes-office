@@ -132,4 +132,25 @@ describe('Warrant', () => {
     await user.click(screen.getByRole('button', { name: /^masuk$/i }))
     expect(fetchImpl).not.toHaveBeenCalled()
   })
+
+  /**
+   * The word this control used to carry. "Tamu · masuk" survived the removal
+   * of guest mode in 9c894ba and sat on the only visible door for a week —
+   * past all eighteen gates, every one of which measures the repository and
+   * none of which reads the screen. The checker is inverted rather than
+   * deleted: the claim is gone, so the test now asserts its absence.
+   */
+  it('never calls the owner a guest', () => {
+    render(<Warrant signedOut />)
+    expect(document.body.textContent).not.toMatch(/tamu/i)
+  })
+
+  it('offers one door when shut and a way back when open', async () => {
+    render(<Warrant signedOut />)
+    const chip = screen.getByRole('button', { name: /^masuk$/i })
+    await userEvent.click(chip)
+    // Open: the chip closes the panel, and only the form submits.
+    expect(screen.getByRole('button', { name: /^tutup$/i })).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: /^masuk$/i })).toHaveLength(1)
+  })
 })

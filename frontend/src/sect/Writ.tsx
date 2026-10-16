@@ -128,7 +128,7 @@ export const Writ: React.FC<{ pollMs?: number; canApprove?: boolean }> = ({
               {KIND_MARK[a.kind] ?? 'Titah'}
             </span>
             <span className="sect-writ__what">
-              <strong>{a.agent ?? 'Tamu'}</strong>{' '}
+              <strong>{a.agent ?? 'pemohon tak dikenal'}</strong>{' '}
               {a.kind === 'entry'
                 ? `memohon masuk ${a.room}`
                 : `memohon ${a.tool ?? 'sebuah alat'} di ${a.room}`}
