@@ -159,7 +159,7 @@ jobs:
       # front of them, not only for whatever was last released.
       - name: Publish SBOM
         if: matrix.node == '22'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-cyclonedx
           path: sbom.cdx.json
