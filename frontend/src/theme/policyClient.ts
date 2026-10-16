@@ -14,8 +14,7 @@
  */
 
 import type { SectRung } from './sect'
-import { SECT_HALLS, sectLadder, type PolicyRoomLike } from './sect'
-import type { RoomId } from '../rooms'
+import { sectLadder, type PolicyRoomLike } from './sect'
 
 export interface PolicySnapshot {
   /** Ladder rungs, lowest hall first. */
@@ -33,14 +32,14 @@ export interface PolicySnapshot {
    *
    * This is the server's answer, not a guess assembled from event shapes.
    */
-  placements: Record<string, RoomId>
+  placements: Record<string, string>
   /**
    * The hall the server drops an unplaced agent into. OPTIONAL on purpose: a
    * required field here breaks every PolicySnapshot fixture in the existing
    * tests, and this is an enrichment, not a contract. Callers fall back to
    * 'lobby', which is what the server has always configured.
    */
-  defaultRoom?: RoomId
+  defaultRoom?: string
 }
 
 interface ServerRoom {
@@ -62,18 +61,25 @@ interface ServerPolicy {
 const NO_STANDING = -1
 
 /**
- * agent -> room, for every room the mountain actually draws.
+ * agent -> room, for every placement the server reports.
  *
- * Rooms with no hall are skipped on purpose: the ladder already drops them,
- * and seeding an agent into a hall that is not rendered would put it nowhere
- * visible while still counting as "placed".
+ * This used to skip any room missing from SECT_HALLS, justified as "the hall
+ * is not rendered anyway". That filter was a silent delete: an agent the
+ * server had genuinely placed vanished here, before any screen could decide
+ * what to say about it, and the office looked emptier than the server said it
+ * was. Deciding what can be drawn is the view's job; losing the fact is not a
+ * decision anyone made on purpose.
+ *
+ * The room is a plain string now. The fork's RoomId union named eight halls,
+ * six of which were never anywhere, so narrowing to it discarded exactly the
+ * rooms worth keeping.
  */
-function placementsFrom(rooms: ServerRoom[]): Record<string, RoomId> {
-  const out: Record<string, RoomId> = {}
+function placementsFrom(rooms: ServerRoom[]): Record<string, string> {
+  const out: Record<string, string> = {}
   for (const r of rooms) {
-    if (!SECT_HALLS[r.room as RoomId]) continue
+    if (typeof r.room !== 'string' || !r.room) continue
     for (const o of r.occupants ?? []) {
-      if (typeof o?.agent === 'string' && o.agent) out[o.agent] = r.room as RoomId
+      if (typeof o?.agent === 'string' && o.agent) out[o.agent] = r.room
     }
   }
   return out
@@ -83,7 +89,7 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
   const rooms = policy.rooms ?? []
   const placements = placementsFrom(rooms)
   const defaultRoom =
-    typeof policy.defaultRoom === 'string' ? (policy.defaultRoom as RoomId) : undefined
+    typeof policy.defaultRoom === 'string' ? policy.defaultRoom : undefined
 
   const byId: Record<string, PolicyRoomLike> = {}
   for (const r of rooms) {

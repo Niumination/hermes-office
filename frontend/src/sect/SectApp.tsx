@@ -88,7 +88,13 @@ interface RosterRow {
 
 interface Tracked {
   id: string
-  room: RoomId
+  /**
+   * Whatever the server called the room. A plain string on purpose: the
+   * server still speaks the fork's vocabulary here while the screens speak
+   * the ecosystem's, and narrowing this to either union would throw away the
+   * half that does not match instead of showing the mismatch.
+   */
+  room: string
   task?: string
   seen: number
   working: boolean
@@ -338,7 +344,11 @@ export const SectApp: React.FC = () => {
    * strip, captioned for exactly what they are.
    */
   const ghosts: Cultivator[] = useMemo(() => {
-    if (room !== (ladder?.defaultRoom ?? 'lobby')) return []
+    // Landing room of the current office, not `ladder.defaultRoom`. The
+    // server's default is still a fork id ('lobby'), which now matches no
+    // ecosystem room at all — leaving it here quietly emptied this strip on
+    // every screen, which is the same disappearance the strip exists to stop.
+    if (room !== 'root') return []
     const placed = new Set(tracked.map((t) => t.id))
     return rosterAgents
       .filter((a) => !placed.has(a.id) && !presence[a.id])
@@ -352,6 +362,21 @@ export const SectApp: React.FC = () => {
         archetype: archetypeFor(a.id, a.role),
       }))
   }, [rosterAgents, tracked, presence, room, ladder, burn])
+
+  /**
+   * Agents the server HAS placed, in a room this office cannot draw.
+   *
+   * Distinct from ghosts, which are placed nowhere at all. These have a
+   * location; it just is not one of ours. While the server still answers in
+   * the fork's vocabulary this is where most of the fleet lands, and saying
+   * so out loud is the point: the alternative is an empty-looking court with
+   * no stated reason, which is the exact failure the floor plan was rebuilt
+   * to end.
+   */
+  const strays = useMemo(
+    () => tracked.filter((t) => t.room && !roomAt(office, t.room)),
+    [tracked, office],
+  )
 
   const rung = ladder?.rungs.find((r) => r.room === room)
   // Signed out means the server answered 401 and there is no ladder at all —
@@ -517,6 +542,16 @@ export const SectApp: React.FC = () => {
           {ghosts.length > 0 && (
             <span className="sect-status__item sect-status__item--dim">
               {ghosts.length} belum terlihat
+            </span>
+          )}
+          {strays.length > 0 && (
+            <span
+              className="sect-status__item sect-status__item--dim"
+              title={`Ditempatkan server di ruangan yang tidak ada di kantor ini: ${
+                [...new Set(strays.map((t) => t.room))].join(', ')
+              }`}
+            >
+              {strays.length} di ruangan tak dikenal
             </span>
           )}
           <span className="sect-status__sep" />

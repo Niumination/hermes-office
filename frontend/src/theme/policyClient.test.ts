@@ -98,16 +98,19 @@ describe('placements', () => {
     expect(snap.placements).toEqual({ cloud: 'lobby', mac: 'lobby', boss: 'ceo-office' })
   })
 
-  it('skips rooms the mountain does not draw', () => {
-    // A room with no sect hall is dropped from the ladder; seeding an agent
-    // into it would mark it placed while rendering it nowhere.
+  it('keeps a placement into a room no screen can draw', () => {
+    // Inverted from "skips rooms the mountain does not draw". That rule let
+    // this function delete a placement the server had genuinely reported,
+    // before any screen could say a word about it, and the office came out
+    // emptier than the server described. Which rooms are drawable is the
+    // view's decision; it cannot make it about facts it never receives.
     const snap = ladderFromPolicy({
       rooms: [
         { room: 'lobby', budgetHourlyUsd: 0.25, occupants: [{ agent: 'cloud' }] },
         { room: 'not-a-hall', budgetHourlyUsd: 1, occupants: [{ agent: 'ghost' }] },
       ],
     })
-    expect(snap.placements).toEqual({ cloud: 'lobby' })
+    expect(snap.placements).toEqual({ cloud: 'lobby', ghost: 'not-a-hall' })
   })
 
   it('is an empty map when nobody is placed, never undefined', () => {
