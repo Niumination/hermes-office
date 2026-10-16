@@ -27,6 +27,8 @@ import { SECT_HALLS } from '../theme/sect'
 import { platePath } from '../theme/plates'
 import { ROOMS, type RoomId } from '../rooms'
 import { useNiuMode, toggleNiuMode, useLang, toggleLang, getStrings } from '../hermes/niu'
+import { fetchRoster, type RosterAgent } from './rosterClient'
+import { spriteFor } from './cast'
 import RealmRail from './RealmRail'
 import Hall, { type Cultivator } from './Hall'
 import Chronicle from './Chronicle'
@@ -94,6 +96,10 @@ export const SectApp: React.FC = () => {
   const strings = getStrings()
 
   const [ladder, setLadder] = useState<PolicySnapshot | null>(null)
+  // The configured fleet. Separate from `tracked` on purpose: this says who
+  // SHOULD be here, which is the only source that knows about an agent that
+  // has never emitted an event. See sect/rosterClient.ts.
+  const [rosterAgents, setRosterAgents] = useState<RosterAgent[]>([])
   const [room, setRoom] = useState<RoomId>('lobby')
   // Follow the activity until the operator picks a hall themselves. Opening on
   // an empty Gerbang Gunung while three disciples work two halls up makes the product
@@ -184,6 +190,18 @@ export const SectApp: React.FC = () => {
     return () => { alive = false }
   }, [])
 
+  // The configured fleet, fetched once. Deliberately a separate effect from
+  // the ladder: the roster is an enrichment, and a server that answers
+  // /policy but not /roster must still draw the halls it can.
+  useEffect(() => {
+    let alive = true
+    void (async () => {
+      const r = await fetchRoster()
+      if (alive) setRosterAgents(r)
+    })()
+    return () => { alive = false }
+  }, [])
+
   // Re-render once a minute so "present" decays without an event arriving.
   useEffect(() => {
     const id = setInterval(() => tick((n) => n + 1), 60_000)
@@ -239,17 +257,53 @@ export const SectApp: React.FC = () => {
     return o
   }, [tracked, now])
 
+  const roleOf = useMemo(() => {
+    const m: Record<string, string | undefined> = {}
+    for (const a of rosterAgents) m[a.id] = a.role
+    return m
+  }, [rosterAgents])
+
   const cultivators: Cultivator[] = tracked
     .filter((t) => t.room === room)
     .sort((a, b) => b.seen - a.seen)
-    .map((t) => ({
-      id: t.id,
-      name: t.id,
-      glyph: MARK[t.id] ?? t.id.slice(0, 1).toUpperCase(),
-      task: t.task,
-      state: now - t.seen > PRESENT_MS ? 'away' : t.working ? 'working' : 'idle',
-      qi: burn,
-    }))
+    .map((t) => {
+      const state: Cultivator['state'] =
+        now - t.seen > PRESENT_MS ? 'away' : t.working ? 'working' : 'idle'
+      return {
+        id: t.id,
+        name: t.id,
+        glyph: MARK[t.id] ?? t.id.slice(0, 1).toUpperCase(),
+        task: t.task,
+        state,
+        qi: burn,
+        sprite: spriteFor(t.id, state, roleOf[t.id]),
+      }
+    })
+
+  /**
+   * Agents the roster lists that the server has never placed in any hall.
+   *
+   * They are NOT occupants and must never be sorted in among them: the court
+   * is the server's floor plan and these agents are absent from it. Showing
+   * them at all is still the honest move — "configured but never seen" is a
+   * fact about the fleet, and hiding it is what made two thirds of this
+   * office invisible. They appear only in the default hall, in their own
+   * strip, captioned for exactly what they are.
+   */
+  const ghosts: Cultivator[] = useMemo(() => {
+    if (room !== (ladder?.defaultRoom ?? 'lobby')) return []
+    const placed = new Set(tracked.map((t) => t.id))
+    return rosterAgents
+      .filter((a) => !placed.has(a.id) && !presence[a.id])
+      .map((a) => ({
+        id: a.id,
+        name: a.id,
+        glyph: MARK[a.id] ?? a.id.slice(0, 1).toUpperCase(),
+        state: 'ghost' as const,
+        qi: burn,
+        sprite: spriteFor(a.id, 'ghost', a.role),
+      }))
+  }, [rosterAgents, tracked, presence, room, ladder, burn])
 
   const rung = ladder?.rungs.find((r) => r.room === room)
   // A guest sits at viewerTier -1, but the server does NOT 403 a guest asking
@@ -322,6 +376,7 @@ export const SectApp: React.FC = () => {
         locked={locked}
         guest={isGuest}
         cultivators={cultivators}
+        ghosts={ghosts}
       />
 
       <aside className="sect-scroll">

@@ -50,6 +50,13 @@ export interface PolicySnapshot {
    * This is the server's answer, not a guess assembled from event shapes.
    */
   placements: Record<string, RoomId>
+  /**
+   * The hall the server drops an unplaced agent into. OPTIONAL on purpose: a
+   * required field here breaks every PolicySnapshot fixture in the existing
+   * tests, and this is an enrichment, not a contract. Callers fall back to
+   * 'lobby', which is what the server has always configured.
+   */
+  defaultRoom?: RoomId
 }
 
 interface ServerRoom {
@@ -65,6 +72,8 @@ interface ServerRoom {
 interface ServerPolicy {
   rooms?: ServerRoom[]
   redacted?: boolean
+  /** Where the server places an agent it has not been told about. */
+  defaultRoom?: string
 }
 
 /** A guest sees the mountain but may not enter any hall (the server 403s). */
@@ -100,6 +109,8 @@ function placementsFrom(rooms: ServerRoom[]): Record<string, RoomId> {
 export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
   const rooms = policy.rooms ?? []
   const placements = placementsFrom(rooms)
+  const defaultRoom =
+    typeof policy.defaultRoom === 'string' ? (policy.defaultRoom as RoomId) : undefined
   // The server puts `redacted: true` on each ROOM for a guest, not on the
   // document — see server/index.js `GET /policy`. Reading only the top-level
   // flag meant the guest took the owner path, found every budget dropped, and
@@ -116,7 +127,7 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
     // An owner may go anywhere the policy lets the kiosk go: the top of the
     // ladder. canEnter() is tier<=viewerTier, so the highest tier opens all.
     const top = rungs.reduce((m, r) => Math.max(m, r.tier), GUEST_VIEWER_TIER)
-    return { rungs, viewerTier: top, redacted: false, placements }
+    return { rungs, viewerTier: top, redacted: false, placements, defaultRoom }
   }
 
   // Guest: rooms without a hall name are still dropped, same rule as the owner
@@ -134,7 +145,7 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
     // the room id breaks ties deterministically.
     .sort((a, b) => a.tier - b.tier || a.room.localeCompare(b.room))
 
-  return { rungs, viewerTier: GUEST_VIEWER_TIER, redacted: true, placements }
+  return { rungs, viewerTier: GUEST_VIEWER_TIER, redacted: true, placements, defaultRoom }
 }
 
 /** Fetch /policy with credentials and adapt it to the ladder. Never throws:

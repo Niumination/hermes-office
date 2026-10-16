@@ -1,22 +1,28 @@
 # Sprite — asal, reproduksi, dan liabilitas yang ditutup
 
-> **PENSIUN — 12 Oktober 2026.** Repo ini tidak lagi mengirim satu sprite pun.
-> Migrasi UI Sect menghentikan penggambaran karakter: Murid kini digambar
-> sebagai tanda ber-aura qi, bukan gambar. Akibatnya 132 sprite yang tersisa
-> tidak punya pembaca — nol `<img>`, nol `url()` di CSS, nol path yang
-> dirangkai di `frontend/src` — sementara setiap build tetap menyalin 3,1 MB
-> ke tiap deploy.
+> **PENSIUN 12 Okt 2026 — CAST DIPULIHKAN 15 Okt 2026.**
 >
-> Mereka **dipensiunkan secara sadar**, bukan hilang diam-diam: 100 sprite
-> asal upstream tercatat di `removals` pada `ASSET-MANIFEST.json` beserta
-> alasannya, dan 32 arketipe donghua buatan fork ini ikut ditarik.
+> Riwayatnya penting, jadi tidak dihapus. Migrasi UI Sect menghentikan
+> penggambaran karakter: Murid digambar sebagai tanda ber-aura qi, bukan
+> gambar. Akibatnya 132 sprite tidak punya pembaca — nol `<img>`, nol `url()`,
+> nol path yang dirangkai — sementara tiap build tetap menyalin 3,1 MB. Pada
+> 12 Okt semuanya dipensiunkan secara sadar dan tercatat.
 >
-> **Seluruh sisa dokumen ini tetap berlaku** dan sengaja tidak dihapus.
-> Sumbernya masih di `art/originals/sprites` dan `art/donghua-cast`, pipeline
-> `stylize-donghua.py` masih ada, dan `scripts/check-sprites.py` kini menjaga
-> dua hal sekaligus: tidak ada sprite yang menyelinap kembali ke `public/`
-> tanpa pembaca, **dan** sumbernya tidak boleh hilang. Pensiun yang tidak bisa
-> dibatalkan hanyalah penghapusan dengan kata yang lebih sopan.
+> Buktinya benar; kesimpulannya meleset. Sprite itu bukan kelebihan —
+> **pembacanya yang hilang**, tiga hari sebelumnya, tanpa satu gerbang pun
+> berubah warna. Yang sebenarnya rusak adalah produk yang dilihat pengguna,
+> dan tidak ada yang mengukurnya.
+>
+> **15 Okt 2026 pensiun itu dibalik untuk 32 arketipe donghua**, berikut
+> pembacanya (`frontend/src/sect/cast.ts`, dirender oleh `Hall.tsx`). Inilah
+> gunanya `art/` tidak pernah dihapus. **100 sprite asal upstream tetap
+> pensiun** — mereka tidak pernah punya tempat di UI Sect, dan entri
+> `removals` di `ASSET-MANIFEST.json` tetap berlaku untuk mereka.
+>
+> `scripts/check-sprites.py` sekarang menjaga sebuah **ikatan**, bukan sekadar
+> jumlah: seni yang dikirim dan kode yang memuatnya harus ada bersama-sama.
+> Hilangkan salah satunya dan gerbang merah. Itu invarian yang seharusnya ada
+> sejak awal — ia akan menangkap kejadian 9 Okt pada hari itu juga.
 >
 > Kalau penggambaran karakter dihidupkan lagi: pulihkan dulu pembacanya di
 > `frontend/src`, baru jalankan `python3 scripts/check-sprites.py --write`.
@@ -30,13 +36,13 @@ menjawabnya jauh lebih kuat, karena sprite **bisa dibangun ulang**.
 Plate ruangan dihasilkan, dan generasi tidak deterministik. Yang bisa dijamin
 hanya sidik jari: "byte ini sama dengan byte yang kami rekam".
 
-Sprite berbeda. Seratus tiga puluh dua sprite diproduksi oleh langkah
+Sprite berbeda. Tiga puluh dua sprite diproduksi oleh langkah
 deterministik dari sumber yang masih ada, jadi jaminannya naik satu tingkat:
 
 > **Bangun ulang dari sumber, dan hasilnya harus cocok byte-for-byte.**
 
-`python3 scripts/check-sprites.py --regen` melakukan itu untuk 132 sprite,
-sekitar dua setengah menit. Itu satu-satunya hal yang bisa menangkap resep
+`python3 scripts/check-sprites.py --regen` melakukan itu untuk 32 sprite,
+sekitar setengah menit. Itu satu-satunya hal yang bisa menangkap resep
 yang bergeser — konstanta filter yang digeser, pencerminan yang dibalik —
 karena saat itu setiap berkas di disk masih cocok dengan hash-nya.
 
@@ -44,7 +50,7 @@ karena saat itu setiap berkas di disk masih cocok dengan hash-nya.
 
 | | jumlah | artinya |
 |---|---|---|
-| `derived` | 100 | punya original di `art/originals/sprites`, dan berkas yang dikirim persis `stylize(original)` |
+| `derived` | 0 | punya original di `art/originals/sprites`; nol sejak 100 sprite upstream dipensiunkan 12 Okt 2026 |
 | `built` | 32 | cast donghua: persis `build-cast-sprites(art/donghua-cast/)` — ukur ulang + cermin, keduanya deterministik |
 | `opaque` | 0 | punya original tanpa alpha, sengaja dilewati filter |
 | `unsourced` | 0 | **tidak ada sumber.** Nol sejak 2026-10-10 — lihat di bawah |
@@ -151,7 +157,7 @@ FAIL: no originals tree at ...
 
 ```bash
 python3 scripts/check-sprites.py           # hash + provenance, milidetik
-python3 scripts/check-sprites.py --regen   # + bangun ulang 132 (100 derived + 32 built), ~2,5 mnt
+python3 scripts/check-sprites.py --regen   # + bangun ulang 32 built, ~30 dtk
 python3 scripts/check-sprites.py --write   # rekam ulang setelah perubahan sah
 python3 scripts/stylize-donghua.py         # terapkan filter dari original
 SPRITE_ORIGINALS=/path python3 scripts/stylize-donghua.py   # original di luar repo

@@ -125,9 +125,9 @@ the normalisation is real work and it is already done here.
 | | |
 |---|---|
 | Backend tests | **383** |
-| Frontend tests | **148** |
-| Machine-verified doc claims | **103** (`scripts/check-docs.py`) |
-| Bundle | 276.4 kB JS · 29.6 kB CSS |
+| Frontend tests | **178** |
+| Machine-verified doc claims | **114** (`scripts/check-docs.py`) |
+| Bundle | 278.8 kB JS · 31.6 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
 
 `check-docs.py` executes the documentation against the repo — route counts,
@@ -177,7 +177,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | room plates | 26 plates match their hashes **and** the house style rules |
 | theme contrast | 26 token pairs measured in APCA Lc, computed from `oklch()` |
 | doc claims | 94 documented claims executed against the repo |
-| sprites (+rebuild) | 0 sprites shipped — the retirement holds and its sources survive |
+| sprites (+rebuild) | 32 cast sprites rebuild byte-for-byte, and the art is bound to the code that loads it |
 
 Three of those are worth singling out, because they are the ones that catch
 what hashes cannot:

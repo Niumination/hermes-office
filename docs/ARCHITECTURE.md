@@ -226,13 +226,15 @@ adalah fenomena per-frame yang tetap bisa dijalankan di atas pelat statis. Biaya
 
 - **18 pelat ruangan** (12 ruangan, varian siang/malam, @2x) — semua seni
   nyata, nol placeholder.
-- **0 sprite** dikirim sejak 12 Okt 2026. Penggambaran karakter dihentikan
-  oleh migrasi UI Sect, jadi 132 sprite yang tersisa tidak punya pembaca —
-  tidak ada `<img>`, tidak ada `url()`, tidak ada path yang dirangkai di
-  `frontend/src`. Mereka dipensiunkan secara resmi dan tercatat di
-  `ASSET-MANIFEST.json`; sumbernya tetap di `art/`, jadi keputusan ini bisa
-  dibalik (lihat `docs/SPRITES.md`). Pipeline di bawah ini **tetap ada** dan
-  itulah yang membuatnya bisa dibalik. **100 `derived`** lewat
+- **32 sprite** dikirim: cast donghua, 8 arketipe × 4 arah hadap. Mereka
+  sempat nol antara 12 dan 15 Okt 2026 — migrasi UI Sect menghapus pembacanya
+  dan 132 sprite yang tertinggal lalu dipensiunkan karena tampak tak terpakai.
+  Pensiun itu dibalik bersama pembacanya (`sect/cast.ts` → `Hall.tsx`), dan
+  `check-sprites.py` kini mengikat keduanya supaya tidak terulang. **100
+  `derived` tetap pensiun** — sprite kantor Barat dari upstream, tak pernah
+  punya tempat di UI Sect, tercatat di `ASSET-MANIFEST.json`; sumbernya tetap
+  di `art/` (lihat `docs/SPRITES.md`). Pipeline di bawah **tetap ada** dan
+  itulah yang membuat pembalikan hari ini mungkin. Jalur `derived` lewat
   `scripts/stylize-donghua.py` — rim light searah god ray pelat, AO,
   specular, grade hangat, keyline; semua alpha-aware, idempoten, selalu
   membaca dari `art/originals/sprites/` dan tidak pernah dari keluarannya
@@ -255,7 +257,7 @@ terdegradasi teruji secara gratis).
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
 | Backend | **383** | `npm test` |
-| Frontend | **148** | `cd frontend && npx vitest run` |
+| Frontend | **178** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

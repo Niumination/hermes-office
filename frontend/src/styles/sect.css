@@ -634,6 +634,124 @@ body {
 .sect-cul--idle .sect-cul__aura::after { animation-duration: 8s; opacity: 0.5; }
 .sect-cul--away { opacity: 0.42; filter: grayscale(0.5); }
 
+/* ---- the cast ---------------------------------------------------------
+   A disciple drawn as a character instead of a mark. The qi ring is kept and
+   becomes the dais it stands on: burn state still reads at a glance, which
+   was the whole reason the ring existed. The figure overflows the ring
+   upward, so the ring stays a floor rather than a halo.
+
+   `overflow: visible` on the aura is load-bearing — without it the character
+   is clipped to a 72 px circle and reads as a bust in a porthole. */
+.sect-cul--art { width: 132px; }
+
+.sect-cul--art .sect-cul__aura {
+  width: 92px; height: 46px;
+  overflow: visible;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 50% 74%,
+      color-mix(in oklch, var(--qi) 40%, transparent) 0%,
+      transparent 72%);
+}
+
+.sect-cul--art .sect-cul__aura::after {
+  inset: auto 6px 4px 6px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in oklch, var(--qi) 55%, transparent);
+  box-shadow: 0 0 20px color-mix(in oklch, var(--qi) 38%, transparent),
+              inset 0 0 12px color-mix(in oklch, var(--qi) 18%, transparent);
+}
+
+.sect-cul__art {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: auto;
+  height: 112px;
+  object-fit: contain;
+  object-position: bottom center;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.45));
+}
+
+.sect-cul--working .sect-cul__art { animation: sect-cul-sway 5.4s var(--sect-ease) infinite; }
+
+@keyframes sect-cul-sway {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-3px); }
+}
+
+/* ---- ghosts -----------------------------------------------------------
+   On the roster, never once seen. Drawn apart from the court and visibly
+   unreal: this is the one group the server has NOT placed, and letting them
+   look like occupants would re-introduce exactly the lie the floor plan was
+   fixed to stop telling. */
+.sect-court--ghosts {
+  /* Deliberately OFF the floor line, in the upper right, clear of both the
+     court and the hall plate. Occupants stand on the ground because the
+     server put them in this hall; these are roster entries with no place in
+     it, and floating them away from the flagstones says that before a single
+     word is read. Clearing the court's names is the other half of the
+     reason — they overlapped it at the bottom. */
+  position: absolute;
+  left: auto;
+  right: var(--sect-sp-4);
+  top: calc(var(--sect-sp-4) + 62px);
+  bottom: auto;
+  width: auto;
+  max-width: 46%;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.sect-court__label {
+  margin: 0;
+  font-size: var(--sect-t-xs);
+  letter-spacing: 0.08em;
+  color: color-mix(in oklch, var(--sect-mist) 70%, transparent);
+}
+
+.sect-court__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--sect-sp-2);
+}
+
+.sect-cul--ghost { opacity: 0.3; }
+.sect-cul--ghost .sect-cul__art { filter: grayscale(0.85) brightness(1.25); }
+.sect-cul--ghost .sect-cul__aura::after {
+  border-style: dashed;
+  animation: none;
+  box-shadow: none;
+}
+.sect-cul--ghost .sect-cul__name { font-style: italic; }
+
+/* The ghost strip is scenery for a crowded hall; when disciples are actually
+   present the court must win the space. */
+.sect-court--ghosts .sect-cul { width: 68px; gap: 2px; }
+.sect-court--ghosts .sect-cul__art { height: 58px; }
+.sect-court--ghosts .sect-cul__aura { width: 52px; height: 26px; }
+.sect-court--ghosts .sect-cul__aura::after { inset: auto 4px 2px 4px; height: 14px; }
+.sect-court--ghosts .sect-cul__name { font-size: var(--sect-t-xs); }
+.sect-court__label {
+  /* Below the figures, not above them: .sect-cul__art is absolutely
+     positioned and overflows its aura upward, so a caption placed above the
+     row gets covered by the very characters it is labelling. */
+  order: 2;
+  text-align: right;
+  max-width: 160px;
+  line-height: 1.35;
+}
+
 .sect-court__empty {
   font-family: var(--sect-face-script);
   font-size: var(--sect-t-lg);

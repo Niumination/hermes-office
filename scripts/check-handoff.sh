@@ -124,7 +124,7 @@ fi
 declare -A EXPECT=(
   ["art/originals/sprites|*.webp"]=100
   ["art/donghua-cast|*.webp"]=16
-  ["frontend/public/sprites|*.webp"]=0   # 282 → 132 pada 2026-10-10 (150 cast lama, paparan HKI); → 0 pada 2026-10-12 (dipensiunkan, tak ada pembaca). Angka ini tetap dijaga: 0 berarti nol, dan sprite yang muncul kembali tanpa pembaca harus membuat gerbang merah.
+  ["frontend/public/sprites|*.webp"]=32  # 282 → 132 pada 2026-10-10 (150 cast lama, paparan HKI); → 0 pada 2026-10-12 (dipensiunkan, tak ada pembaca); → 32 pada 2026-10-15 (cast donghua dipulihkan BERSAMA pembacanya di sect/cast.ts). 100 sprite upstream tetap pensiun. check-sprites.py yang menjaga ikatan seni↔pembaca; angka di sini hanya menjaga agar jumlahnya tidak bergeser diam-diam.
   ["frontend/public/rooms|*.webp"]=26   # 18 tema bawaan + 8 tema Perguruan di rooms/sect/
 )
 for key in "${!EXPECT[@]}"; do

@@ -248,7 +248,8 @@ ledger **tidak pernah** menolak aksi yang sedang berjalan.
 
 ### F5 · Lapisan Visual Donghua (Fase 5)
 
-12 ruangan, 18 pelat, 0 sprite (dipensiunkan 12 Okt 2026), nol placeholder.
+12 ruangan, 18 pelat, 32 sprite cast donghua (dipensiunkan 12 Okt 2026,
+dipulihkan 15 Okt bersama pembacanya), nol placeholder.
 Kesan 3D datang dari
 **cahaya**, bukan geometri: satu fragment shader WebGL2 (`AtmosphereLayer`)
 dengan god ray volumetrik, debu di tiga bidang parallax, vignette, dan

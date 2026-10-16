@@ -1,0 +1,233 @@
+{
+  "note": "Shipped sprite inventory. 'derived' sprites are reproducible byte-for-byte from art/originals/sprites via scripts/stylize-donghua.py; verify with --regen. 'unsourced' sprites have no original on record and have never been through the pipeline \u2014 only these hashes protect them.",
+  "count": 32,
+  "byProvenance": {
+    "built": 32
+  },
+  "sprites": [
+    {
+      "file": "donghua/alchemist-front-left.webp",
+      "sha256": "82018bbe791d417e22136a6c1dcfd2b76b756a0ff79a072b1a034733e10c296a",
+      "bytes": 21314,
+      "provenance": "built",
+      "originalSha256": "88754f139be0446c0a0eca9a46d6daade98fbeff532cbda452d87360408f1dce"
+    },
+    {
+      "file": "donghua/alchemist-front-right.webp",
+      "sha256": "243f6408df748ba75815c44becde87f2b43bcb860ab852cd003fcf72523a84c1",
+      "bytes": 21110,
+      "provenance": "built",
+      "originalSha256": "88754f139be0446c0a0eca9a46d6daade98fbeff532cbda452d87360408f1dce"
+    },
+    {
+      "file": "donghua/alchemist-rear-left.webp",
+      "sha256": "8691707be6c2d63563190c5f0c792cba1a646baf105467be1f4aac995314113c",
+      "bytes": 21568,
+      "provenance": "built",
+      "originalSha256": "452403633320e621b0113cdec39dd989d822db36869d6d71e62267892f1884f6"
+    },
+    {
+      "file": "donghua/alchemist-rear-right.webp",
+      "sha256": "420bd19381c73bc439ac5e72f9cea4fb6f99e3cf3adb448b1ab6da644e2658e9",
+      "bytes": 21616,
+      "provenance": "built",
+      "originalSha256": "452403633320e621b0113cdec39dd989d822db36869d6d71e62267892f1884f6"
+    },
+    {
+      "file": "donghua/cultivator-front-left.webp",
+      "sha256": "a8a51562afdf29807eb1ec5dc5f16add6de3adc2efe97dece09a01bfbeae4ffd",
+      "bytes": 17952,
+      "provenance": "built",
+      "originalSha256": "340658b3df3bd6e57479467355b65361e96218d88034663c5a1e8801b8d55e8a"
+    },
+    {
+      "file": "donghua/cultivator-front-right.webp",
+      "sha256": "7dfbd32b9b48d8ff30463f19602ac2a96700863af5c147c33958b2e0d3bc6715",
+      "bytes": 17970,
+      "provenance": "built",
+      "originalSha256": "340658b3df3bd6e57479467355b65361e96218d88034663c5a1e8801b8d55e8a"
+    },
+    {
+      "file": "donghua/cultivator-rear-left.webp",
+      "sha256": "be2114f0d00810be4dba20f875a1cbaf6c7335d5c1a87ae1e0dbe4319f429a51",
+      "bytes": 13596,
+      "provenance": "built",
+      "originalSha256": "ca0327c145bfde397dd59af0346c77143a8c06008e7c4cafc5b8f9901199d490"
+    },
+    {
+      "file": "donghua/cultivator-rear-right.webp",
+      "sha256": "c98537c845f20a5cdfe05c9532a84321401f9d1f3f1252f15dfb633cee45cdc1",
+      "bytes": 13560,
+      "provenance": "built",
+      "originalSha256": "ca0327c145bfde397dd59af0346c77143a8c06008e7c4cafc5b8f9901199d490"
+    },
+    {
+      "file": "donghua/elder-front-left.webp",
+      "sha256": "a64a876c6acfe4648074d6066eeaeab72533992f6661c0ce392234f183936e66",
+      "bytes": 15510,
+      "provenance": "built",
+      "originalSha256": "5f9873a4b4d947ad8a68bad97dcc71ceb2e1ea537f00f8ddb0454d07c2197807"
+    },
+    {
+      "file": "donghua/elder-front-right.webp",
+      "sha256": "4eeeaebb23be8891312c92d228fdf3fbf15c0c1fa2877d5533e0221a4cc4e26b",
+      "bytes": 15646,
+      "provenance": "built",
+      "originalSha256": "5f9873a4b4d947ad8a68bad97dcc71ceb2e1ea537f00f8ddb0454d07c2197807"
+    },
+    {
+      "file": "donghua/elder-rear-left.webp",
+      "sha256": "c5f25d050361efed0ecc647bb6e48e2be5791da46952c9a0e679784dadd871b7",
+      "bytes": 15934,
+      "provenance": "built",
+      "originalSha256": "e061e88d1f5cba052a2a8a1dbb7b5ff8f5256f06f12e1c91cda484eca95c71b4"
+    },
+    {
+      "file": "donghua/elder-rear-right.webp",
+      "sha256": "2ed8a610bcd68cd4ca7125b146c4e52ee5f5090a0e4b7a6ac5e0f70a4434d5b7",
+      "bytes": 15888,
+      "provenance": "built",
+      "originalSha256": "e061e88d1f5cba052a2a8a1dbb7b5ff8f5256f06f12e1c91cda484eca95c71b4"
+    },
+    {
+      "file": "donghua/forge-front-left.webp",
+      "sha256": "3b7a623d590a358e0f9c57bc868239d9ddbdaacde7569785d311a54da9375a1f",
+      "bytes": 17426,
+      "provenance": "built",
+      "originalSha256": "fb03491a86aad47779d8f9c6bec31c0565607cee6b8856bb13ea4c13e19b49fd"
+    },
+    {
+      "file": "donghua/forge-front-right.webp",
+      "sha256": "8f5b509e3023f48b5fb42dab38332b1b2922639cae4f088a428b50ceca981cd5",
+      "bytes": 17628,
+      "provenance": "built",
+      "originalSha256": "fb03491a86aad47779d8f9c6bec31c0565607cee6b8856bb13ea4c13e19b49fd"
+    },
+    {
+      "file": "donghua/forge-rear-left.webp",
+      "sha256": "0462df0993771cb6b2eb13e7801e9892fa3064b4e0c35e1e640e961720b084f0",
+      "bytes": 18222,
+      "provenance": "built",
+      "originalSha256": "b141775c5b9b4d8691e6c34b9a15d03ff419f24f6a869f6bb770ad3cd10b8d1e"
+    },
+    {
+      "file": "donghua/forge-rear-right.webp",
+      "sha256": "2d86b921442c2b5e2a143b6f0db6104be05f82f1868321d86647c7a8ed7e6453",
+      "bytes": 18252,
+      "provenance": "built",
+      "originalSha256": "b141775c5b9b4d8691e6c34b9a15d03ff419f24f6a869f6bb770ad3cd10b8d1e"
+    },
+    {
+      "file": "donghua/guardian-front-left.webp",
+      "sha256": "1d93fed16098aad1d0003c9da41e626e23a93e7915d88a1b57aec64320045367",
+      "bytes": 16550,
+      "provenance": "built",
+      "originalSha256": "b376a4ad0df6eb07c21624b11d633e106042d3c11e3edcd78c1e95b5a41768c5"
+    },
+    {
+      "file": "donghua/guardian-front-right.webp",
+      "sha256": "f644a1fc7316ba8359d5ab0853185880f40788ad04570ea6a02083a3093d556a",
+      "bytes": 16588,
+      "provenance": "built",
+      "originalSha256": "b376a4ad0df6eb07c21624b11d633e106042d3c11e3edcd78c1e95b5a41768c5"
+    },
+    {
+      "file": "donghua/guardian-rear-left.webp",
+      "sha256": "0ff79acdc8b4df341f3c055cb20df3d2524af15c0cfc50ae05e2edf655a16abb",
+      "bytes": 15538,
+      "provenance": "built",
+      "originalSha256": "9400002b1e73e74c1b3613b19afe795afbbc1022531b0182b4684a472b7cb73d"
+    },
+    {
+      "file": "donghua/guardian-rear-right.webp",
+      "sha256": "33f1fb1f643ba4c86c16e679deef5b55aba468b88556ac0630054f55aa6bedc6",
+      "bytes": 15432,
+      "provenance": "built",
+      "originalSha256": "9400002b1e73e74c1b3613b19afe795afbbc1022531b0182b4684a472b7cb73d"
+    },
+    {
+      "file": "donghua/physician-front-left.webp",
+      "sha256": "a96938dbf0f720d2baf9ced1461fdd2c67a5ba3c6f4394659324d35cf17612a0",
+      "bytes": 15662,
+      "provenance": "built",
+      "originalSha256": "9580e28a6a283ecefc105a1cae5325f235724a73c3bbd0a67239b5901bf9c785"
+    },
+    {
+      "file": "donghua/physician-front-right.webp",
+      "sha256": "94deb983ed9be5c30599f09a02b366fe4ac3e73d450aafefa0596dbf8cadc43c",
+      "bytes": 15742,
+      "provenance": "built",
+      "originalSha256": "9580e28a6a283ecefc105a1cae5325f235724a73c3bbd0a67239b5901bf9c785"
+    },
+    {
+      "file": "donghua/physician-rear-left.webp",
+      "sha256": "949e65008b76dd8184946757a0c86ced5d79f0eb615dbde3145e246f47ed9730",
+      "bytes": 15892,
+      "provenance": "built",
+      "originalSha256": "fbc152f7d3c4d88db09e22636ca537ab229c5d5495ada30cf78a4e5d445f3e41"
+    },
+    {
+      "file": "donghua/physician-rear-right.webp",
+      "sha256": "d7e2f6da7522b50dc3b5b49c3d37f378ae9d2f484b8e4b4c6789b41888c06d8a",
+      "bytes": 16260,
+      "provenance": "built",
+      "originalSha256": "fbc152f7d3c4d88db09e22636ca537ab229c5d5495ada30cf78a4e5d445f3e41"
+    },
+    {
+      "file": "donghua/scholar-front-left.webp",
+      "sha256": "2cc77fcb52687d6b6da058760410345824c337b9f44e6567c67f54feb93836ae",
+      "bytes": 18166,
+      "provenance": "built",
+      "originalSha256": "0e61b57c24a395e58f0272eef64edc3080dea31233a9b8cadde5a1850994ad7c"
+    },
+    {
+      "file": "donghua/scholar-front-right.webp",
+      "sha256": "54d91fbfd7d510bd6dc53893bfd9557cd50d92b97d8f07479cdf7ea6921cc245",
+      "bytes": 18302,
+      "provenance": "built",
+      "originalSha256": "0e61b57c24a395e58f0272eef64edc3080dea31233a9b8cadde5a1850994ad7c"
+    },
+    {
+      "file": "donghua/scholar-rear-left.webp",
+      "sha256": "f0a8ee01d41e80e46716dedda7e07b96f907108f355788ee6c3db71676eb1bcf",
+      "bytes": 16628,
+      "provenance": "built",
+      "originalSha256": "daa485e3c32373bf4719411b812f9db303507b0f8b43bbd8acfbb0422e9be05a"
+    },
+    {
+      "file": "donghua/scholar-rear-right.webp",
+      "sha256": "1ae6153a36113aa99eb4a6d94cc89dc46b6ca05528bdccb00e3cb1846700749a",
+      "bytes": 16652,
+      "provenance": "built",
+      "originalSha256": "daa485e3c32373bf4719411b812f9db303507b0f8b43bbd8acfbb0422e9be05a"
+    },
+    {
+      "file": "donghua/weaver-front-left.webp",
+      "sha256": "3e541d346d6d5217f1b129c97760438c03a7c408e9cda754c8e7bf21b44eebfd",
+      "bytes": 21606,
+      "provenance": "built",
+      "originalSha256": "8aa0be28fdbb0a8bbc6d835dd5bdb92e4c1be3ff5bff5ec5f984bc5c09a4e717"
+    },
+    {
+      "file": "donghua/weaver-front-right.webp",
+      "sha256": "39fe62eaec70dd4fd9139d93c3d571de8784ca0585207e0b1ffb2c7ba42a0194",
+      "bytes": 21764,
+      "provenance": "built",
+      "originalSha256": "8aa0be28fdbb0a8bbc6d835dd5bdb92e4c1be3ff5bff5ec5f984bc5c09a4e717"
+    },
+    {
+      "file": "donghua/weaver-rear-left.webp",
+      "sha256": "9c8578dfdef8afa326ec491544e49a798e4d96dfd3b2b4cce438141937e6cf53",
+      "bytes": 23440,
+      "provenance": "built",
+      "originalSha256": "47e3055630d8eda1d512c3934006a5ac57b8365f25edc272b1ddb354112ff003"
+    },
+    {
+      "file": "donghua/weaver-rear-right.webp",
+      "sha256": "397e53fc6376472e4b377487946444ea3385af1e8dddd3c096101ef3db87ee92",
+      "bytes": 23330,
+      "provenance": "built",
+      "originalSha256": "47e3055630d8eda1d512c3934006a5ac57b8365f25edc272b1ddb354112ff003"
+    }
+  ]
+}

@@ -896,8 +896,13 @@ def main() -> int:
         with open(sp_manifest, encoding="utf-8") as fh:
             spm = _json2.load(fh)
         by = spm["byProvenance"]
-        check("docs/SPRITES.md total sprites", "132", str(spm["count"]))
-        for kind, claimed in (("derived", "100"), ("built", "32"),
+        # 2026-10-15: 132 -> 32. The 100 `derived` upstream sprites stay
+        # retired; the 32 donghua `built` ones came back together with the
+        # reader that renders them. These numbers are pinned here AND in the
+        # doc on purpose — the check is that the two agree with the manifest,
+        # so moving the product means moving all three deliberately.
+        check("docs/SPRITES.md total sprites", "32", str(spm["count"]))
+        for kind, claimed in (("derived", "0"), ("built", "32"),
                               ("unsourced", "0")):
             check(f"docs/SPRITES.md {kind} count", claimed, str(by.get(kind, 0)))
             # Substring matching is not enough here: a bare "32" is also

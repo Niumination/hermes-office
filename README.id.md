@@ -130,9 +130,9 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 | | |
 |---|---|
 | Test backend | **383** |
-| Test frontend | **148** |
-| Klaim dokumen yang diverifikasi mesin | **103** (`scripts/check-docs.py`) |
-| Bundel | 276,4 kB JS · 29,6 kB CSS |
+| Test frontend | **178** |
+| Klaim dokumen yang diverifikasi mesin | **114** (`scripts/check-docs.py`) |
+| Bundel | 278,8 kB JS · 31,6 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 
 `check-docs.py` memeriksa dokumentasi terhadap repo — jumlah rute, jumlah
@@ -179,7 +179,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | room plates | 26 pelat cocok hash **dan** aturan gaya rumah |
 | theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |
-| sprites (+rebuild) | 0 sprite dikirim — pensiunnya bertahan dan sumbernya tetap ada |
+| sprites (+rebuild) | 32 sprite cast dibangun ulang byte-for-byte, dan seninya terikat pada kode yang memuatnya |
 
 Tiga di antaranya layak disebut khusus, karena merekalah yang menangkap apa
 yang tidak bisa ditangkap hash:

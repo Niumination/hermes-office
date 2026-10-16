@@ -43,6 +43,7 @@ USAGE
     python3 scripts/check-sprites.py --write      # (re)record the manifest
 """
 import hashlib
+import re
 import json
 import os
 import subprocess
@@ -256,6 +257,9 @@ def retired():
                 "then re-record this manifest with --write.")
             problems.extend("    " + s for s in stray[:8])
 
+    # Zero shipped art is only honest if nothing is trying to load it.
+    problems.extend(check_binding(0))
+
     for src, what in ((ORIGINALS, "art/originals/sprites"),
                       (CAST_FRONT, "art/donghua-cast/front-256"),
                       (CAST_REAR, "art/donghua-cast/rear-256")):
@@ -277,6 +281,87 @@ def retired():
           f"ASSET-MANIFEST.json); {n_orig} originals and {n_cast} cast renders "
           f"preserved, so the decision stays reversible")
     return 0
+
+
+SRC_DIR = os.path.join(ROOT, "frontend", "src")
+
+
+def strip_comments(src):
+    """Remove // and /* */ comments so a COMMENT cannot satisfy the binding.
+
+    Found by mutation-testing this gate: deleting the real reader still
+    passed, because frontend/src/config.ts carried the words
+    "/sprites/donghua/" in a comment above a map that nothing used. A gate
+    satisfied by a sentence about the feature, rather than the feature, is
+    the same theatre as a gate that reads its expectations from the file it
+    is watching.
+
+    `//` is only treated as a comment when it is not part of a URL scheme,
+    so "https://..." inside a string survives.
+    """
+    src = re.sub(r"/\*.*?\*/", "", src, flags=re.S)
+    return re.sub(r"(?<!:)//[^\n]*", "", src)
+
+
+
+
+def reader_refs():
+    """Files under frontend/src that name the shipped sprite directory.
+
+    This is the check that was missing. The gate used to measure one half of
+    the relationship — are the shipped files intact — and the half it could
+    not see is the half that actually broke. On 2026-10-12 the art was
+    deleted because nothing read it; the real fault was three days earlier,
+    when the Sect migration dropped the reader and every gate stayed green
+    while the characters vanished from the product.
+
+    So the invariant is a BINDING, not a count:
+
+        art shipped  <->  code that loads it
+
+    Break it either way and this fails. Art with no reader is the 3.1 MB of
+    dead weight that accumulated the first time. A reader with no art is an
+    office full of empty circles, which is worse, because it looks like the
+    feature is broken rather than absent.
+    """
+    hits = []
+    for dirpath, dirs, names in os.walk(SRC_DIR):
+        dirs[:] = [d for d in dirs if d != "node_modules"]
+        for n in sorted(names):
+            if not n.endswith((".ts", ".tsx", ".css")):
+                continue
+            # A test may name the path while asserting on a fixture; that is
+            # not a reader. Only production modules count as the other half
+            # of the binding.
+            if ".test." in n:
+                continue
+            fp = os.path.join(dirpath, n)
+            try:
+                with open(fp, encoding="utf-8") as fh:
+                    if "/sprites/donghua/" in strip_comments(fh.read()):
+                        hits.append(os.path.relpath(fp, ROOT).replace(os.sep, "/"))
+            except OSError:
+                continue
+    return hits
+
+
+def check_binding(shipped_n):
+    """Return a list of problems with the art<->reader binding."""
+    readers = reader_refs()
+    problems = []
+    if readers and shipped_n == 0:
+        problems.append(
+            f"{len(readers)} module(s) load /sprites/donghua/ but 0 sprites are "
+            "shipped — the office would render empty rings. Rebuild them: "
+            "python3 scripts/build-cast-sprites.py")
+        problems.extend("    " + r for r in readers[:8])
+    if shipped_n and not readers:
+        problems.append(
+            f"{shipped_n} sprite(s) are shipped but nothing under frontend/src "
+            "loads /sprites/donghua/ — this is how 3.1 MB of unreachable art "
+            "accumulated before. Restore the reader, or retire the art on "
+            "purpose and re-record with --write.")
+    return problems
 
 
 def verify(regen):
@@ -331,6 +416,8 @@ def verify(regen):
                     f"(sha256 {orig_now[:12]} != {e['originalSha256'][:12]}) — "
                     "the shipped art is intact but can no longer be rebuilt "
                     "from source")
+
+    problems.extend(check_binding(len(on_disk)))
 
     if regen and not problems:
         regen_check(doc["sprites"], problems)

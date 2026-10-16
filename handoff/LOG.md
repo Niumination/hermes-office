@@ -2460,3 +2460,92 @@ dikerjakan dari sandbox Arena karena butuh mesin, kredensial produksi, atau
 keputusan operasional. Nomor 1 (restart backend) memblokir sisanya.
 
 Tes: frontend 140→148. Klaim dokumen 102→103. Gerbang 17/17.
+
+---
+
+## 028 · 2026-10-15 · Cast donghua kembali, dan gerbang yang membiarkannya pergi
+
+### Keluhan
+
+Perbaikan 026 dan 027 sudah diterapkan upstream dan live sudah di-restart.
+Pemilik membuka situsnya dan melaporkan: masih belum terlihat karakter agen,
+yang tampak hanya tingkatan kantor.
+
+### Diagnosis
+
+Benar, dan sebabnya bukan kemunduran dari dua commit itu. Keduanya
+memperbaiki **data** — siapa yang ada di lantai, dan bisakah seseorang masuk
+sebagai pemilik. Tidak satu pun menyentuh **cara seseorang digambar**.
+
+Live diperiksa langsung sebagai tamu ber-cookie:
+
+```
+/policy  lobby ['cloud']        <- penempatan 026 bekerja
+/roster  cloud, mac, boss       <- tiga terdaftar
+/presence cloud online=False    <- satu pernah terlihat, 143 dtk lalu
+```
+
+Jadi satu agen dari tiga ada di denah, dan ia digambar sebagai `AW` — dua
+huruf di dalam cincin qi, `opacity: 0.42`.
+
+Bundel yang dilayani live mengonfirmasi tidak ada jalan lain: `"sprites/"`
+muncul **0 kali**, `"donghua"` **0 kali**.
+
+Penyebabnya commit **5b90097** (12 Okt), milik repo ini sendiri. Bukti yang
+dikumpulkan saat itu benar — 133 berkas sprite, nol `<img>`, nol `url()`,
+nol path yang dirangkai — tapi kesimpulannya meleset. Sprite itu bukan
+kelebihan; **pembacanya** yang dihapus oleh migrasi UI Sect tiga hari
+sebelumnya, tanpa satu gerbang pun berubah warna.
+
+Gerbang `sprites` tidak merah selama karakter menghilang. Ketika populasi
+yang dijaganya jatuh ke nol, ia ditulis ulang untuk menegaskan kenyataan baru
+(`PASS: 0 sprites shipped`). Gerbang yang menyesuaikan diri dengan kehilangan
+bukanlah gerbang.
+
+### Yang dikerjakan
+
+32 sprite dibangun ulang dari 16 render di `art/donghua-cast` lewat
+`scripts/build-cast-sprites.py` yang memang tidak pernah dihapus — itulah
+gunanya pensiun dibuat bisa dibalik.
+
+`frontend/src/sect/cast.ts` (pembaca baru): arketipe dipilih dari id agen,
+lalu dari peran `/roster`, lalu sebaran hash. Hadap depan/belakang mengikuti
+`state` dan merupakan fakta; kiri/kanan adalah hash yang stabil dan tidak
+berarti apa-apa — dicatat supaya tidak dibaca sebagai informasi.
+
+`frontend/src/sect/rosterClient.ts`: `/roster` tidak pernah diambil satu
+baris pun oleh frontend. Itu sumber ketiga dari "siapa yang ada", dan
+satu-satunya yang tahu soal agen yang belum pernah mengirim event. `mac` dan
+`boss` tidak terlihat karena tidak ada yang bertanya.
+
+`Hall.tsx`: Murid digambar sebagai karakter, dengan **jatuh balik ke huruf**
+bila gambar gagal dimuat — deploy yang mengirim JS tanpa webp jangan sampai
+mengosongkan kantor untuk kedua kalinya karena alasan yang berbeda. Agen di
+`/roster` yang tak pernah ditempatkan digambar sebagai **hantu** di jalur
+terpisah, berlabel "belum pernah terlihat", tidak pernah dicampur ke denah
+server.
+
+### Gerbang diberi invarian yang seharusnya ada sejak awal
+
+`check-sprites.py` sekarang menjaga sebuah **ikatan**, bukan jumlah:
+
+    seni yang dikirim  <->  kode yang memuatnya
+
+Putus salah satu arah dan ia merah. Seni tanpa pembaca adalah 3,1 MB bobot
+mati yang menumpuk pertama kali. Pembaca tanpa seni adalah kantor berisi
+lingkaran kosong, yang lebih buruk karena tampak rusak alih-alih absen.
+
+Diuji dengan mutasi: pembaca dihapus → merah; seni dihapus → merah. Versi
+pertama lulus mutasi pertama, karena `config.ts` memuat kata
+`/sprites/donghua/` di dalam **komentar** di atas `ROLE_TO_CHAR` yang nol
+konsumen. Gerbang yang dipuaskan oleh kalimat tentang fitur, bukan fiturnya,
+adalah teater yang sama. Komentar kini dilucuti sebelum dipindai, dan
+`ROLE_TO_CHAR` (39 baris kode mati) dibuang.
+
+Satu celah sisa dicatat dengan sadar: menghapus seni, manifest, dan pembaca
+sekaligus tetap lulus sebagai jalur pensiun yang sah. Kecelakaan
+sesungguhnya tertangkap di langkah pertama, dan aparatus tidak ditambah
+melampaui itu.
+
+Tes: frontend 148→178 (11 mutasi diuji, 11 tertangkap). Klaim dokumen
+103→114. Gerbang 17/17.

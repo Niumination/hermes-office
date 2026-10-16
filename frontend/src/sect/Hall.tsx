@@ -20,8 +20,13 @@ export interface Cultivator {
   name: string
   glyph: string
   task?: string
-  state: 'working' | 'idle' | 'away'
+  state: 'working' | 'idle' | 'away' | 'ghost'
   qi: BurnState
+  /**
+   * Character art from sect/cast.ts. Optional: absent means mark-only, which
+   * is exactly how this component behaved before the cast came back.
+   */
+  sprite?: string
 }
 
 const QI_VAR: Record<BurnState, string> = {
@@ -32,6 +37,44 @@ const QI_VAR: Record<BurnState, string> = {
   tripped: 'var(--sect-qi-4)',
 }
 
+/**
+ * One disciple.
+ *
+ * A component rather than inline JSX because the sprite needs per-image
+ * failure state. Sprites are static files served beside the bundle, so a
+ * deploy that ships the JS and forgets the webp files would empty the
+ * mountain a second time for a completely different reason. On error this
+ * falls back to the mark, and the hall still reports who is in it.
+ */
+const Disciple: React.FC<{ c: Cultivator }> = ({ c }) => {
+  const [failed, setFailed] = React.useState(false)
+  const showSprite = Boolean(c.sprite) && !failed
+  return (
+    <figure
+      className={`sect-cul sect-cul--${c.state}${showSprite ? ' sect-cul--art' : ''}`}
+      style={{ ['--qi' as string]: QI_VAR[c.qi] }}
+      title={c.task ? `${c.name} — ${c.task}` : c.name}
+    >
+      <div className="sect-cul__aura">
+        {showSprite ? (
+          <img
+            className="sect-cul__art"
+            src={c.sprite}
+            alt=""
+            draggable={false}
+            decoding="async"
+            onError={() => setFailed(true)}
+          />
+        ) : (
+          <span className="sect-cul__glyph">{c.glyph}</span>
+        )}
+      </div>
+      <figcaption className="sect-cul__name">{c.name}</figcaption>
+      {c.task && <p className="sect-cul__task">{c.task}</p>}
+    </figure>
+  )
+}
+
 export const Hall: React.FC<{
   room: RoomId
   hall: SectHall | undefined
@@ -39,7 +82,14 @@ export const Hall: React.FC<{
   locked: boolean
   guest?: boolean
   cultivators: Cultivator[]
-}> = ({ room, hall, plate, locked, guest, cultivators }) => {
+  /**
+   * Agents the roster lists that the server has placed nowhere. Drawn in
+   * their own strip, never mixed into the court: the court is the server's
+   * floor plan and these are absent from it. Mixing them in would re-tell
+   * the exact lie the floor plan was fixed to stop telling.
+   */
+  ghosts?: Cultivator[]
+}> = ({ room, hall, plate, locked, guest, cultivators, ghosts = [] }) => {
   return (
     <main className="sect-stage" aria-label={hall ? `${hall.nameId} — ${hall.nameEn}` : room}>
       <div
@@ -60,21 +110,19 @@ export const Hall: React.FC<{
           {cultivators.length === 0 ? (
             <p className="sect-court__empty sect-script">Balai kosong</p>
           ) : (
-            cultivators.map((c) => (
-              <figure
-                key={c.id}
-                className={`sect-cul sect-cul--${c.state}`}
-                style={{ ['--qi' as string]: QI_VAR[c.qi] }}
-                title={c.task ? `${c.name} — ${c.task}` : c.name}
-              >
-                <div className="sect-cul__aura">
-                  <span className="sect-cul__glyph">{c.glyph}</span>
-                </div>
-                <figcaption className="sect-cul__name">{c.name}</figcaption>
-                {c.task && <p className="sect-cul__task">{c.task}</p>}
-              </figure>
-            ))
+            cultivators.map((c) => <Disciple key={c.id} c={c} />)
           )}
+        </div>
+      )}
+
+      {!locked && ghosts.length > 0 && (
+        <div className="sect-court sect-court--ghosts">
+          <p className="sect-court__label sect-script">
+            Tercatat di daftar — belum pernah terlihat
+          </p>
+          <div className="sect-court__row">
+            {ghosts.map((g) => <Disciple key={g.id} c={g} />)}
+          </div>
         </div>
       )}
 
