@@ -12,7 +12,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import {
-  readReport, servedBundle, buildProof, redactForGuest,
+  readReport, servedBundle, buildProof,
 } from "../server/proof.js";
 
 const tmp = () => mkdtempSync(join(tmpdir(), "proof-"));
@@ -110,33 +110,19 @@ test("servedBundle fingerprints the real file and survives an absent dist", () =
   rmSync(dir, { recursive: true, force: true });
 });
 
-test("guests get the verdict, never the commit, branch or gate names", () => {
+test("the proof is served whole — there is no redacted variant", () => {
+  // `redactForGuest` stripped commit, branch and gate names for read-only
+  // visitors. With one principal the proof has one reader, who is entitled
+  // to the evidence rather than a verdict about it.
   const full = buildProof({
     report: REPORT,
     served: { file: "index-AAA.js", sha256: "a".repeat(64) },
-    ledger: { ok: true, trustworthy: true, records: 12 },
+    ledger: { ok: true, records: 42 },
   });
-  const guest = redactForGuest(full);
-  const text = JSON.stringify(guest);
-
-  assert.equal(guest.redacted, true);
-  assert.equal(guest.verification.gatesGreen, 2);
-  assert.equal(guest.bundleMatches, true);
-  for (const leak of ["abc123", "dev", "eslint", "doc claims", "index-AAA.js"]) {
-    assert.equal(text.includes(leak), false, `guest payload leaked ${leak}`);
-  }
-  // Chain health is a yes/no for a guest; record counts are not theirs.
-  assert.equal(guest.ledger.ok, true);
-  assert.equal("records" in guest.ledger, false);
+  assert.equal(full.redacted, undefined);
+  assert.equal(full.verification.gatesGreen, 2);
+  assert.equal(full.ledger.records, 42, "record counts belong to the owner");
 });
-
-test("a guest told nothing was verified is still told that much", () => {
-  const guest = redactForGuest(
-    buildProof({ report: null, served: null, ledger: null }));
-  assert.equal(guest.reportMissing, true);
-  assert.equal(guest.verification, null);
-});
-
 test("the ledger failing does not erase the gate evidence", () => {
   const proof = buildProof({
     report: REPORT,

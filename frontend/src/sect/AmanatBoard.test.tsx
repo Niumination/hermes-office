@@ -2,7 +2,7 @@
  * Tests for the Amanat board overlay.
  *
  * Carried over from Amanat.test.tsx (the panel this replaces) so the
- * guarantees survive the change of shape: blocked-first ordering, guest
+ * guarantees survive the change of shape: blocked-first ordering,
  * redaction, the empty state, and the fact that counts stay visible even
  * when titles are hidden.
  *
@@ -25,7 +25,6 @@ function task(over: Partial<Amanat> = {}): Amanat {
     origin: 'whatsapp',
     repo: 'hermes-office',
     blocked: false,
-    redacted: false,
     updatedTs: NOW - 60_000,
     createdTs: NOW - 300_000,
     lane: 'active',
@@ -48,7 +47,6 @@ function board(over: Partial<AmanatState> = {}): AmanatState {
     counts: { blocked: 0, active: 0, queued: 0, done: 0, stopped: 0 },
     total: 0,
     blocked: 0,
-    redacted: false,
     stale: false,
     loaded: true,
     lastOkTs: NOW,
@@ -91,20 +89,21 @@ describe('AmanatBoard', () => {
     expect(screen.getByText(/1 menunggu Anda/)).toBeTruthy()
   })
 
-  it('shows counts but not titles for a guest', () => {
-    const b = board({ total: 2, redacted: true })
+  it('falls back to the id for a task that genuinely has no title', () => {
+    // The board used to print "[tersembunyi]" here, because a guest received
+    // every title stripped. Nothing strips titles now, so a null title means
+    // the task was filed without one and the id is the only true label.
+    const b = board({ total: 2 })
     b.lanes.active = [
-      task({ id: 'a', title: null, redacted: true, repo: '[redacted]' }),
-      task({ id: 'b', title: null, redacted: true, repo: '[redacted]' }),
+      task({ id: 'a', title: null, repo: null }),
+      task({ id: 'b', title: null, repo: null }),
     ]
     render(<AmanatBoard board={b} onClose={() => {}} now={NOW} />)
-    // The lane count is still honest...
     const col = document.querySelector('.amanat-col--active')!
     expect(within(col as HTMLElement).getByText('2')).toBeTruthy()
-    // ...but no project name escapes.
-    expect(screen.queryByText('hermes-office')).toBeNull()
-    expect(screen.getAllByText('[tersembunyi]')).toHaveLength(2)
-    expect(screen.getByText(/judul disembunyikan/)).toBeTruthy()
+    expect(screen.getByText('a')).toBeTruthy()
+    expect(screen.getByText('b')).toBeTruthy()
+    expect(screen.queryByText('[tersembunyi]')).toBeNull()
   })
 
   it('explains the empty state instead of showing bare zeroes', () => {

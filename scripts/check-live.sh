@@ -58,30 +58,39 @@ else
   note "$(head -c 160 "$BODY" 2>/dev/null)"
 fi
 
-# --- 2. a visitor actually gets a session -----------------------------------
-# GET / is one of only two guest-session minters. If this breaks, every visitor
-# sees a 401 wall and the dashboard is functionally offline while /health still
-# reports healthy.
+# --- 2. the door is served, and it is only a door ---------------------------
+# GET / used to mint a guest session, so every visitor was logged in as a
+# second principal. It must now serve the shell and nothing else: a 200 with
+# the app HTML, and NO session cookie. Both halves matter — a 401 here would
+# lock the owner out of the login form itself, and a cookie here would mean
+# the auto-session came back.
 code=$(curl -s -c "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/" 2>/dev/null)
-if [ "$code" = "200" ] && grep -q 'office_session' "$JAR" 2>/dev/null; then
-  ok "GET / mints a guest session"
+if [ "$code" != "200" ]; then
+  bad "GET / returned '$code' — the login shell must be reachable without a session"
+elif grep -q 'office_session' "$JAR" 2>/dev/null; then
+  bad "GET / minted a session cookie — the auto-session is back"
 else
-  bad "GET / returned '$code' without a session cookie"
+  ok "GET / serves the shell and mints nothing"
 fi
 
-# --- 3. the three endpoints the office cannot draw without -------------------
+# --- 3. no data before a session --------------------------------------------
+# These three are what the office draws itself from. Served to an anonymous
+# caller they are a floor plan, a staff list and a live location feed, which
+# is why there is no longer a role that may read them without a token.
 for ep in policy roster presence; do
   code=$(curl -s -b "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
-  if [ "$code" = "200" ] && head -c 1 "$BODY" | grep -q '{'; then
-    ok "/$ep answers a guest with JSON"
-  else
-    bad "/$ep answered '$code' to a guest"
-  fi
+  case "$code" in
+    401) ok "/$ep refuses an anonymous caller" ;;
+    000) bad "/$ep unreachable — authorization not verified" ;;
+    *) bad "/$ep answered '$code' without a session (expected 401)" ;;
+  esac
 done
 
 # --- 4. owner-only data is still owner-only ---------------------------------
 # A live assertion, not a repo one: this is the check that notices if a deploy
-# ever ships with the guards misconfigured.
+# ever ships with the guards misconfigured. With one principal these answer
+# the same 401 as section 3; they are kept separate because a regression that
+# re-opens the ledger is a different incident from one that re-opens /policy.
 leaked=""
 unreachable=0
 for ep in ledger dossier replay standup debug/events; do
@@ -98,9 +107,9 @@ done
 if [ "$unreachable" -gt 0 ]; then
   bad "could not reach $unreachable/5 owner-only routes — authorization not verified"
 elif [ -z "$leaked" ]; then
-  ok "owner-only routes refuse a guest (5 checked)"
+  ok "owner-only routes refuse an anonymous caller (5 checked)"
 else
-  bad "owner-only routes reachable by a guest:$leaked"
+  bad "owner-only routes reachable without a session:$leaked"
 fi
 
 # --- 5. the deployed bundle is the one in this working tree ------------------

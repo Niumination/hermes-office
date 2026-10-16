@@ -50,7 +50,9 @@ function initials(name: string): string {
 
 function Card({ task, now }: { task: AmanatTask; now: number }) {
   const where = task.origin ? (ORIGIN_LABELS[task.origin] ?? task.origin) : null
-  const title = task.title ?? (task.redacted ? '[tersembunyi]' : task.id)
+  // The server no longer withholds titles from anyone, so a missing title is
+  // a task that genuinely has none — the id is the honest fallback.
+  const title = task.title ?? task.id
   return (
     <article className={`amanat-card${task.blocked ? ' amanat-card--blocked' : ''}`}>
       <div className="amanat-card__title">{title}</div>
@@ -66,7 +68,7 @@ function Card({ task, now }: { task: AmanatTask; now: number }) {
       <div className="amanat-card__meta">
         <span>{STATE_LABELS[task.state]}</span>
         {where && <span>lewat {where}</span>}
-        {task.repo && task.repo !== '[redacted]' && (
+        {task.repo && (
           <span className="amanat-card__repo">{task.repo}</span>
         )}
       </div>
@@ -102,7 +104,7 @@ export default function AmanatBoard({
   onClose: () => void
   now?: number
 }) {
-  const { order, lanes, total, blocked, redacted, stale, loaded } = board
+  const { order, lanes, total, blocked, stale, loaded } = board
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -126,7 +128,6 @@ export default function AmanatBoard({
           <span className="amanat-board__sub">
             {loaded || total > 0 ? `${total} amanat` : 'memuat…'}
             {blocked > 0 && <strong className="amanat-board__alert"> · {blocked} menunggu Anda</strong>}
-            {redacted && <span className="amanat-board__veil"> · judul disembunyikan</span>}
             {stale && <span className="amanat-board__veil"> · tak tersambung</span>}
           </span>
           <button

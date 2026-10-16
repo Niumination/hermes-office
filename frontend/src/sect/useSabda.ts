@@ -12,12 +12,12 @@
  *
  * ## The permission boundary is the server's, and it is mirrored, not invented
  *
- *   GET  /chat         requireAny                  — a guest may read
- *   POST /chat         requireAuth(bridge, owner)  — a guest may NOT speak
- *   POST /chat/react   requireAny                  — a guest may react
+ *   GET  /chat         requireAny(bridge, owner)
+ *   POST /chat         requireAuth(bridge, owner)
+ *   POST /chat/react   requireAny(bridge, owner)
  *   POST /chat/typing  requireAny
  *
- * So a guest gets the transcript and the reactions, and no composer. The UI
+ * All three need a session, so signed out there is nothing to show. The UI
  * hides the composer because the server would refuse it — not to be decorative
  * about it. When the server refuses anyway (403), the refusal is shown as the
  * server's, verbatim in effect, rather than swallowed.
@@ -112,16 +112,12 @@ export function useSabda(opts: UseSabdaOptions = {}): SabdaState {
   const [loaded, setLoaded] = useState(false)
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // History. A guest is allowed this (GET /chat is requireAny), so it is not
-  // gated on being the owner — gating it client-side would be the UI inventing
-  // a refusal.
-  //
-  // The retry is not defensive padding. On a cold load this fetch races
-  // SectApp's `GET /kiosk`, which is what mints the auto-guest session, and it
-  // loses: the server answers 401 and the transcript would stay empty until
-  // the visitor happened to reload. Observed in a real browser, not theorised.
-  // So a 401 here means "no session *yet*" and is retried with the same capped
-  // backoff the rest of this app uses.
+  // History. The retry is not defensive padding: on a cold load this used to
+  // race the auto-guest session mint and lose, leaving the transcript empty
+  // until the visitor happened to reload. Observed in a real browser, not
+  // theorised. The race is gone with the auto-session, but a 401 still means
+  // "no session yet" during the moment between the owner submitting their
+  // token and the cookie landing, so the capped backoff stays.
   useEffect(() => {
     let stopped = false
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))

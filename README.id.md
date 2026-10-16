@@ -54,7 +54,6 @@ mengapa ia diizinkan.
 | **Flight recorder tahan-rusak** | Setiap keputusan dirantai SHA-256, append-only. 0,020 ms per catatan; 100.000 catatan terverifikasi dalam 0,7 detik dan memakan 31,3 MB. |
 | **Penambatan eksternal** | Rantai saja tidak mendeteksi pemotongan ekor. Hash kepala diterbitkan ke sink luar, jadi menghapus seratus catatan terakhir menjadi terlihat. Statusnya dilaporkan sebagai `none`/`local`/`remote` — tidak pernah diklaim lebih kuat dari kenyataannya. |
 | **Time Machine** | Putar ulang rentang mana pun dari rantai. Agen punya **ruangan, bukan koordinat**: kalau rantai tidak mencatatnya, replay tidak mengarangnya. |
-| **Mode kiosk** | Layar dinding yang **menurunkan haknya sendiri** — tanpa angka dolar bahkan untuk owner, kecuali diminta eksplisit per-URL. |
 | **Standup** | Bacaan pagi berperingkat, deterministik, tanpa panggilan LLM. Malam yang tenang menghasilkan satu baris. |
 | **Dossier kepatuhan** | Artefak yang dibaca asesor, dengan vonis verifikasinya sendiri di dalamnya. |
 
@@ -95,7 +94,7 @@ Pasar observability LLM ramai dan sebagian besar jauh lebih besar dari ini.
 | LangSmith | Tracing + eval | **$39/kursi** + $0,50–2,50 per 1k trace |
 | Braintrust | Eval, didanai $80 jt @ $800 jt | Gratis → $249 |
 | Laminar | Tracing | $30 / $150, kursi tak terbatas |
-| **Hermes Office** | **Pagar pengaman + bukti**, bukan tracing | **$0 / $39 / $299 / $2.000+** |
+| **Hermes Office** | **Pagar pengaman + bukti**, bukan tracing | **Host sendiri, MIT, tanpa tier** |
 
 Kalau yang Anda butuhkan adalah membandingkan dua prompt, pakai Langfuse. Alat
 ini menjawab pertanyaan yang berbeda: *apa yang boleh dilakukan armada saya
@@ -110,7 +109,7 @@ balik angka-angkanya.
 ```
 Agen / bridge ──OTLP──┐
 Hermes Cloud ─────────┼──► office-server ──► Browser (React, kantor isometrik)
-Hermes Mac ───────────┘    Express 5 + ws        /kiosk  → layar dinding
+Hermes Mac ───────────┘    Express 5 + ws        /auth   → satu-satunya pintu
                                  │               /standup → bacaan pagi
                     kebijakan ───┤               /replay  → time machine
                     burn-rate ───┤               /dossier → bukti
@@ -129,8 +128,8 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 
 | | |
 |---|---|
-| Test backend | **407** |
-| Test frontend | **194** |
+| Test backend | **370** |
+| Test frontend | **189** |
 | Klaim dokumen yang diverifikasi mesin | **115** (`scripts/check-docs.py`) |
 | Bundel | 287,7 kB JS · 41,0 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
@@ -166,7 +165,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | handoff integrity | setiap berkas cocok `MANIFEST.sha256` byte-for-byte; tanpa berkas liar |
 | eslint | nol error lint di `server/` dan `tests/` |
 | frontend build | `tsc && vite build` — error tipe gagal di sini |
-| backend tests | 407 test |
+| backend tests | 370 test |
 | frontend tests | 170 test |
 | clean shutdown | proses keluar bersih dengan WebSocket masih tersambung |
 | ledger under load | rantai hash selamat dari 400 keputusan serentak: rapat, tanpa duplikat, verify ok |
@@ -180,7 +179,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |
 | sprites (+rebuild) | 32 sprite cast dibangun ulang byte-for-byte, dan seninya terikat pada kode yang memuatnya |
-| live site | situs yang berjalan menjawab, mencetak sesi tamu, tetap menolak tamu di rute pemilik, dan menyajikan bundel dari pohon ini |
+| live site | situs yang berjalan menjawab, menyajikan halaman masuk tanpa mencetak sesi, menolak setiap rute data bagi pemanggil tanpa sesi, dan menyajikan bundel dari pohon ini |
 
 Tiga di antaranya layak disebut khusus, karena merekalah yang menangkap apa
 yang tidak bisa ditangkap hash:
@@ -207,12 +206,12 @@ Repo-nya adalah buktinya; bagian ini hanya daftar isinya.
 | [`PRICING.id.md`](docs/PRICING.id.md) | Paket, dan argumen harganya |
 | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modul, rute, keputusan |
 | [`PRD.md`](docs/PRD.md) | Pilar produk, non-goal, roadmap |
-| [`SECURITY.md`](docs/SECURITY.md) | Model token, auto-guest, pipeline redaksi, coordinated disclosure |
+| [`SECURITY.md`](docs/SECURITY.md) | Model token, auth satu-pemilik, coordinated disclosure |
 | [`SUPPORT.md`](docs/SUPPORT.md) | Versi Node yang didukung, sampai kapan, dan apa arti "didukung" di sini |
 | [`POLICY.md`](docs/POLICY.md) | Denah lantai sebagai kebijakan |
 | [`BURN-RATE.md`](docs/BURN-RATE.md) | State, aksi, anggaran |
 | [`FLIGHT-RECORDER.md`](docs/FLIGHT-RECORDER.md) | Rantai hash, penambatan, verifikasi |
-| [`REPLAY.md`](docs/REPLAY.md) · [`KIOSK.md`](docs/KIOSK.md) · [`STANDUP.md`](docs/STANDUP.md) | Tiga permukaan turunan |
+| [`REPLAY.md`](docs/REPLAY.md) · [`STANDUP.md`](docs/STANDUP.md) | Dua permukaan turunan |
 | [`OTLP.md`](docs/OTLP.md) · [`EVENTS.md`](docs/EVENTS.md) | Kontrak ingest |
 | [`DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Menjalankannya sungguhan |
 | [`CHANGELOG-v2.md`](CHANGELOG-v2.md) | Setiap fase, termasuk yang gagal |
@@ -221,7 +220,7 @@ Repo-nya adalah buktinya; bagian ini hanya daftar isinya.
 
 Fork dari [Claude-Office](https://github.com/W17ant/Claude-Office) (MIT),
 yang menyumbang kantor isometrik dan seninya. Semua lapisan tata
-kelola — kebijakan, burn-rate, flight recorder, penambatan, replay, kiosk,
+kelola — kebijakan, burn-rate, flight recorder, penambatan, replay,
 standup — adalah karya baru di fork ini. README operasional asli diarsipkan di
 [`docs/LEGACY-README.md`](docs/LEGACY-README.md).
 

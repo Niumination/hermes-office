@@ -20,7 +20,6 @@ export OFFICE_PORT="$PORT"
 export OFFICE_CLOUD_TOKEN="${OFFICE_CLOUD_TOKEN:-ci-cloud-token-000000000000}"
 export OFFICE_MAC_TOKEN="${OFFICE_MAC_TOKEN:-ci-mac-token-0000000000000}"
 export OFFICE_OWNER_TOKEN="${OFFICE_OWNER_TOKEN:-ci-owner-token-00000000000}"
-export OFFICE_GUEST_TOKEN="${OFFICE_GUEST_TOKEN:-ci-guest-token-00000000000}"
 export OFFICE_DB="${OFFICE_DB:-$(mktemp -d)/office.db}"
 
 node server/index.js > /tmp/shutdown-check.log 2>&1 &

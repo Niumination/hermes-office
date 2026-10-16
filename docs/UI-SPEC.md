@@ -63,22 +63,22 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 | `sect.css` | 2214 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
 | 43 token OKLCH | seluruh sistem desain
-| `SectApp` (575 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, bootstrap tamu |
-| `Hall` (222 baris) | aula, awan, Murid berdiri di denah, papan nama, tabir Lenyap di Balik Kabut |
-| `AmanatBoard` (160 baris) | papan amanat mengambang — lajur mendatar, backdrop redup |
+| `SectApp` (569 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, halaman masuk |
+| `Hall` (215 baris) | aula, awan, Murid berdiri di denah, papan nama, tabir Lenyap di Balik Kabut |
+| `AmanatBoard` (161 baris) | papan amanat mengambang — lajur mendatar, backdrop redup |
 | `stations` (135 baris) | peta stasiun per arketipe: koordinat lantai, skala kedalaman, urutan gambar |
-| `RealmRail` (80 baris) | tangga Tataran, kehadiran, pagu |
+| `RealmRail` (78 baris) | tangga Tataran, kehadiran, pagu |
 | `Chronicle` (108 baris) | Babad — catatan peristiwa |
-| `QiRing` (95 baris) | cincin Tenaga, tiga keadaan |
+| `QiRing` (92 baris) | cincin Tenaga, tiga keadaan |
 | `Seal` (241 baris) | Segel — integritas rantai ledger |
-| `Writ` (164 baris) | Titah — antrean persetujuan |
-| `Warrant` (167 baris) | pintu masuk pemilik — token → cookie sesi |
+| `Writ` (155 baris) | Titah — antrean persetujuan |
+| `Warrant` (166 baris) | pintu masuk pemilik — token → cookie sesi |
 
 ### `QiRing` — tiga keadaan, bukan dua
 
 | situasi | tampilan | alasan |
 |---|---|---|
-| tamu, diredaksi | `Tamu · diredaksi` | server tidak mengirim angka |
+| belanja belum terukur | `—` | server tidak mengirim angka |
 | pagu belum dikonfigurasi | `$1,25 · tanpa pagu` | belanja **diketahui**; hanya pagunya tidak ada |
 | keduanya diketahui | `$2,50 / $10,00` | busur proporsional |
 
@@ -100,8 +100,8 @@ yang lenyap. Keduanya dipulihkan di sini dalam idiom sekte.
 dengan sengaja:
 
 - **Tidak merender apa pun** begitu probe ditolak. Menampilkan tombol
-  "verifikasi" yang mati kepada tamu justru mengiklankan keberadaan log audit
-  yang tak boleh ia baca.
+  "verifikasi" yang mati justru mengiklankan keberadaan log audit yang tak
+  bisa dibaca pemanggilnya.
 - **Hash kepala ditampilkan utuh dan bisa diseleksi** (`user-select: all`).
   Memotongnya menghapus satu-satunya pertahanan terhadap pemangkasan ekor:
   operator menyalin hash ke tempat yang tidak dikuasai server ini.
@@ -119,11 +119,15 @@ Kalimat di Segel yang merupakan klaim kepatuhan dan diperiksa mesin:
 > Tahan-rusak, bukan anti-rusak
 
 **Titah** menampilkan permohonan yang menunggu keputusan manusia. Aturannya:
-*mengetahui ada yang menunggu bukan hak istimewa; memutuskannya iya.* Tamu
-melihat antrean tanpa tombol — bukan tombol yang dinonaktifkan, melainkan
-tidak ada tombol. Kepemilikan disimpulkan dari payload itu sendiri (server
-meredaksi `agent` dan `tool` untuk tamu), sehingga tidak ada kontrol yang
-dijamin 403.
+*tidak ada kontrol yang dijamin 403* — bukan tombol yang dinonaktifkan,
+melainkan tidak ada tombol sama sekali.
+
+Dulu aturannya berbunyi "mengetahui ada yang menunggu bukan hak istimewa;
+memutuskannya iya", dan kepemilikan disimpulkan dari payload (server
+meredaksi `agent` dan `tool` untuk tamu). Dengan satu principal, membaca
+antrean dan memutuskannya adalah standing yang sama: siapa pun yang bisa
+membacanya adalah pemilik. Inferensi itu dibuang; `canApprove` kini bawaan
+`true` dan pemanggil masih boleh menimpanya.
 
 Baris hanya dihapus bila server menerima keputusan. Bila server menolak (409
 kedaluwarsa, misalnya), barisnya tetap dan alasannya ditampilkan — menghapus

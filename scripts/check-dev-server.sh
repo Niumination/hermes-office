@@ -6,7 +6,7 @@
 # Every other gate inspects files at rest. Not one of them starts the dev
 # server, and that blind spot has now cost us twice:
 #
-#   1. /kiosk stopped being proxied, so no guest session was ever minted in
+#   1. the session minter stopped being proxied, so no session was ever had in
 #      development. 16/16 green for weeks (entri LOG 018).
 #   2. /desks was nearly shipped without a proxy entry. A route missing from
 #      HTTP_ROUTES does not error — Vite quietly answers with index.html, the
@@ -58,7 +58,6 @@ fail() { echo "FAIL: $*"; exit 1; }
 export OFFICE_CLOUD_TOKEN="${OFFICE_CLOUD_TOKEN:-ci-cloud-token-000000000000}"
 export OFFICE_MAC_TOKEN="${OFFICE_MAC_TOKEN:-ci-mac-token-0000000000000}"
 export OFFICE_OWNER_TOKEN="${OFFICE_OWNER_TOKEN:-ci-owner-token-00000000000}"
-export OFFICE_GUEST_TOKEN="${OFFICE_GUEST_TOKEN:-ci-guest-token-00000000000}"
 export OFFICE_DB="${OFFICE_DB:-$TMP/office.db}"
 
 # Reading the route list out of vite.config.ts is necessary but NOT sufficient,
@@ -87,7 +86,7 @@ PY
 
 # Every top-level prefix the backend actually registers must be covered by
 # some entry in HTTP_ROUTES. This is the check that catches a new route
-# shipped without a proxy entry — the /desks near-miss and the /kiosk
+# shipped without a proxy entry — the /desks near-miss and the session-minter
 # regression are both exactly this shape.
 mapfile -t UNPROXIED < <(python3 - <<'PY'
 import re
@@ -96,8 +95,10 @@ cfg = open("frontend/vite.config.ts", encoding="utf-8").read()
 block = re.search(r"const HTTP_ROUTES\s*=\s*\[(.*?)\]", cfg, re.S).group(1)
 declared = set(re.findall(r"'([^']+)'", re.sub(r"//[^\n]*", "", block)))
 
-# "/" is served by Vite itself in development and must not be proxied; that is
-# why /kiosk exists at all. Everything else the server answers should reach it.
+# "/" is served by Vite itself in development and must not be proxied. (This
+# is why the office once needed a separate route just to mint a session: `/`
+# never reaches the backend in dev. The route is gone; the exception stays.)
+# Everything else the server answers should reach it.
 registered = {"/" + m.split("/")[1]
               for m in re.findall(r'app\.(?:get|post|put|delete|use)\("(/[^"]*)"', src)
               if m != "/"}
@@ -164,16 +165,21 @@ for route in "${ROUTES[@]}"; do
   esac
 done
 
-# 3. /kiosk still mints an auto-guest cookie. This is the exact regression of
-#    entri LOG 018: it resolved, looked fine, and handed back no session.
+# 3. The one door still opens through the proxy. This was /kiosk minting an
+#    auto-guest cookie; with the guest role removed, `POST /auth/session` is
+#    the only route in the product that raises an identity. The regression of
+#    entri LOG 018 is unchanged in shape: the route resolves, looks fine, and
+#    hands back no session, so the developer sees a permanent login form.
 #
-#    Only /kiosk is checked, not /. In development `/` is Vite's own shell and
-#    never touches the backend, which is precisely why /kiosk had to exist. A
-#    gate asserting that `/` mints a cookie in dev would be asserting a bug.
-hdrs=$(curl -s -m 10 -D - -o /dev/null "http://127.0.0.1:$WEB_PORT/kiosk" 2>/dev/null || true)
+#    `/` is deliberately not checked. In development it is Vite's own shell
+#    and never touches the backend; asserting it mints anything would be
+#    asserting a bug.
+hdrs=$(curl -s -m 10 -D - -o /dev/null -X POST \
+  -H "Authorization: Bearer $OFFICE_OWNER_TOKEN" \
+  "http://127.0.0.1:$WEB_PORT/auth/session" 2>/dev/null || true)
 case "$hdrs" in
   *office_session*) ;;
-  *) problems+=("GET /kiosk minted no office_session cookie — guests cannot enter in development") ;;
+  *) problems+=("POST /auth/session minted no office_session cookie — the owner cannot log in during development") ;;
 esac
 
 if [ "${#problems[@]}" -gt 0 ]; then
@@ -182,4 +188,4 @@ if [ "${#problems[@]}" -gt 0 ]; then
   exit 1
 fi
 
-echo "PASS: dev server boots, all ${#ROUTES[@]} declared routes reach the API, and /kiosk mints a guest session"
+echo "PASS: dev server boots, all ${#ROUTES[@]} declared routes reach the API, and POST /auth/session mints a session"

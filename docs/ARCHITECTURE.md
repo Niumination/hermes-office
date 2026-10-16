@@ -36,25 +36,24 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1362   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1249   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     602   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
-eventbus.js   458   validasi, clamp, REDAKSI, rate limit, ring buffer
+eventbus.js   392   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       403   Fase 1 — OTel GenAI → event Hermes
 ledger.js     393   Fase 4 — rantai hash append-only
 standup.js    465   Fase 14 — bacaan pagi; deterministik, tanpa panggilan model
-kiosk.js      269   Fase 13 — layar dinding, teredaksi-tamu saat dibangun
 replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
 dossier.js    375   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
-desks.js      417   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
-proof.js      158   Fase 6 — bukti: gerbang tercatat + pengikatan bundel yang disajikan
-config.js     151   seluruh konfigurasi env, validasi wajib saat boot
+desks.js      393   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
+proof.js      140   Fase 6 — bukti: gerbang tercatat + pengikatan bundel yang disajikan
+config.js     150   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
 chat-db.js    101   SQLite (WAL) untuk riwayat chat
 pricing.js    100   token → USD, pencocokan prefiks-terpanjang
-auth.js        91   Bearer per-sumber, SHA-256
+auth.js        90   Bearer per-sumber, SHA-256
 ```
 
 ### Frontend (`frontend/src/`, ~3782 baris non-tes)
@@ -62,7 +61,7 @@ auth.js        91   Bearer per-sumber, SHA-256
 ```
 styles/sect.css     979   seluruh sistem desain: token, tata letak, gerak
 rooms.ts            540   definisi ruangan: nama, pelat, metadata
-SectApp.tsx         257   orkestrasi: socket, follow-mode, bootstrap tamu
+SectApp.tsx         257   orkestrasi: socket, follow-mode, halaman masuk
 sect/Seal.tsx       168   Segel — integritas rantai ledger, hash kepala utuh
 hermes/useOfficeSocket 171 klien WS, reconnect
 sect/Writ.tsx       149   Titah — antrean persetujuan, hanya pemilik memutuskan
@@ -97,11 +96,7 @@ hermes/burnTypes.ts  41   kontrak /burn, terpisah dari komponen render
                                             clamp 500/4000 char
                                             source dipaksa dari identitas
                                                    ▼
-                                            ┌──  REDAKSI  ──┐
-                                            │ sanitizeForGuest│
-                                            └───────┬────────┘
-                                                    ▼
-                                      ring buffer (100k / 7 hari)
+                                            ring buffer (100k / 7 hari)
                                                     │
    POST /policy/check ──→ policy.decide() ──────────┤
         │                      │                    │
@@ -122,7 +117,7 @@ hermes/burnTypes.ts  41   kontrak /burn, terpisah dari komponen render
 **Titik yang sering disalahpahami:** redaksi terjadi **sekali**, di
 `eventbus.js`, sebelum apa pun menyentuh ring buffer atau socket. Tetapi itu
 hanya menutup jalur socket. Jalur REST punya cabang peran **per-endpoint**
-masing-masing (`index.js`). Kontrak guest karena itu hidup di **dua** tempat,
+masing-masing (`index.js`). Kontrak otorisasi karena itu hidup di **dua** tempat,
 dan keduanya harus diperiksa saat menambah endpoint.
 
 ---
@@ -132,22 +127,21 @@ dan keduanya harus diperiksa saat menambah endpoint.
 | Metode | Rute | Penjaga | Catatan |
 |---|---|---|---|
 | GET | `/health` | — | |
-| GET | `/` | — | **Mencetak sesi guest** bila belum ada (lihat §6) |
+| GET | `/` | — | Cangkang halaman masuk. **Tidak mencetak sesi apa pun** |
 | POST | `/auth/session` | — | Bearer → cookie `office_session` |
 | POST | `/event` | `requireAuth` | sumber dipaksa dari identitas |
 | POST | `/v1/traces` | `requireAuth` | OTLP, **JSON saja**; protobuf → 415 |
-| GET | `/burn` | `requireAny` | angka USD **dinolkan** untuk guest |
+| GET | `/burn` | `requireAny` | angka USD penuh |
 | POST | `/budget/check` | `requireAuth` | **200 walau ditolak** |
-| GET | `/policy` | `requireAny` | guest: room/label/trust/state/occupants saja |
-| GET | `/tasks` | `requireAny` | Amanat; guest: judul & repo **diredaksi**, jumlah per jalur tetap terlihat |
+| GET | `/policy` | `requireAny` | denah penuh: tools, approval, anggaran |
+| GET | `/tasks` | `requireAny` | Amanat; judul & repo apa adanya |
 | POST | `/policy/check` | `requireAuth` | rate limit 600/mnt, dicatat ke ledger |
-| GET | `/approvals` | `requireAny` | guest: tanpa `agent`/`tool`, `redacted:true` |
-| GET | `/approvals/:id` | `requireAuth` | bridge+owner; guest **403** |
+| GET | `/approvals` | `requireAny` | `agent`, `tool`, `reason` apa adanya |
+| GET | `/approvals/:id` | `requireAuth` | bridge+owner |
 | POST | `/approvals/:id` | `requireOwner` | sekali pakai, terikat `{agent,tool}` |
 | POST | `/agents/:agent/room` | `requireOwner` | |
 | GET | `/ledger`, `/ledger/head`, `/ledger/verify` | `requireOwner` | bridge **dikecualikan** |
-| GET | `/kiosk` | `autoGuestSession` + `requireAny` | layar dinding; **menurunkan hak sendiri** — tanpa dolar bahkan untuk owner kecuali `?reveal=1` |
-| GET | `/replay` | `requireOwner` | Time Machine; **tanpa versi tamu** — bukti berlubang bukan bukti |
+| GET | `/replay` | `requireOwner` | Time Machine — bukti berlubang bukan bukti |
 | GET | `/ledger/anchors` | `requireOwner` | tambatan terbit + hasil perbandingan |
 | POST | `/ledger/anchor` | `requireOwner` | terbitkan sekarang; **207** bila sebagian sink gagal |
 | GET | `/standup` | `requireOwner` | bacaan pagi berperingkat; `?hours=`, `?format=md\|json`; tidak direkam ke rantai |
@@ -159,18 +153,26 @@ dan keduanya harus diperiksa saat menambah endpoint.
 
 ## 5. Model keamanan — baca ini sebelum menambah endpoint
 
-**Default rute baru BUKAN `requireAny`.** Sejak middleware auto-guest
-mendarat, `GET /` mencetak sesi guest read-only untuk browser mana pun tanpa
-kredensial. Server dipublikasikan lewat Tailscale Funnel, sehingga:
+**Default rute baru BUKAN `requireAny`.** Dulu `GET /` mencetak sesi tamu
+read-only untuk browser mana pun tanpa kredensial, dan server dipublikasikan
+lewat tunnel — sehingga "pengunjung anonim di internet publik" dan "guest"
+adalah principal yang sama, dan redaksi per-field adalah satu-satunya batas.
 
-> **"pengunjung anonim di internet publik" dan "guest" adalah principal yang
-> sama.** Setiap rute `requireAny` secara efektif dapat dibaca seluruh dunia.
-> Redaksi guest bukan lagi pertahanan berlapis — ia **satu-satunya** batas.
+Peran `guest` sudah dicabut (Okt 2026). Batasnya kini kepemilikan token, satu
+tempat, bukan belasan cabang redaksi. Yang tersisa tanpa sesi hanya `GET
+/health` (uptime, supaya tunnel tahu kantor hidup) dan `GET /` (cangkang
+halaman masuk, tanpa data). Semua rute lain menjawab **401** tanpa sesi —
+bukan 403, karena tidak ada lagi peran valid yang kurang wewenang di sini.
 
-Dipasak oleh 4 test integrasi yang menyerang dari sudut pandang browser anonim
-sungguhan (ambil cookie dari `GET /`, lalu gunakan cookie itu), dan oleh 9 test
-frontend pada `sect/Writ.tsx`. Sesi yang sudah lebih kuat **tidak pernah**
-diturunkan.
+`requireAny` sekarang berarti bridge **atau** owner, dua principal yang
+sama-sama memegang token dari `.env.office`. Itu tetap bukan default yang
+aman untuk rute baru: bridge adalah proses otomatis, dan rute yang hanya
+masuk akal bagi manusia harus `requireOwner`.
+
+Dipasak oleh test integrasi yang menyerang dari sudut pandang browser anonim
+sungguhan (coba `GET /`, pastikan tidak ada cookie, lalu coba setiap rute
+data), dan oleh gerbang live `scripts/check-live.sh`. Sesi yang sudah lebih
+kuat **tidak pernah** diturunkan.
 
 Detail lengkap: `SECURITY.md`.
 
@@ -257,8 +259,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **407** | `npm test` |
-| Frontend | **194** | `cd frontend && npx vitest run` |
+| Backend | **370** | `npm test` |
+| Frontend | **189** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 
@@ -288,7 +290,7 @@ Tidak ada satu pun host atau akun yang tertanam di kode. Integrasi opsional
 
 ```json
 {"log":"boot","port":7333,"githubPoller":"off","a2aMac":"off",
- "otlp":"off","ledger":"on","guestAutoSession":"off"}
+ "otlp":"off","ledger":"on"}
 ```
 
 Dulu tidak begitu: `HERMES_A2A_MAC_URL` default ke IP Tailscale satu mesin

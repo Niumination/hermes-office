@@ -1,6 +1,6 @@
 /**
  * eventbus.js — validation, clamping, redaction, rate limiting, ring buffer,
- * guest sanitization. Implements docs/EVENTS.md contract.
+ * Implements docs/EVENTS.md contract.
  * Changes here MUST be mirrored in tests/contract tests.
  */
 import { EventEmitter } from "events";
@@ -337,66 +337,6 @@ export class RingBuffer {
 }
 
 // ---------------------------------------------------------------------------
-// Guest sanitization (SECURITY.md §3)
-// ---------------------------------------------------------------------------
-
-const INTERNAL_IP = /(^|[^0-9])(100\.\d+\.\d+\.\d+|127\.0\.0\.1|localhost|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)/;
-
-export function sanitizeForGuest(ev) {
-  if (!ev || typeof ev !== "object") return ev;
-  if (ev.type === "git_push" && ev.privat) {
-    return { type: "git_push", repo: "[private]", privat: true, source: ev.source, ts: ev.ts };
-  }
-  if (ev.type === "a2a_task_in" || ev.type === "a2a_task_out") {
-    return { ...ev, summary: "[redacted]" };
-  }
-  // A task title is usually "<client repo>: <what is wrong with it>", which is
-  // the most commercially sensitive string the office handles. A guest may see
-  // that work is moving and that something is blocked; never what it is.
-  if (ev.type === "task_update") {
-    const out = { ...ev };
-    if (out.title) out.title = "[redacted]";
-    if (out.summary) out.summary = "[redacted]";
-    if (out.repo) out.repo = "[redacted]";
-    return out;
-  }
-  if (ev.type === "office_chat") {
-    return { type: "office_chat", activity: true, source: ev.source, ts: ev.ts };
-  }
-  // Governance events: a guest may see that the office is under pressure or
-  // that a door is being knocked on, but not the amounts, the agent names, or
-  // which privileged tool is being attempted. Spend figures and the privilege
-  // map are reconnaissance.
-  if (ev.type === "budget_state") {
-    return { type: "budget_state", scope: ev.scope, state: ev.state, from: ev.from, source: ev.source, ts: ev.ts };
-  }
-  if (ev.type === "agent_moved") {
-    return { type: "agent_moved", agent: ev.agent, room: ev.room, fromRoom: ev.fromRoom, source: ev.source, ts: ev.ts };
-  }
-  if (ev.type === "approval_requested") {
-    return { type: "approval_requested", kind: ev.kind, room: ev.room, source: ev.source, ts: ev.ts };
-  }
-  if (ev.type === "approval_resolved") {
-    return { type: "approval_resolved", kind: ev.kind, room: ev.room, state: ev.state, source: ev.source, ts: ev.ts };
-  }
-
-  if (ev.type === "service_status") {
-    // Guest: unit name + state visible, detail sanitized (no internal paths/URLs)
-    const okDetail = typeof ev.detail === "string" && !INTERNAL_IP.test(ev.detail);
-    const detail = okDetail ? ev.detail.replace(/\/[^\s]+/g, "[path]") : undefined;
-    return { type: "service_status", host: ev.host, unit: ev.unit, kind: ev.kind, state: ev.state, detail, source: ev.source, ts: ev.ts };
-  }
-  // Strip internal URLs / Tailscale IPs from any event
-  const out = { ...ev };
-  for (const key of ["url", "peer_url", "endpoint"]) {
-    if (typeof out[key] === "string" && INTERNAL_IP.test(out[key])) {
-      out[key] = undefined;
-    }
-  }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
 // OfficeEventBus
 // ---------------------------------------------------------------------------
 
@@ -434,7 +374,7 @@ export class OfficeEventBus extends EventEmitter {
     return { ok: true, event };
   }
 
-  /** Listeners receive raw events; per-connection guest filtering happens in frameFor. */
+  /** Listeners receive events as published; there is no per-connection filtering. */
   broadcast(event) {
     this.emit("event", event);
   }
@@ -442,12 +382,6 @@ export class OfficeEventBus extends EventEmitter {
   /** WS hello handshake frame (EVENTS.md §7). */
   hello() {
     return { channel: "hello", data: { server: "1.0", events: KNOWN_EVENT_TYPES } };
-  }
-
-  /** Per-connection frame with guest filtering applied. */
-  frameFor(event, isGuest) {
-    const data = isGuest ? sanitizeForGuest(event) : event;
-    return JSON.stringify({ channel: "event", data });
   }
 
   close() {

@@ -2,87 +2,51 @@
 
 [English](PRICING.md) · **Bahasa Indonesia**
 
-| | Gratis | Solo Pro | Team | Enterprise |
-|---|---|---|---|---|
-| | **$0** | **$39** sekali | **$299** sekali | **$2.000+**/tahun |
-| | selamanya | lisensi abadi | lisensi abadi, ≤10 orang | kontrak |
-| Kantor, kebijakan ruangan, burn-rate | ✅ | ✅ | ✅ | ✅ |
-| Ingest OTLP, approval gate | ✅ | ✅ | ✅ | ✅ |
-| Flight recorder (rantai hash) | ✅ | ✅ | ✅ | ✅ |
-| Dossier kepatuhan | — | ✅ | ✅ | ✅ |
-| Time Machine (replay) | — | ✅ | ✅ | ✅ |
-| Mode kiosk, standup | — | ✅ | ✅ | ✅ |
-| Penambatan eksternal (webhook) | — | — | ✅ | ✅ |
-| Kebijakan kustom, tema | — | — | ✅ | ✅ |
-| SSO, dukungan SLA | — | — | — | ✅ |
-| Bantuan paket bukti audit | — | — | — | ✅ |
+Tidak ada tier, tidak ada kursi, tidak ada daftar harga. Ini kantor satu
+orang, di-host sendiri, MIT, dan setiap permukaannya menjawab satu token
+pemilik.
 
-## Tidak pernah per kursi
+Itu sebuah pencabutan. Halaman ini dulu memuat empat tier — Gratis $0, Solo
+Pro $39, Team $299, Enterprise $2.000+ — dengan dossier, replay, kiosk, dan
+standup ditahan di balik yang berbayar, plus argumen panjang kenapa $2.000
+adalah angka yang benar dibanding denda EU AI Act. Argumennya koheren. Ia
+juga menggambarkan produk yang punya pelanggan, kontrak dukungan, dan paket
+Team untuk sepuluh orang — yang tak satu pun ada.
 
-Ini keputusan, bukan kelalaian, dan ia menolak uang di atas meja.
+Ongkos berpura-pura itu bukan sekadar malu. Tier Gratis menyiratkan adanya
+pengunjung yang bukan pembeli, dan justru dari situlah peran tamu lahir:
+sesi read-only yang dicetak otomatis supaya calon pembeli bisa melihat
+kantor tanpa token, lalu pipeline redaksi di belasan berkas supaya sesi itu
+tidak membaca apa pun yang nyata. Bentuk produk yang tak diminta siapa pun
+menumbuhkan batas keamanan yang tak dibutuhkan siapa pun, dan batas itu
+sempat bocor sekali sebelum dicabut. Paketnya bukan hiasan — ia menopang
+beban, ke arah yang salah.
 
-Alat tata kelola yang menagih per kursi menghukum Anda tepat ketika Anda
-melakukan hal yang benar: mengundang petugas kepatuhan, memperlihatkan ke
-penasihat hukum, memberi akses baca ke auditor eksternal, menempelkan layar di
-dinding tempat seluruh perusahaan bisa melihatnya. Setiap kursi tambahan
-membuat armada Anda **lebih** terkendali, dan menagihnya berarti menjual
-produk yang berdebat melawan tujuannya sendiri.
-
-LangSmith menagih $39/kursi ditambah per-trace. Laminar sudah pindah ke kursi
-tak terbatas pada 2026, dan itu arah yang benar.
-
-## Mengapa lisensi abadi, bukan langganan
-
-Pembeli yang menginginkan ini tidak membeli layanan — mereka membeli
-kemampuan membuktikan sesuatu nanti. Artefak yang buktinya lenyap saat
-kartu kredit kedaluwarsa bukan bukti.
-
-Rantai audit Anda adalah berkas SQLite di disk Anda. Dossier adalah Markdown.
-Keduanya tetap bisa dibaca setelah kami hilang, dan itu bagian dari apa yang
-Anda bayar. Langganan hanya untuk Enterprise, dan yang dibayar di situ adalah
-dukungan dan SSO, bukan akses ke data Anda sendiri.
-
-## Argumen untuk $2.000+
-
-Pertanyaan yang benar bukan "apakah ini mahal", tapi "dibandingkan apa".
-
-**Dibandingkan denda.** Pasal 99(4) EU AI Act: **€15 juta atau 3% omzet
-global**, mana yang lebih tinggi. Pasal 12(1) menuntut pencatatan otomatis
-sepanjang siklus hidup; Pasal 19 dan 26(6) menuntut log itu disimpan minimal
-enam bulan. Kewajiban berisiko-tinggi sudah berlaku sejak **2 Agustus 2026.**
-Alat ini tidak membuat Anda patuh — tidak ada perangkat lunak yang bisa — tapi
-ia menghasilkan jenis artefak yang diminta pasal-pasal pencatatan itu, dalam
-format yang bisa diverifikasi orang lain.
-
-**Dibandingkan satu insiden.** 96% perusahaan melampaui proyeksi biaya AI
-mereka, dan hanya 44% yang punya pagar pengaman (IDC, Des 2025). Satu agen
-yang berputar dalam loop retry semalaman sudah melampaui angka ini. Standup
-menemukan loop itu sebagai temuan bernama; pembatas anggaran menghentikannya
-sebelum paginya.
-
-**Dibandingkan membangunnya sendiri.** Rantai hash yang benar, redaksi yang
-teruji, kontrak tamu yang tidak bocor di salah satu dari dua tempat, replay
-deterministik yang bisa dipakai sebagai bukti. Itu bukan sprint. Repo ini
-punya 407 test backend dan 115 klaim dokumen yang diverifikasi mesin justru
-karena bagian-bagian ini mudah dibuat *hampir* benar.
-
-**Dibandingkan pesaing.** Langfuse Enterprise $2.499/tahun untuk tracing dan
-eval. Angka $2.000 bukan diskon terhadap mereka — ia produk berbeda di
-kategori yang berdekatan, dan ia sengaja tidak lebih murah. Harga yang lebih
-rendah akan memberi sinyal "alat bantu", padahal yang dibeli adalah bukti.
+Yang tersisa adalah yang benar: intinya MIT, rantai audit adalah berkas
+SQLite di disk Anda sendiri, dossier berupa Markdown, tidak ada telemetry
+keluar, dan tidak ada yang kedaluwarsa. Bukan karena itu positioning yang
+murah hati, melainkan karena tidak ada mekanisme di repositori ini yang bisa
+berbuat lain.
 
 ## Setiap angka di halaman ini bisa dieksekusi
 
 Halaman harga adalah tempat klaim membusuk: ditulis sekali, dibaca semua
-orang, diperiksa tidak oleh siapa pun. Yang ini tersambung ke repo.
+orang, diperiksa tidak oleh siapa pun. Yang ini tertambat ke repositori, dan
+tetap tertambat setelah harganya dihapus — pemeriksanya tidak peduli kalimat
+ini menjual apa, hanya apakah benar.
 
 Jumlah test, jumlah klaim, dan jumlah aset yang dikutip di sini dibaca dari
-berkas ini oleh `scripts/check-docs.py` lalu dicocokkan dengan yang
-benar-benar dilaporkan runner. Kalau halaman ini dan kodenya berbeda, CI
-gagal. Versi Inggris dan Indonesia diikat ke angka yang sama, karena
-terjemahan adalah tempat kedua bagi sebuah klaim untuk membusuk.
+berkas ini oleh `scripts/check-docs.py` dan dibandingkan dengan laporan
+runner sungguhan. Bila halaman ini dan kodenya berselisih, CI gagal. Versi
+Inggris dan Indonesia diikat ke angka yang sama, karena terjemahan adalah
+tempat kedua bagi klaim untuk membusuk.
 
-Anda juga tidak perlu memercayai itu begitu saja:
+Repo ini punya 370 test backend dan 115 klaim dokumen yang diverifikasi mesin,
+justru karena rantai hash yang benar, otorisasi yang bertahan di REST
+**dan** WebSocket alih-alih di salah satu dari dua tempatnya, serta replay
+deterministik yang layak jadi bukti semuanya mudah dibuat *nyaris* benar.
+
+Anda juga tidak perlu memercayainya begitu saja:
 
 ```bash
 git clone https://github.com/Niumination/hermes-office
@@ -92,45 +56,82 @@ cd hermes-office && npm ci && npm run verify
 18 gerbang, sekitar 4 menit di mesin 2 inti. Daftar gerbang dan apa yang
 dibuktikan masing-masing ada di [README](../README.id.md#verifikasi-sendiri).
 
-Inilah produk yang sebenarnya. Kantor isometrik bisa ditiru dalam seminggu;
-vendor yang mempersilakan Anda mengeksekusi materi pemasarannya tidak bisa
-ditiru sama sekali tanpa mengerjakan hal yang sama. Yang dijual seharga
-$2.000+ bukan gambarnya — melainkan bahwa setiap kalimat yang menempel padanya
-sudah dibuat dapat dibantah, dan dibiarkan begitu.
+Kantor isometrik bisa disalin dalam sepekan. Yang tidak bisa disalin tanpa
+mengerjakan hal yang sama adalah pohon kode yang setiap kalimat terlampirnya
+sudah dibuat dapat difalsifikasi, dan dibiarkan begitu. Sifat itulah
+intinya, dan ia selamat dari penghapusan tier — ia memang bukan yang
+dijual tier.
 
-## Batas open-core
+## Jangan pernah per-kursi
 
-Inti MIT, dan tetap begitu: kantor, kebijakan ruangan, burn-rate, OTLP,
-approval, dan **flight recorder**.
+Dipertahankan sebagai aturan meski tak ada yang ditagih, karena inilah hal
+yang paling mungkin ditemukan ulang begitu ada.
 
-Rantai audit ada di tingkat gratis dengan sengaja. Memindahkan integritas
-log ke balik paywall berarti menjual keselamatan kepada orang yang paling
-mampu membayar, dan membuat proyek ini kehilangan hak untuk berargumen
-seperti yang ia lakukan di `SECURITY.md`.
+Alat tata kelola yang menagih per kursi menghukum Anda tepat saat Anda
+melakukan hal yang benar: mengundang petugas kepatuhan, memperlihatkan ke
+legal, memberi auditor eksternal akses baca. Setiap pembaca tambahan membuat
+armada **lebih** terkelola, dan menagihnya berarti mengirim produk yang
+membantah tujuannya sendiri.
 
-Yang berbayar adalah lapisan **artefak** — dossier, replay, kiosk,
-standup — plus penambatan dan dukungan. Semuanya dibangun *di atas* rantai,
-tidak satu pun diperlukan agar rantai itu benar.
+Perhatikan bentuk kesalahan yang sudah dibuat repo ini ke arah sebaliknya.
+"Biarkan satu pembaca tambahan masuk gratis" menjadi sesi tamu otomatis,
+menjadi pipeline redaksi, menjadi satu-satunya hal yang berdiri antara
+tunnel publik dan anggaran armada. Tidak menagih pembaca itu benar. Tidak
+berarti pembaca boleh bebas tanpa autentikasi.
+
+## Kenapa tidak ada yang kedaluwarsa
+
+Alasan menjalankan ini bukan membeli layanan — melainkan agar bisa
+membuktikan sesuatu nanti. Artefak yang buktinya lenyap saat kartu kredit
+kedaluwarsa bukanlah bukti.
+
+Rantai audit Anda adalah berkas SQLite di disk Anda. Dossier-nya Markdown.
+Keduanya tetap terbaca setelah repositori ini tiada.
+
+## Tidak ada lagi batas open-core
+
+Dulu ada. Kantor, kebijakan ruangan, burn-rate, OTLP, approval, dan perekam
+penerbangan bersifat MIT; dossier, replay, kiosk, dan standup adalah lapisan
+artefak berbayar. Sekarang semuanya MIT — yang memang selalu tertulis di
+berkas lisensi — dan kiosk sudah tidak ada sama sekali.
+
+Menjaga integritas log keluar dari paruh berbayar adalah satu-satunya bagian
+dari pemisahan itu yang layak dipertahankan sebagai aturan, bukan tier:
+menaruhnya di balik paywall berarti menjual keselamatan kepada yang paling
+mampu membayar, dan akan merenggut hak proyek ini berargumen seperti yang
+dilakukannya di `SECURITY.md`.
+
+## Klaim yang dulu dibuat halaman ini
+
+Versi lama mengadu tier $2.000-nya dengan EU AI Act Pasal 99(4) — **EUR 15
+juta atau 3% omzet global** — dan dengan Pasal 12(1) yang mewajibkan logging
+otomatis sepanjang siklus hidup, serta Pasal 19 dan 26(6) yang mewajibkan
+log itu disimpan minimal enam bulan. Kewajiban risiko-tinggi berlaku sejak
+**2 Agustus 2026**.
+
+Pasal-pasal itu tetap nyata dan tetap jadi alasan perekam penerbangan
+dibangun seperti sekarang. Yang keliru adalah kesimpulan tersiratnya. Alat
+ini tidak membuat siapa pun patuh — tidak ada perangkat lunak yang bisa — dan
+menempelkan harga pada paragraf itu membuatnya terbaca seolah bisa.
 
 ## Yang tidak dijual
 
-- **Akses ke data Anda.** Tidak ada telemetri keluar. Satu-satunya panggilan
-  keluar adalah webhook jangkar yang Anda konfigurasikan sendiri.
-- **Jaminan kepatuhan.** Kami menghasilkan bukti; asesor Anda menilainya.
-  Disebut eksplisit, supaya tak perlu ditanyakan lewat email: tidak ada
-  laporan SOC 2, tidak ada sertifikasi ISO 27001, tidak ada HIPAA BAA, tidak
-  ada DPA bertanda tangan, tidak ada penetration test pihak ketiga. Yang ada
-  adalah SBOM CycloneDX yang dibangun ulang setiap larian CI
-  (`sbom.cdx.json`), ledger tahan-rusak, dan model ancaman terdokumentasi.
-  Itu masukan bagi sebuah asesmen, bukan penggantinya.
-- **Anti-rusak.** Tahan-rusak. Tertulis di UI-nya.
-- **SLA uptime atau waktu tanggap.** Anda yang meng-hosting. Satu-satunya
-  komitmen waktu di mana pun adalah jendela pengungkapan di
+Tidak ada yang dijual. Daftar ini dipertahankan karena setiap butirnya
+adalah kalimat yang cepat atau lambat akan menggoda seseorang untuk ditulis.
+
+- **Akses ke data Anda.** Tanpa telemetry keluar. Satu-satunya panggilan
+  keluar adalah webhook penambat yang Anda konfigurasi sendiri.
+- **Jaminan kepatuhan.** Kami menghasilkan bukti; asesor Anda yang menilai.
+  Disebut eksplisit supaya tak perlu ditanya lewat surel: tidak ada laporan
+  SOC 2, tidak ada sertifikasi ISO 27001, tidak ada HIPAA BAA, tidak ada DPA
+  bertanda tangan, tidak ada uji penetrasi pihak ketiga. Yang ada adalah SBOM
+  CycloneDX yang dibangun ulang tiap CI (`sbom.cdx.json`), ledger yang
+  tamper-evident, dan model ancaman yang terdokumentasi. Itu masukan untuk
+  asesmen, bukan penggantinya.
+- **Tamper-proof.** Tamper-evident. Tertulis begitu di UI.
+- **SLA uptime atau waktu respons.** Anda yang meng-host. Satu-satunya
+  komitmen waktu yang dibuat di mana pun adalah jendela disclosure di
   [`SECURITY.md`](SECURITY.md#11-coordinated-disclosure), dan itu janji untuk
   menjawab, bukan janji untuk memperbaiki.
 - **Dukungan untuk versi Node di luar matriks CI.** Himpunan yang didukung
-  tepat dua versi dan terdaftar di [`SUPPORT.md`](SUPPORT.md).
-
-Setiap butir di atas bisa dijual cukup dengan menulis satu kalimat. Tak satu
-pun dijual, dan hanya karena itulah kalimat-kalimat di sisa halaman ini ada
-harganya.
+  persis dua versi dan tercantum di [`SUPPORT.md`](SUPPORT.md).

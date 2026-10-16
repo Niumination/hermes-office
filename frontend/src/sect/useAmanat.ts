@@ -44,7 +44,6 @@ export interface Amanat {
   createdTs: number
   updatedTs: number
   blocked: boolean
-  redacted?: boolean
 }
 
 export interface AmanatBoard {
@@ -53,7 +52,6 @@ export interface AmanatBoard {
   counts: Record<LaneId, number>
   total: number
   blocked: number
-  redacted: boolean
 }
 
 export interface AmanatState extends AmanatBoard {
@@ -156,7 +154,6 @@ function normalise(raw: unknown): Amanat | null {
     createdTs: created,
     updatedTs: updated,
     blocked: lane === 'blocked',
-    redacted: d.redacted === true,
   }
 }
 
@@ -167,7 +164,6 @@ export function useAmanat(opts: UseAmanatOptions = {}): AmanatState {
   const [lanes, setLanes] = useState<Record<LaneId, Amanat[]>>(EMPTY_LANES)
   const [counts, setCounts] = useState<Record<LaneId, number>>(EMPTY_COUNTS)
   const [total, setTotal] = useState(0)
-  const [redacted, setRedacted] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [stale, setStale] = useState(false)
   const [lastOkTs, setLastOkTs] = useState<number | null>(null)
@@ -178,7 +174,7 @@ export function useAmanat(opts: UseAmanatOptions = {}): AmanatState {
       const res = await doFetch('/tasks', { credentials: 'include' })
       if (!alive.current) return
       if (!res.ok) {
-        // A 401 on a cold load means the guest session has not been minted
+        // A 401 on a cold load means no session has been minted
         // yet, not that the board is gone. Keep what we have.
         setStale(true)
         return
@@ -198,7 +194,6 @@ export function useAmanat(opts: UseAmanatOptions = {}): AmanatState {
       setLanes(next)
       setCounts(nextCounts)
       setTotal(typeof data.total === 'number' ? data.total : Object.values(nextCounts).reduce((a, b) => a + b, 0))
-      setRedacted(data.redacted === true)
       setLastOkTs(Date.now())
       setStale(false)
       setLoaded(true)
@@ -231,7 +226,6 @@ export function useAmanat(opts: UseAmanatOptions = {}): AmanatState {
     counts,
     total,
     blocked: counts.blocked,
-    redacted,
     loaded,
     stale,
     lastOkTs,

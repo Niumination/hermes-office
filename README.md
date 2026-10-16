@@ -52,7 +52,6 @@ why it was allowed to.
 | **Tamper-evident flight recorder** | Every decision SHA-256 chained, append-only. 0.020 ms per record; 100,000 records verify in 0.7 s and occupy 31.3 MB. |
 | **External anchoring** | A chain alone cannot detect tail truncation. Head hashes are published to outside sinks, so deleting the last hundred records becomes visible. Strength is reported as `none`/`local`/`remote` — never claimed stronger than it is. |
 | **Time Machine** | Replay any range from the chain. Agents have **rooms, not coordinates**: if the chain did not record it, the replay will not invent it. |
-| **Kiosk mode** | A wall display that **downgrades its own privileges** — no dollar figures even for the owner, unless explicitly asked for per-URL. |
 | **Standup** | A ranked morning read, deterministic, with no LLM call. A quiet night produces one line. |
 | **Compliance dossier** | The artifact an assessor reads, carrying its own verification verdict inside it. |
 
@@ -91,7 +90,7 @@ this.
 | LangSmith | Tracing + eval | **$39/seat** + $0.50–2.50 per 1k traces |
 | Braintrust | Eval; raised $80M @ $800M | Free → $249 |
 | Laminar | Tracing | $30 / $150, unlimited seats |
-| **Hermes Office** | **Guardrails + evidence**, not tracing | **$0 / $39 / $299 / $2,000+** |
+| **Hermes Office** | **Guardrails + evidence**, not tracing | **Self-hosted, MIT, no tiers** |
 
 If what you need is to compare two prompts, use Langfuse. This tool answers a
 different question: *what is my fleet allowed to do without me, what does it
@@ -105,7 +104,7 @@ argument behind the numbers.
 ```
 Agents / bridges ──OTLP──┐
 Hermes Cloud ────────────┼──► office-server ──► Browser (React isometric office)
-Hermes Mac ──────────────┘    Express 5 + ws        /kiosk   → wall display
+Hermes Mac ──────────────┘    Express 5 + ws        /auth    → the one door
                                     │               /standup → morning read
                             policy ─┤               /replay  → time machine
                          burn-rate ─┤               /dossier → evidence
@@ -124,8 +123,8 @@ the normalisation is real work and it is already done here.
 
 | | |
 |---|---|
-| Backend tests | **407** |
-| Frontend tests | **194** |
+| Backend tests | **370** |
+| Frontend tests | **189** |
 | Machine-verified doc claims | **115** (`scripts/check-docs.py`) |
 | Bundle | 287.7 kB JS · 41.0 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
@@ -164,7 +163,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | handoff integrity | every file matches `MANIFEST.sha256` byte-for-byte; no extras |
 | eslint | no lint errors in `server/` and `tests/` |
 | frontend build | `tsc && vite build` — a type error fails here |
-| backend tests | 407 tests |
+| backend tests | 370 tests |
 | frontend tests | 170 tests |
 | clean shutdown | the process exits with a live WebSocket attached |
 | ledger under load | the hash chain survives 400 concurrent decisions: contiguous, no duplicates, verify ok |
@@ -178,7 +177,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | theme contrast | 26 token pairs measured in APCA Lc, computed from `oklch()` |
 | doc claims | 94 documented claims executed against the repo |
 | sprites (+rebuild) | 32 cast sprites rebuild byte-for-byte, and the art is bound to the code that loads it |
-| live site | the running site answers, mints a guest session, still refuses guests on owner routes, and serves this tree's bundle |
+| live site | the running site answers, serves the login shell without minting a session, refuses every data route to an anonymous caller, and serves this tree's bundle |
 
 Three of those are worth singling out, because they are the ones that catch
 what hashes cannot:
@@ -205,12 +204,12 @@ The repository is the evidence; this section is just the index to it.
 | [`PRICING.md`](docs/PRICING.md) | Packaging, and the argument for the price |
 | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modules, routes, decisions |
 | [`PRD.md`](docs/PRD.md) | Product pillars, non-goals, roadmap |
-| [`SECURITY.md`](docs/SECURITY.md) | Token model, auto-guest, redaction pipeline, coordinated disclosure |
+| [`SECURITY.md`](docs/SECURITY.md) | Token model, single-principal auth, coordinated disclosure |
 | [`SUPPORT.md`](docs/SUPPORT.md) | Which Node versions are supported, until when, and what support means here |
 | [`POLICY.md`](docs/POLICY.md) | Floor plan as policy |
 | [`BURN-RATE.md`](docs/BURN-RATE.md) | States, actions, budgets |
 | [`FLIGHT-RECORDER.md`](docs/FLIGHT-RECORDER.md) | Hash chain, anchoring, verification |
-| [`REPLAY.md`](docs/REPLAY.md) · [`KIOSK.md`](docs/KIOSK.md) · [`STANDUP.md`](docs/STANDUP.md) | The three derived surfaces |
+| [`REPLAY.md`](docs/REPLAY.md) · [`STANDUP.md`](docs/STANDUP.md) | The two derived surfaces |
 | [`OTLP.md`](docs/OTLP.md) · [`EVENTS.md`](docs/EVENTS.md) | Ingest contracts |
 | [`DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Running it for real |
 | [`CHANGELOG-v2.md`](CHANGELOG-v2.md) | Every phase, including the ones that failed |
@@ -222,7 +221,7 @@ available in both.
 
 Forked from [Claude-Office](https://github.com/W17ant/Claude-Office) (MIT),
 which contributed the isometric office and its art. Every governance
-layer — policy, burn-rate, flight recorder, anchoring, replay, kiosk,
+layer — policy, burn-rate, flight recorder, anchoring, replay,
 standup — is new work in this fork. The original operational README is
 archived at [`docs/LEGACY-README.md`](docs/LEGACY-README.md).
 

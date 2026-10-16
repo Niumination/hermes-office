@@ -66,7 +66,7 @@ describe('sect theme', () => {
     const ladder = sectLadder(POLICY)
     const ceo = ladder.find((r) => r.room === 'ceo-office')!
     const lobby = ladder.find((r) => r.room === 'lobby')!
-    expect(canEnter(lobby, 0)).toBe(false)   // guest sits below $0.25
+    expect(canEnter(lobby, 0)).toBe(false)   // tier 0 sits below $0.25
     expect(canEnter(lobby, lobby.tier)).toBe(true)
     expect(canEnter(ceo, lobby.tier)).toBe(false)
     expect(canEnter(ceo, ceo.tier)).toBe(true)

@@ -9,11 +9,14 @@
  * Restored from the old `ApprovalGate`, which the sect rebuild dropped. Its
  * two rules are kept exactly:
  *
- *   - Knowing that something waits is not privileged; deciding it is. A guest
- *     sees the queue read-only.
- *   - No button that is guaranteed to 403. Ownership is inferred from the
- *     payload itself — the server redacts `agent` and `tool` for guests — so
- *     the controls are absent rather than present-and-futile.
+ *   - No button that is guaranteed to 403. The controls are absent rather
+ *     than present-and-futile.
+ *
+ * Ownership used to be *inferred* from the payload, because a guest got the
+ * same queue with `agent` and `tool` redacted and a `redacted: true` marker.
+ * With one principal that inference is dead weight: anyone who can read this
+ * queue at all is the owner, so `canApprove` defaults to true and the caller
+ * may still override it.
  */
 import React, { useCallback, useEffect, useState } from 'react'
 
@@ -26,7 +29,6 @@ export interface Approval {
   fromRoom?: string
   tool?: string | null
   reason?: string
-  redacted?: boolean
   createdAt: number
   expiresAt: number
 }
@@ -42,8 +44,8 @@ export const Writ: React.FC<{ pollMs?: number; canApprove?: boolean }> = ({
   pollMs = 2000,
   canApprove,
 }) => {
-  const [inferredOwner, setInferredOwner] = useState(false)
-  const mayApprove = canApprove ?? inferredOwner
+  // One principal: reading the queue and deciding it are the same standing.
+  const mayApprove = canApprove ?? true
   const [pending, setPending] = useState<Approval[]>([])
   const [busy, setBusy] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
@@ -61,17 +63,6 @@ export const Writ: React.FC<{ pollMs?: number; canApprove?: boolean }> = ({
           const body = await r.json()
           const list: Approval[] = Array.isArray(body?.pending) ? body.pending : []
           setPending(list)
-          // An entry the server did NOT mark redacted means it trusted this
-          // viewer with the detail, which is the same trust required to decide.
-          //
-          // The test is `!== true`, not `=== false`. GET /approvals returns the
-          // raw approval object to a non-guest and simply omits the key; only
-          // the guest branch sets `redacted: true`. An earlier cut here checked
-          // `=== false` and so inferred "guest" for everyone, which silently
-          // removed the approve/deny controls from the owner — the one viewer
-          // the panel exists for. No unit test caught it, because the fixture
-          // sent `redacted: false` rather than what the server actually sends.
-          setInferredOwner(list.some((a) => a.redacted !== true))
           failures = 0
           setError(null)
         } else {

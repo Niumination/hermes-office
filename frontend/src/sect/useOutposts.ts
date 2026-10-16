@@ -26,7 +26,6 @@ export interface Outpost {
   lastTs: number | null
   checkedTs: number | null
   detail?: string | null
-  redacted?: boolean
   /** Owner-declared actions. Tamu tidak melihat field ini. */
   actions?: Array<{ id: string; label: string; confirm: boolean; cooldownMs: number }>
 }
@@ -73,7 +72,6 @@ function normalise(raw: unknown): Outpost | null {
     lastTs: typeof d.lastTs === 'number' ? d.lastTs : null,
     checkedTs: typeof d.checkedTs === 'number' ? d.checkedTs : null,
     detail: typeof d.detail === 'string' ? d.detail : null,
-    redacted: d.redacted === true,
     actions: Array.isArray(d.actions)
       ? d.actions.filter((a): a is NonNullable<typeof d.actions>[number] =>
           typeof a?.id === 'string' && a.id.length > 0)
@@ -98,7 +96,7 @@ export function useOutposts(opts: UseOutpostsOptions = {}): OutpostsState {
       const res = await doFetch('/desks', { credentials: 'include' })
       if (!alive.current) return
       if (!res.ok) {
-        // 401 on a cold load means the guest session has not been minted yet
+        // 401 on a cold load means no session has been minted yet
         // (SectApp touches /kiosk for that), not that we are forbidden.
         failures.current += 1
         setStale(true)

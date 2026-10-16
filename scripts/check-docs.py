@@ -505,10 +505,14 @@ def main() -> int:
                   len(glob.glob(os.path.join(ROOT, "frontend/public/sprites/**/*.webp"),
                                 recursive=True)))
 
-        # The guest contract and the "never read prompt content" fence are
-        # load-bearing promises, not prose. If the words leave the PRD the
-        # product changed; this only checks they are still claimed.
-        for phrase in ("Tidak pernah membaca isi prompt", "Jangan pernah per-kursi"):
+        # These three are load-bearing promises, not prose. If the words
+        # leave the PRD the product changed; this only checks they are still
+        # claimed. "Persona 4" is here because its REMOVAL is the promise:
+        # the section must stay, marked dicabut, so that re-adding a visitor
+        # role requires deleting a documented retraction rather than quietly
+        # filling a gap.
+        for phrase in ("Tidak pernah membaca isi prompt", "Jangan pernah per-kursi",
+                       "Persona 4: pengunjung anonim — **dihapus"):
             checks += 1
             if phrase not in prd:
                 failures.append(f"PRD no longer states: {phrase!r}")
@@ -790,31 +794,41 @@ def main() -> int:
             if not os.path.exists(os.path.join(ROOT, cmd)):
                 failures.append(f"{rel} tells the reader to run {cmd}, which does not exist")
 
-    # Prices must be identical across all four documents. Two currencies
-    # formats are in play (1.000 vs 1,000), so each tier carries both.
-    # Prices must be identical across all four documents, and the check has
-    # to look at the PRICE ROW, not the document.
+    # The price table is gone, and this check is its inverse.
     #
-    # The first version searched the whole file for each tier. It passed a
-    # table that had been mutated to $2,400 because the correct $2,000 still
-    # appeared two paragraphs later in prose — a green check over a document
-    # quoting the wrong price, which is worse than having no check at all.
-    TIERS_EN = ["$0", "$39", "$299", "$2,000"]
-    TIERS_ID = ["$0", "$39", "$299", "$2.000"]
+    # It used to assert that all four documents quoted the same four tiers on
+    # a single PRICE ROW — $0 / $39 / $299 / $2,000 — because an earlier
+    # version searched the whole file and passed a table mutated to $2,400
+    # while the correct figure still sat two paragraphs away in prose. A green
+    # check over a document quoting the wrong price is worse than no check.
+    #
+    # Those tiers were retracted in Oct 2026: there is one owner, no seats and
+    # nothing to sell (docs/PRICING.md). The retraction is the kind that gets
+    # quietly undone — a tier table is easy to paste back in, and it drags a
+    # second principal with it, which is exactly how the guest role and its
+    # redaction pipeline were justified in the first place. So the assertion
+    # is inverted rather than deleted: no price may reappear in a table row.
+    # Prose may discuss the old figures; `docs/PRICING.md` does, deliberately.
+    # Room budgets ($0.25/hr for the lobby) are facts about policy and must
+    # stay; only the retracted LICENCE figures are forbidden. Matching those
+    # exact numbers keeps the check narrow enough to be true.
+    RETRACTED = ("$39", "$299", "$2,000", "$2.000", "$2,400")
     for rel in list(READMES.values()) + list(PRICINGS.values()):
         if text.get(rel) is None:
             continue
         checks += 1
-        tiers = TIERS_ID if rel.endswith(".id.md") else TIERS_EN
-        row = next(
-            (ln for ln in text[rel].splitlines()
-             if all(t in ln for t in tiers) and ln.lstrip().startswith("|")),
-            None,
-        )
-        if row is None:
+        offenders = [
+            ln.strip() for ln in text[rel].splitlines()
+            if ln.lstrip().startswith("|")
+            and any(t in ln for t in RETRACTED)
+            # The competitor comparison quotes other vendors' prices on
+            # purpose; it is a claim about them, not an offer.
+            and not any(v in ln for v in ("LangSmith", "Langfuse", "Laminar"))
+        ]
+        if offenders:
             failures.append(
-                f"{rel} has no single line quoting all four tiers "
-                f"({', '.join(tiers)}) — the price table drifted or was reworded")
+                f"{rel} quotes a retracted licence price in a table row: "
+                f"{offenders[0][:70]!r} — see docs/PRICING.md")
 
     # Each language version must point at the other, and at its own-language
     # pricing page. A dead language switcher is how a translation starts

@@ -2,7 +2,7 @@
  * Tataran — the rail *is* the permission model, so these tests are about the
  * policy it draws, not about markup. The rail's whole claim is that altitude
  * equals permission; if a locked hall is clickable, or a cap the server
- * redacted is printed anyway, that claim is a lie.
+ * never sent is printed anyway, that claim is a lie.
  */
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
@@ -25,7 +25,6 @@ function hall(id: keyof typeof SECT_HALLS) {
 // an empty map rather than the rail growing an opinion about who stands where.
 const ladder = (over: Partial<PolicySnapshot> = {}): PolicySnapshot => ({
   viewerTier: 1,
-  redacted: false,
   placements: {},
   rungs: [
     { room: 'lobby', tier: 0, capUsd: 0.25, hall: hall('lobby') },
@@ -53,16 +52,18 @@ describe('RealmRail', () => {
     expect(onEnter).toHaveBeenCalledWith('meeting-room')
   })
 
-  it('hides caps when the server says they were redacted', () => {
-    render(<RealmRail ladder={ladder({ redacted: true, viewerTier: 0 })}
-                      current="lobby" occupancy={{}} onEnter={() => {}} />)
-    // The guest cap is 0 server-side; printing "$0" would be a fabricated fact.
-    expect(screen.queryByText('$0.25')).toBeNull()
+  it('prints a dot, not "$0", for a hall the policy budgets at zero', () => {
+    // The rail used to blank every cap when the server marked the document
+    // redacted for a guest. No document is redacted now, so the only way a
+    // cap is missing is that it is genuinely zero — and "$0" would read as a
+    // measured limit rather than an unbudgeted hall.
+    render(<RealmRail ladder={ladder({ rungs: [{ room: 'kitchen', tier: 0, capUsd: 0, hall: hall('kitchen') }] })}
+                      current="kitchen" occupancy={{}} onEnter={() => {}} />)
     expect(screen.queryByText('$0')).toBeNull()
   })
 
-  it('locks everything for a guest with no tier', () => {
-    render(<RealmRail ladder={ladder({ viewerTier: -1, redacted: true })}
+  it('locks everything for a viewer with no tier', () => {
+    render(<RealmRail ladder={ladder({ viewerTier: -1 })}
                       current="lobby" occupancy={{}} onEnter={() => {}} />)
     const locked = screen.getAllByTitle(/Lenyap di Balik Kabut/)
     expect(locked).toHaveLength(3)

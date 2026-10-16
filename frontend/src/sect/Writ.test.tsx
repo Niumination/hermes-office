@@ -2,10 +2,12 @@
  * Titah — the writ. Its contract is a permission boundary, so the tests are
  * about who may decide, not about how the queue looks.
  *
- * The rule inherited from the old ApprovalGate and kept verbatim: knowing
- * that something waits is not privileged; deciding it is. A guest sees the
- * queue and gets no buttons — not disabled buttons, none — because a control
- * guaranteed to 403 is a worse lie than silence.
+ * The rule inherited from the old ApprovalGate: no control that is
+ * guaranteed to 403 — not a disabled button, none at all, because that is a
+ * worse lie than silence. What changed is who it protects. The split used to
+ * be guest-versus-owner, inferred from a `redacted` marker on each entry.
+ * With one principal, reading the queue and deciding it are the same
+ * standing, so the only remaining case is a caller that explicitly says no.
  */
 import React from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
@@ -16,8 +18,8 @@ const now = Date.now()
 
 const pending = (over = {}) => ({
   id: 'ap-1', kind: 'entry' as const, status: 'pending' as const,
-  room: 'ceo-office', createdAt: now, expiresAt: now + 90_000,
-  redacted: true, ...over,
+  room: 'ceo-office', agent: 'niu-1', createdAt: now, expiresAt: now + 90_000,
+  ...over,
 })
 
 function stub(body: unknown, post?: { status: number; body?: unknown }) {
@@ -35,16 +37,18 @@ function stub(body: unknown, post?: { status: number; body?: unknown }) {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('Writ', () => {
-  it('shows a guest the queue but offers no decision', async () => {
+  it('shows the queue and offers no decision when the caller forbids it', async () => {
+    // `canApprove={false}` is the one remaining way to get a read-only queue.
+    // It must suppress the controls entirely, not disable them.
     stub({ pending: [pending()] })
-    render(<Writ pollMs={5} />)
+    render(<Writ pollMs={5} canApprove={false} />)
     await waitFor(() => expect(screen.getByText(/1 menunggu keputusan/)).toBeTruthy())
     expect(screen.queryByText('Restui')).toBeNull()
     expect(screen.queryByText('Tolak')).toBeNull()
   })
 
-  it('offers the decision once the server sends unredacted detail', async () => {
-    stub({ pending: [pending({ redacted: false, agent: 'niu-1' })] })
+  it('offers the decision to whoever can read the queue', async () => {
+    stub({ pending: [pending()] })
     render(<Writ pollMs={5} />)
     await waitFor(() => expect(screen.getByText('Restui')).toBeTruthy())
     expect(screen.getByText('Tolak')).toBeTruthy()
@@ -52,7 +56,7 @@ describe('Writ', () => {
   })
 
   it('removes a row only when the server accepted the decision', async () => {
-    stub({ pending: [pending({ redacted: false, agent: 'niu-1' })] })
+    stub({ pending: [pending()] })
     render(<Writ pollMs={100000} />)
     await waitFor(() => expect(screen.getByText('Restui')).toBeTruthy())
     fireEvent.click(screen.getByText('Restui'))
@@ -60,7 +64,7 @@ describe('Writ', () => {
   })
 
   it('keeps the row and reports the reason when the server refuses', async () => {
-    stub({ pending: [pending({ redacted: false, agent: 'niu-1' })] },
+    stub({ pending: [pending()] },
           { status: 409, body: { error: 'Sudah kedaluwarsa' } })
     render(<Writ pollMs={100000} />)
     await waitFor(() => expect(screen.getByText('Restui')).toBeTruthy())
@@ -88,11 +92,10 @@ describe('Writ', () => {
     await waitFor(() => expect(screen.getByText(/^1m \d+s$/)).toBeTruthy())
   })
 
-  it('offers the decision when the server omits `redacted` entirely', async () => {
-    // This is what GET /approvals actually returns to an owner: the raw
-    // approval object, with no `redacted` key at all. A fixture that sends
-    // `redacted: false` tests a response the server never produces — and that
-    // gap hid a bug that removed the owner's buttons against the real server.
+  it('matches the shape GET /approvals actually returns', async () => {
+    // A fixture carrying keys the server never sends is how the owner's
+    // buttons once vanished against the real thing: the component inferred
+    // standing from a `redacted` marker that only the fixture produced.
     stub({ pending: [{
       id: 'ap-1', kind: 'entry', status: 'pending', room: 'server-room',
       agent: 'niu-1', createdAt: now, expiresAt: now + 90_000,
@@ -102,9 +105,9 @@ describe('Writ', () => {
     expect(screen.getByText('niu-1')).toBeTruthy()
   })
 
-  it('still withholds the decision when every entry is marked redacted', async () => {
+  it('withholds every decision, not just the first, when the caller forbids it', async () => {
     stub({ pending: [pending(), pending({ id: 'ap-2' })] })
-    render(<Writ pollMs={5} />)
+    render(<Writ pollMs={5} canApprove={false} />)
     await waitFor(() => expect(screen.getByText(/2 menunggu keputusan/)).toBeTruthy())
     expect(screen.queryByText('Restui')).toBeNull()
   })

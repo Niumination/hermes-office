@@ -35,7 +35,7 @@ describe('Seal', () => {
     vi.stubGlobal('fetch', mockFetch({ '/ledger/head': { status: 403 } }))
     const { container } = render(<Seal />)
     // Not "disabled", not "403" — absent. Showing a locked control would
-    // advertise an audit log the guest cannot read.
+    // advertise an audit log the viewer cannot read.
     await waitFor(() => expect(container.querySelector('.sect-chain')).toBeNull())
   })
 

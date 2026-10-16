@@ -27,5 +27,5 @@ cd frontend && npm run build       # typecheck + build
 ## Before pushing
 
 - [ ] Tidak ada token/secret di kode atau test fixtures
-- [ ] sanitizeForGuest tetap hijau bila menyentuh event types
+- [ ] validateEvent tetap hijau bila menyentuh event types
 - [ ] Redaction rules tidak dilemahkan

@@ -8,7 +8,7 @@
  * that restart services. That second half changes what this product *is*:
  * the office is an authorised observer, and `@mitigasi → systemctl restart`
  * would make it a shell executor — on a service published through a Tailscale
- * Funnel, where "guest" and "anonymous visitor on the internet" are the same
+ * tunnel, where an unauthenticated request is an anonymous visitor on the
  * principal (docs/SECURITY.md §3).
  *
  * So phase one is observation only. There is no route here that changes
@@ -205,26 +205,6 @@ function finalise(desk, { state, lastMs = null, at, detail = null }) {
 }
 
 /**
- * A guest sees that an outpost exists and whether it is well — never where it
- * lives or what the error said. Internal hostnames and stack-ish detail
- * strings are exactly the kind of thing a public Funnel should not hand out,
- * and `detail` is the field most likely to carry them.
- */
-export function redactDesk(d) {
-  return {
-    id: d.id,
-    label: d.label,
-    hall: d.hall,
-    kind: d.kind,
-    state: d.state,
-    lastTs: d.lastTs,
-    checkedTs: d.checkedTs,
-    detail: null,
-    redacted: true,
-  };
-}
-
-/**
  * Poll on the server, not per client. Ten open browsers must not become ten
  * times the probe traffic against someone else's service — that turns a
  * monitor into a load generator (the "WebSocket storm" worry in
@@ -325,14 +305,10 @@ export function createDesksRouter(board, opts = {}) {
   const r = Router();
   const { recordImpl = null, runActionImpl = runAction } = opts;
 
-  r.get("/", requireAny, (req, res) => {
-    const guest = req.identity?.role === "guest";
-    const desks = board.snapshot();
+  r.get("/", requireAny, (_req, res) => {
     res.json({
-      desks: guest ? desks.map(redactDesk) : desks,
-      // Config problems are an owner's business; a guest learns nothing from
-      // a parse error about a file they cannot see.
-      problems: guest ? [] : board.problems,
+      desks: board.snapshot(),
+      problems: board.problems,
       pollMs: board.pollMs,
       ts: Date.now(),
     });

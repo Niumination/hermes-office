@@ -117,34 +117,33 @@ test("a2a events carry their own origin and owner", () => {
   assert.equal(t.title, "review");
 });
 
-// --- guest redaction --------------------------------------------------------
+// --- one principal -----------------------------------------------------------
 
-test("a guest sees the shape of the work but never its subject", () => {
+test("the snapshot carries whole titles and repo names", () => {
+  // This used to take {isGuest:true} and blank out titles and repo names.
+  // With the guest role gone the board has one reader, and hiding its own
+  // subject from it was never the point.
   const b = new TaskBoard();
-  b.ingest(upd("T1", "working", { title: "repo lightvela: perbaiki build", repo: "lightvela", peer: "mac" }));
-  b.ingest(upd("T2", "input_required", { title: "migrasi agroclimate" }));
+  b.ingest(upd("t-1", "working", { title: "migrasi skema agroclimate", repo: "lightvela" }));
+  b.ingest(upd("t-2", "input_required", { title: "review PR #88", repo: "brain" }));
 
-  const guest = JSON.stringify(b.snapshot({ isGuest: true }));
-  for (const secret of ["lightvela", "agroclimate", "perbaiki build"]) {
-    assert.ok(!guest.includes(secret), `leaked "${secret}" to a guest`);
-  }
-  const view = b.snapshot({ isGuest: true });
-  assert.equal(view.redacted, true);
-  assert.equal(view.counts.active, 1, "a guest still sees that work is running");
-  assert.equal(view.counts.blocked, 1, "a guest still sees that something is blocked");
-  assert.equal(view.lanes.active[0].title, "[redacted]");
+  const view = b.snapshot();
+  assert.equal(view.redacted, undefined, "no redaction marker should survive");
+  const blob = JSON.stringify(view);
+  assert.ok(blob.includes("migrasi skema agroclimate"));
+  assert.ok(blob.includes("lightvela"));
+  assert.equal(view.counts.active, 1);
+  assert.equal(view.counts.blocked, 1);
 });
 
-test("the owner sees everything the guest does not", () => {
+test("snapshot() takes no arguments — a stray flag cannot re-enable redaction", () => {
   const b = new TaskBoard();
-  b.ingest(upd("T1", "working", { title: "rahasia", repo: "r", peer: "mac" }));
-  const t = b.snapshot().lanes.active[0];
-  assert.equal(t.title, "rahasia");
-  assert.equal(t.repo, "r");
-  assert.equal(t.peer, "mac");
+  b.ingest(upd("t-1", "working", { title: "rahasia", repo: "privat" }));
+  // Passing the old option must not change anything: the branch is gone.
+  const blob = JSON.stringify(b.snapshot({ isGuest: true }));
+  assert.ok(blob.includes("rahasia"), "the old flag must be inert, not honoured");
+  assert.equal(TaskBoard.prototype.snapshot.length, 0, "snapshot declares no parameters");
 });
-
-// --- the ledger contract ----------------------------------------------------
 
 test("only real transitions are written to the chain", () => {
   const written = [];

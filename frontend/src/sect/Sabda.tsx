@@ -5,7 +5,7 @@
  * Murid is who is *present*, Sabda is what was *said*. Three different kinds
  * of truth, so three panels rather than one merged feed.
  *
- * A guest gets the transcript with no composer, because `POST /chat` is
+ * Signed out there is no transcript and no composer, because `GET /chat`
  * `requireAuth(["bridge","owner"])` and would refuse them. The badge states
  * that plainly instead of leaving a dead input box on screen.
  */
@@ -31,14 +31,14 @@ export interface SabdaProps {
   messages: SabdaMessage[]
   typing: string | null
   refusal: string | null
-  guest: boolean
+  signedOut: boolean
   loaded: boolean
   onSend: (text: string) => void
   onReact: (id: number | string, emoji: string) => void
 }
 
 export default function Sabda(props: SabdaProps) {
-  const { messages, typing, refusal, guest, loaded, onSend, onReact } = props
+  const { messages, typing, refusal, signedOut, loaded, onSend, onReact } = props
   const [draft, setDraft] = useState('')
   const [open, setOpen] = useState<number | string | null>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
@@ -133,9 +133,9 @@ export default function Sabda(props: SabdaProps) {
         </p>
       )}
 
-      {guest ? (
+      {signedOut ? (
         <p className="sect-sabda__guest" data-testid="sabda-guest">
-          Tamu menyimak tanpa bersabda — perguruan hanya menerima titah murid.
+          Perguruan sunyi bagi yang belum bersegel — tunjukkan segel untuk bersabda.
         </p>
       ) : (
         <form className="sect-sabda__composer" onSubmit={submit}>

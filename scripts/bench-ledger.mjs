@@ -70,7 +70,6 @@ const TOK = {
   bridge: "bench-bridge-token-aaaaaaaa",
   mac: "bench-mac-token-cccccccc",
   owner: "bench-owner-token-bbbbbbbb",
-  guest: "bench-guest-token-dddddddd",
 };
 
 function pct(sorted, p) {
@@ -101,7 +100,6 @@ async function main() {
       OFFICE_CLOUD_TOKEN: TOK.bridge,
       OFFICE_MAC_TOKEN: TOK.mac,
       OFFICE_OWNER_TOKEN: TOK.owner,
-      OFFICE_GUEST_TOKEN: TOK.guest,
       OFFICE_LEDGER_ENABLED: "1",
       // Full durability on purpose: the expensive setting is the one shipped
       // by default, so it is the one worth measuring.

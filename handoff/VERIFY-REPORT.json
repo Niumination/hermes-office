@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-16T14:36:43Z",
-  "commit": "78de2ae4e5a9951c9ad5407fd05da4923e77f0e2",
+  "generatedAt": "2026-10-16T15:46:57Z",
+  "commit": "91c1ac49882b9085b6f2d2636d4b9200419d3002",
   "branch": "dev",
   "dirty": true,
   "gates": [
@@ -74,13 +74,13 @@
     },
     {
       "gate": "live site",
-      "ok": true
+      "ok": false
     }
   ],
-  "gatesGreen": 18,
+  "gatesGreen": 17,
   "gatesTotal": 18,
   "bundle": {
-    "file": "index-Clc2Xcb7.js",
-    "sha256": "979315e2e395f036eed3fec432f3f3c71e4b4d84322e4d99e1b16157a806107f"
+    "file": "index-BLZbDf4G.js",
+    "sha256": "88beb4d271572c3a71a9c56f4ed18134c9c05d14ee1b36952a9f8e8e28ba6cee"
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Integration test: boots the real server on an ephemeral port with test tokens,
- * exercises HTTP auth, /event validation, WS broadcast + guest filtering, chat.
+ * exercises HTTP auth, /event validation, WS broadcast, chat.
  * Run with: node --test tests/integration.test.js
  * Uses OFFICE_DATA_DIR to a temp dir so it never touches real data.
  */
@@ -22,7 +22,6 @@ const TOKENS = {
   cloud: "cloud-test-token-aaaa",
   mac: "mac-test-token-bbbb",
   owner: "owner-test-token-cccc",
-  guest: "guest-test-token-dddd",
 };
 
 let proc;
@@ -94,7 +93,6 @@ before(async () => {
       OFFICE_CLOUD_TOKEN: TOKENS.cloud,
       OFFICE_MAC_TOKEN: TOKENS.mac,
       OFFICE_OWNER_TOKEN: TOKENS.owner,
-      OFFICE_GUEST_TOKEN: TOKENS.guest,
       ALLOWED_ORIGINS: "http://localhost:5173",
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -142,10 +140,10 @@ test("health endpoint", async () => {
   assert.equal(j.status, "ok");
 });
 
-test("auth: 401 without token, 401 bad token, 403 guest on /event, bridge ok", async () => {
+test("auth: 401 without token, 401 bad token, bridge ok on /event", async () => {
   assert.equal((await post("/event", { type: "tool_done", agentId: "x" })).status, 401);
   assert.equal((await post("/event", { type: "tool_done", agentId: "x" }, "wrong")).status, 401);
-  assert.equal((await post("/event", { type: "tool_done", agentId: "x" }, TOKENS.guest)).status, 403);
+  assert.equal((await post("/event", { type: "tool_done", agentId: "x" }, "no-such-token")).status, 401);
   const ok = await post("/event", { type: "tool_done", agentId: "x" }, TOKENS.cloud);
   assert.equal(ok.status, 200);
   const okBody = await ok.json();
@@ -164,16 +162,15 @@ test("event validation: unknown type 400, missing field 400, source override ign
   assert.equal(j.ok, true);
 });
 
-test("owner cannot POST /event, guest cannot POST /chat, owner can", async () => {
+test("owner cannot POST /event, an unknown token cannot POST /chat, owner can", async () => {
   assert.equal((await post("/event", { type: "tool_done", agentId: "x" }, TOKENS.owner)).status, 403);
-  assert.equal((await post("/chat", { sender: "g", text: "hi" }, TOKENS.guest)).status, 403);
+  assert.equal((await post("/chat", { sender: "g", text: "hi" }, "no-such-token")).status, 401);
   const r = await post("/chat", { sender: "owner", text: "hello office" }, TOKENS.owner);
   assert.equal(r.status, 200);
 });
 
-test("WS: handshake hello, event broadcast, guest filtering of private git_push", async () => {
+test("WS: handshake hello, event broadcast carries the whole event", async () => {
   const owner = await wsConnect(TOKENS.owner);
-  const guest = await wsConnect(TOKENS.guest);
   await new Promise((r) => { setTimeout(r, 200); });
   assert.equal(owner._frames[0].channel, "hello");
   assert.ok(owner._frames[0].data.events.includes("git_push"));
@@ -190,24 +187,16 @@ test("WS: handshake hello, event broadcast, guest filtering of private git_push"
 
   await new Promise((r) => { setTimeout(r, 300); });
   const ownerEv = owner._frames.filter((f) => f.channel === "event");
-  const guestEv = guest._frames.filter((f) => f.channel === "event");
   const lastOwner = ownerEv[ownerEv.length - 1]?.data;
-  const lastGuest = guestEv[guestEv.length - 1]?.data;
+  // A private repo name used to be rewritten to "[private]" for guest
+  // sockets. With one principal the frame is the event, unedited — the
+  // owner already knows which repos are theirs.
   assert.equal(lastOwner.type, "git_push");
   assert.equal(lastOwner.repo, "brain");
-  assert.equal(lastGuest.repo, "[private]");
-  assert.equal(lastGuest.url, undefined);
-
-  // public git_push passes through for guest
-  await post("/event", { type: "git_push", repo: "public-repo", privat: false, author: "a", commits: 1 }, TOKENS.cloud);
-  await new Promise((r) => { setTimeout(r, 300); });
-  const guestLast = guest._frames.filter((f) => f.channel === "event").pop()?.data;
-  assert.equal(guestLast.repo, "public-repo");
+  assert.equal(lastOwner.url, "https://github.com/Niumination/brain");
 
   owner.close();
-  guest.close();
 });
-
 test("WS: bad origin rejected, no token rejected", async () => {
   const expectReject = (headers) =>
     new Promise((resolve) => {
@@ -252,9 +241,9 @@ test("chat history roundtrip via SQLite", async () => {
   assert.ok(j.messages.some((m) => m.text === "persist me"));
 });
 
-test("/roster: guest ok, unauthenticated 401", async () => {
+test("/roster: owner ok, unauthenticated 401", async () => {
   assert.equal((await fetch(BASE + "/roster")).status, 401);
-  const r = await fetch(BASE + "/roster", { headers: { Authorization: `Bearer ${TOKENS.guest}` } });
+  const r = await fetch(BASE + "/roster", { headers: { Authorization: `Bearer ${TOKENS.owner}` } });
   assert.equal(r.status, 200);
 });
 
@@ -331,7 +320,6 @@ test("watchdog: a non-agent_status event counts as a heartbeat", async () => {
       OFFICE_CLOUD_TOKEN: TOKENS.cloud,
       OFFICE_MAC_TOKEN: TOKENS.mac,
       OFFICE_OWNER_TOKEN: TOKENS.owner,
-      OFFICE_GUEST_TOKEN: TOKENS.guest,
       OFFICE_DB: ":memory:",
       OFFICE_WATCHDOG_CUTOFF_MS: "600",
       OFFICE_WATCHDOG_SWEEP_MS: "150",
@@ -407,10 +395,10 @@ async function postOtlp(body, token) {
   });
 }
 
-test("otlp: requires a bridge token, rejects guest and anonymous", async () => {
+test("otlp: requires a bridge token, rejects owner and anonymous", async () => {
   assert.equal((await postOtlp(otlpBody([]))).status, 401);
   assert.equal((await postOtlp(otlpBody([]), "wrong")).status, 401);
-  assert.equal((await postOtlp(otlpBody([]), TOKENS.guest)).status, 403);
+  assert.equal((await postOtlp(otlpBody([]), "no-such-token")).status, 401);
   assert.equal((await postOtlp(otlpBody([]), TOKENS.cloud)).status, 200);
 });
 
@@ -528,12 +516,12 @@ test("burn: /budget/check allows everything when no budget is set", async () => 
   assert.match(j.reason, /no budget/);
 });
 
-test("burn: a guest can neither read burn state nor ask for a decision", async () => {
+test("burn: an unknown token can neither read burn state nor ask for a decision", async () => {
   assert.equal((await fetch(BASE + "/budget/check", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKENS.guest}` },
+    headers: { "Content-Type": "application/json", Authorization: "Bearer no-such-token" },
     body: JSON.stringify({ agent: "x" }),
-  })).status, 403);
+  })).status, 401);
 });
 
 test("burn: bridges cannot forge a budget_state event", async () => {
@@ -558,7 +546,6 @@ test("burn: end-to-end — OTLP spend trips the breaker and denies the next call
       OFFICE_CLOUD_TOKEN: TOKENS.cloud,
       OFFICE_MAC_TOKEN: TOKENS.mac,
       OFFICE_OWNER_TOKEN: TOKENS.owner,
-      OFFICE_GUEST_TOKEN: TOKENS.guest,
       OFFICE_DB: ":memory:",
       OFFICE_BUDGET_AGENT_HOURLY_USD: "0.06",
       OFFICE_BUDGET_HOURLY_USD: "1",
@@ -677,7 +664,7 @@ test("policy: an unassigned agent is confined to the lobby", async () => {
 
 test("policy: only an owner may grant scope by moving an agent", async () => {
   assert.equal((await moveAgent("mover", "main-office", TOKENS.cloud)).status, 403);
-  assert.equal((await moveAgent("mover", "main-office", TOKENS.guest)).status, 403);
+  assert.equal((await moveAgent("mover", "main-office", "no-such-token")).status, 401);
   const ok = await moveAgent("mover", "main-office", TOKENS.owner);
   assert.equal(ok.status, 200);
   assert.equal((await ok.json()).room, "main-office");
@@ -806,80 +793,71 @@ test("policy: an unknown approval id is a 404, not a pass", async () => {
   assert.equal(d.allow, false);
 });
 
-// --- Guest confidentiality on the governance surface -----------------------
+// --- One principal: the governance surface answers the owner or nobody ----
 //
-// v1 was careful about what a guest could see (sanitizeForGuest, guest-filtered
-// roster). The governance endpoints added later initially used requireAny and
-// handed read-only visitors the hourly AI spend and a complete map of the
-// privilege boundaries. These tests exist so that cannot silently return.
+// v1 served a softened view to a `guest` role: burn without amounts, the
+// building without the privilege map, a knock without the knocker. That role
+// is gone — this office has one occupant — and with it the whole redaction
+// path. What used to be "a visitor sees less" is now "a visitor sees
+// nothing", and these tests hold that line, because a half-removed guest
+// mode is worse than either end state: dead branches that still parse, still
+// ship, and quietly come back.
 
 const getAs = (path, token) =>
   fetch(BASE + path, { headers: { Authorization: `Bearer ${token}` } }).then((r) => r.json());
 
-test("guest: /burn discloses temperature but never amounts", async () => {
-  const owner = await getAs("/burn", TOKENS.owner);
-  const guest = await getAs("/burn", TOKENS.guest);
+const statusAs = (path, token) =>
+  fetch(BASE + path, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
+    .then((r) => r.status);
 
-  assert.equal(guest.global.redacted, true);
-  assert.equal(guest.global.spentHourUsd, 0);
-  assert.equal(guest.global.spentDayUsd, 0);
-  assert.equal(guest.global.lifetimeUsd, 0);
-  // State still crosses, so the room can visibly catch fire for a guest.
-  assert.equal(guest.global.state, owner.global.state);
-  for (const a of guest.agents) {
-    assert.equal(a.spentHourUsd, undefined, `${a.agent} spend must not reach a guest`);
-    assert.equal(a.tokens, undefined);
+test("no guest token exists: a former guest credential is just a bad token", async () => {
+  // The exact string the old suite used. It must now authenticate as nothing.
+  assert.equal(await statusAs("/policy", "guest-test-token-dddd"), 401);
+  assert.equal(await statusAs("/burn", "guest-test-token-dddd"), 401);
+});
+
+test("the governance surface is 401 to anyone without a token", async () => {
+  for (const path of ["/burn", "/policy", "/approvals", "/tasks", "/roster", "/desks"]) {
+    assert.equal(await statusAs(path), 401, `${path} must not answer an anonymous caller`);
   }
 });
 
-test("guest: /policy shows the building, not the privilege map", async () => {
-  const guest = await getAs("/policy", TOKENS.guest);
-  const blob = JSON.stringify(guest);
+test("the owner sees whole objects — nothing is redacted on the way out", async () => {
+  // The mirror image of the old guest tests: every field they asserted was
+  // blanked must now be present and real for the only principal left.
+  const burn = await getAs("/burn", TOKENS.owner);
+  assert.equal(burn.global.redacted, undefined, "no redaction marker should survive");
+  assert.equal(typeof burn.global.spentHourUsd, "number");
+  assert.equal(typeof burn.global.lifetimeUsd, "number");
 
-  for (const room of guest.rooms) {
-    assert.equal(room.toolsAllow, undefined, "tool allow lists are recon");
-    assert.equal(room.toolsDeny, undefined);
-    assert.equal(room.approval, undefined, "which tools are gated is recon");
-    assert.equal(room.budgetHourlyUsd, undefined);
-    assert.equal(room.entryApproval, undefined);
-    assert.ok(room.label, "but the room itself is still visible");
+  const policy = await getAs("/policy", TOKENS.owner);
+  assert.ok(
+    policy.rooms.find((r) => r.room === "server-room").approval.includes("kubectl"),
+    "the privilege map is the owner's to read"
+  );
+  for (const room of policy.rooms) {
+    assert.equal(room.redacted, undefined);
   }
-  assert.ok(!blob.includes("kubectl"), "no gated tool name should appear");
-  assert.ok(!blob.includes("terraform"));
-
-  // The owner still sees everything.
-  const owner = await getAs("/policy", TOKENS.owner);
-  assert.ok(owner.rooms.find((r) => r.room === "server-room").approval.includes("kubectl"));
 });
 
-test("guest: /approvals shows a knock, not who wants which tool", async () => {
+test("approvals name the agent and the tool for the owner", async () => {
   await moveAgent("secretive", "server-room");
-  const guest = await getAs("/approvals", TOKENS.guest);
-  assert.ok(guest.pending.length > 0, "the knock is visible");
-  for (const a of guest.pending) {
-    assert.equal(a.agent, undefined, "agent identity must not reach a guest");
-    assert.equal(a.tool, undefined, "nor which privileged tool is wanted");
-    assert.equal(a.redacted, true);
-  }
   const owner = await getAs("/approvals", TOKENS.owner);
   assert.ok(owner.pending.some((a) => a.agent === "secretive"));
+  for (const a of owner.pending) assert.equal(a.redacted, undefined);
 });
 
-test("guest: a single approval cannot be read at all", async () => {
+test("a single approval is readable by the owner and nobody else", async () => {
   const held = await moveAgent("probe", "server-room");
   const { approvalId } = await held.json();
-  assert.equal(
-    (await fetch(BASE + `/approvals/${approvalId}`, {
-      headers: { Authorization: `Bearer ${TOKENS.guest}` },
-    })).status,
-    403,
-    "the detail view would re-expose exactly what the list redacts"
-  );
+  assert.equal(await statusAs(`/approvals/${approvalId}`), 401);
+  assert.equal(await statusAs(`/approvals/${approvalId}`, TOKENS.owner), 200);
 });
 
-test("guest: governance events over the socket are sanitized too", async () => {
-  // Redacting the REST surface is pointless if the same facts stream over WS.
-  const ws = await wsConnect(TOKENS.guest);
+test("the socket streams whole events — there is no second frame shape", async () => {
+  // Redaction used to be applied per connection in frameFor(). With one
+  // principal there is exactly one frame, and governance detail rides in it.
+  const ws = await wsConnect(TOKENS.owner);
   await new Promise((r) => { setTimeout(r, 50); });
 
   await moveAgent("wsprobe", "main-office");
@@ -890,21 +868,11 @@ test("guest: governance events over the socket are sanitized too", async () => {
 
   assert.ok(await waitFor(() => ws._frames.some((f) => f.data?.type === "agent_moved"), 3000));
 
-  const moved = ws._frames.find((f) => f.data?.type === "agent_moved").data;
-  assert.equal(moved.grantedBy, undefined, "who granted scope is not a guest's business");
-
-  const approvals = ws._frames.filter((f) => f.data?.type === "approval_requested");
-  for (const f of approvals) {
-    assert.equal(f.data.agent, undefined);
-    assert.equal(f.data.tool, undefined);
-  }
-
   const budget = ws._frames.filter((f) => f.data?.type === "budget_state");
   for (const f of budget) {
-    assert.equal(f.data.spentUsd, undefined, "spend figures must not stream to guests");
-    assert.equal(f.data.limitUsd, undefined);
-    assert.ok(f.data.state, "but the state still does");
+    assert.ok(f.data.state, "state still streams");
   }
+  ws.close();
 });
 
 // --- Fase 4: Flight Recorder over HTTP ------------------------------------
@@ -917,7 +885,7 @@ test("ledger: the audit surface is owner-only, including for bridges", async () 
   // A bridge token is held by every agent process. Agents are the *subjects*
   // of this record, so bridge access would let the watched read the watchlist.
   for (const path of ["/ledger", "/ledger/head", "/ledger/verify", "/dossier"]) {
-    for (const [role, token] of [["guest", TOKENS.guest], ["bridge", TOKENS.cloud]]) {
+    for (const [role, token] of [["bridge", TOKENS.cloud], ["mac-bridge", TOKENS.mac]]) {
       const r = await fetch(BASE + path, { headers: { Authorization: `Bearer ${token}` } });
       assert.equal(r.status, 403, `${role} must not reach ${path}`);
     }
@@ -1022,70 +990,53 @@ test("policy/check: a looping agent is rate limited and fails closed", async () 
   assert.notEqual(other.scope, "limiter", "the limiter is keyed per agent");
 });
 
-// --- Auto-guest (upstream, Okt 2026) --------------------------------------
+// --- No auto-session: the door does not open itself ----------------------
 //
-// GET / now mints a read-only guest session for any browser without one. The
-// server is published through a Tailscale Funnel, so this makes "anonymous
-// visitor on the public internet" and "guest" the same principal. Everything
-// the Fase 3 review redacted from guests is now redacted from the whole
-// internet — and these tests are the proof, because the redaction stopped
-// being defence-in-depth and became the only boundary.
+// `GET /` used to mint a read-only guest cookie for any browser without one.
+// Published through a tunnel, that made "anonymous visitor on the public
+// internet" and "guest" the same principal, and turned the redaction layer
+// from defence-in-depth into the only boundary. It also had a denial-of-
+// service edge: a bounded session map plus a 12h TTL meant enough anonymous
+// visits could exhaust the table and lock the owner out with a 429.
+//
+// Now the shell is public and the data is not.
 
-test("auto-guest: a tokenless browser is issued a read-only guest session", async () => {
+test("GET / mints no session for an anonymous browser", async () => {
   const r = await fetch(BASE + "/", { redirect: "manual" });
-  const cookie = r.headers.get("set-cookie");
-  assert.ok(cookie, "GET / should mint a session for an anonymous browser");
-  assert.match(cookie, /office_session=/);
-  assert.match(cookie, /HttpOnly/i, "the session cookie must not be readable from JS");
+  assert.equal(r.headers.get("set-cookie"), null, "no cookie may be handed out for free");
 });
 
-test("auto-guest: the minted session really is a guest, not an owner", async () => {
-  const r = await fetch(BASE + "/", { redirect: "manual" });
-  const cookie = (r.headers.get("set-cookie") || "").split(";")[0];
-  assert.ok(cookie.startsWith("office_session="));
-
-  const as = (path) => fetch(BASE + path, { headers: { Cookie: cookie } });
-
-  // Owner-only governance surfaces must stay shut to the anonymous public.
-  for (const path of ["/ledger", "/ledger/head", "/ledger/verify", "/dossier"]) {
-    assert.equal((await as(path)).status, 403, `${path} must be closed to an anonymous visitor`);
-  }
-  assert.equal((await as("/approvals/ap-1-x")).status, 403);
-});
-
-test("auto-guest: an anonymous visitor cannot read spend figures or the privilege map", async () => {
+test("an anonymous browser can read nothing but the shell", async () => {
   const r = await fetch(BASE + "/", { redirect: "manual" });
   const cookie = (r.headers.get("set-cookie") || "").split(";")[0];
-  const get = async (p) => (await fetch(BASE + p, { headers: { Cookie: cookie } })).json();
+  const as = (path) => fetch(BASE + path, cookie ? { headers: { Cookie: cookie } } : undefined);
 
-  const burn = await get("/burn");
-  assert.equal(burn.global.redacted, true, "the public internet must not see hourly AI spend");
-  assert.equal(burn.global.spentHourUsd, 0);
-  assert.equal(burn.global.lifetimeUsd, 0);
-
-  const policy = await get("/policy");
-  const blob = JSON.stringify(policy);
-  assert.ok(!blob.includes("kubectl"), "nor a map of which tools are gated where");
-  assert.ok(!blob.includes("terraform"));
-  for (const room of policy.rooms) {
-    assert.equal(room.approval, undefined);
-    assert.equal(room.budgetHourlyUsd, undefined);
-  }
-
-  const approvals = await get("/approvals");
-  for (const a of approvals.pending) {
-    assert.equal(a.agent, undefined, "nor which agent is reaching past its scope");
-    assert.equal(a.tool, undefined);
+  for (const path of ["/burn", "/policy", "/approvals", "/tasks", "/roster",
+                      "/ledger", "/ledger/head", "/dossier"]) {
+    const st = (await as(path)).status;
+    assert.ok(st === 401 || st === 403, `${path} answered ${st} to an anonymous visitor`);
   }
 });
 
-test("auto-guest: an existing stronger session is never downgraded", async () => {
-  // The owner's browser hitting / must keep its owner session.
-  const r = await fetch(BASE + "/", {
+test("/health stays open — it is how the tunnel knows the office is alive", async () => {
+  assert.equal((await fetch(BASE + "/health")).status, 200);
+});
+
+test("an owner session is created only by presenting the owner token", async () => {
+  const r = await fetch(BASE + "/auth/session", {
+    method: "POST",
     headers: { Authorization: `Bearer ${TOKENS.owner}` },
-    redirect: "manual",
   });
-  assert.equal(r.headers.get("set-cookie"), null, "an authenticated request must not be re-cookied as guest");
+  assert.equal(r.status, 200);
+  assert.match(r.headers.get("set-cookie") || "", /office_session=/);
+  assert.match(r.headers.get("set-cookie") || "", /HttpOnly/i);
+
+  const bad = await fetch(BASE + "/auth/session", {
+    method: "POST",
+    headers: { Authorization: "Bearer not-a-real-token" },
+  });
+  assert.equal(bad.status, 401);
+  assert.equal(bad.headers.get("set-cookie"), null);
 });
 
 test("presence: an object-form agent is keyed by id/name, not [object Object]", async () => {

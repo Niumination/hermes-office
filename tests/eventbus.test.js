@@ -8,7 +8,6 @@ import {
   redactEvent,
   RateLimiter,
   RingBuffer,
-  sanitizeForGuest,
   OfficeEventBus,
   KNOWN_EVENT_TYPES,
 } from "../server/eventbus.js";
@@ -77,16 +76,6 @@ test("unknown type rejected; office_chat internal-only; missing fields rejected"
     assert.match(validateEvent({ type: "a2a_task_out", origin: "mac", state: "bogus" }), /Invalid/);
     assert.match(validateEvent({ type: "task_update" }), /taskId required/);
     assert.match(validateEvent({ type: "task_update", taskId: "T", state: "bogus" }), /Invalid/);
-    // A guest must not learn what a task is about — the title is usually
-    // "<client repo>: <what is wrong with it>".
-    {
-      const veiled = sanitizeForGuest({
-        type: "task_update", taskId: "T", title: "repo rahasia: bocor", repo: "rahasia",
-      });
-      assert.equal(veiled.title, "[redacted]");
-      assert.equal(veiled.repo, "[redacted]");
-      assert.equal(veiled.taskId, "T", "the task must still be countable");
-    }
   assert.match(validateEvent({ type: "agent_status", agent: "mac", state: "bogus" }), /Invalid/);
   assert.match(validateEvent({ type: "service_status", host: "cloud" }), /host \+ unit \+ state required/);
   assert.match(validateEvent({ type: "service_status", host: "cloud", unit: "u", state: "bogus" }), /Invalid/);
@@ -168,26 +157,18 @@ test("ring buffer: maxRows and maxAge", () => {
   assert.equal(rb.size, 0);
 });
 
-// --- guest sanitization ---------------------------------------------------
+// --- no per-connection filtering -----------------------------------------
 
-test("sanitizeForGuest: private git_push, a2a summary, office_chat, internal urls", () => {
-  const gp = sanitizeForGuest({ type: "git_push", repo: "brain", privat: true, url: "https://github.com/x/brain" });
-  assert.equal(gp.repo, "[private]");
-  assert.equal(gp.url, undefined);
-  const pub = sanitizeForGuest({ type: "git_push", repo: "brain", privat: false, url: "https://github.com/x/brain" });
-  assert.equal(pub.repo, "brain");
-  const a2a = sanitizeForGuest({ type: "a2a_task_in", dest: "cloud", summary: "secret plan" });
-  assert.equal(a2a.summary, "[redacted]");
-  const oc = sanitizeForGuest({ type: "office_chat", text: "hi", source: "system" });
-  assert.equal(oc.text, undefined);
-  assert.equal(oc.activity, true);
-  const url = sanitizeForGuest({ type: "cron_fired", job: "j", url: "http://100.64.0.1:9900/x" });
-  assert.equal(url.url, undefined);
-  const svc = sanitizeForGuest({ type: "service_status", host: "cloud", unit: "hermes-office", state: "active", detail: "uptime 3d, log /var/log/office.log" });
-  assert.equal(svc.unit, "hermes-office");
-  assert.equal(svc.detail, "uptime 3d, log [path]");
-  const svcBad = sanitizeForGuest({ type: "service_status", host: "cloud", unit: "u", state: "active", detail: "see http://127.0.0.1:7333" });
-  assert.equal(svcBad.detail, undefined);
+test("the bus exports no sanitiser: every socket gets the same frame", async () => {
+  // `sanitizeForGuest` rewrote private repo names to "[private]", blanked
+  // a2a summaries and office_chat text, and stripped internal URLs — all so
+  // a read-only visitor could watch the office without reading its contents.
+  // There is no such visitor now. The check is that the function is gone
+  // rather than merely unused: a dormant redactor is an invitation to wire
+  // a second principal back in without re-doing the threat model.
+  const mod = await import("../server/eventbus.js");
+  assert.equal(mod.sanitizeForGuest, undefined);
+  assert.equal(mod.OfficeEventBus.prototype.frameFor, undefined);
 });
 
 // --- OfficeEventBus.ingest -------------------------------------------------

@@ -7,11 +7,11 @@
  *      the last step, and operators learn to ignore the colour.
  *   2. Losing the connection must not blank the board or turn it red. The
  *      outposts did not vanish; our view of them did.
- *   3. A guest must not be shown `detail` — the server nulls it, and the UI
+ *   3. A signed-out viewer is shown no `detail` — there is none, and the UI
  *      must not reconstruct anything in its place.
- *   4. A guest sees no control of any kind. Phase two gave the owner buttons,
+ *   4. A viewer without standing sees no control of any kind. Phase two gave the owner buttons,
  *      so the old blanket "no buttons here" rule was rewritten rather than
- *      deleted: the part that still binds is that a guest gets no button at
+ *      deleted: the part that still binds is that a non-owner gets no button at
  *      all — not a disabled one, which would advertise a capability and
  *      invite a support ticket.
  *   5. A cooldown is visible before the click, and survives a successful run.
@@ -71,10 +71,10 @@ describe('Outposts — panel', () => {
     expect(screen.getByText('HTTP 500')).toBeTruthy()
   })
 
-  it('shows nothing extra when the server redacted the detail for a guest', () => {
+  it('shows the state without inventing a detail the server did not send', () => {
     render(<Outposts
         isOwner={false}
-        outposts={[post({ state: 'failed', detail: null, redacted: true })]} problems={[]} loaded stale={false} lastOkTs={1} />)
+        outposts={[post({ state: 'failed', detail: null })]} problems={[]} loaded stale={false} lastOkTs={1} />)
     expect(screen.getByText('Genting')).toBeTruthy()
     expect(screen.queryByText(/HTTP/)).toBeNull()
   })
@@ -92,10 +92,10 @@ describe('Outposts — panel', () => {
    * Rewritten 2026-10-15. This test used to assert that the panel had no
    * controls at all, which was the phase-one contract. Phase two gives the
    * owner action buttons, so the assertion was re-aimed at the half that still
-   * binds — and it is the more important half. A guest must not see a disabled
+   * binds — and it is the more important half. A non-owner must not see a disabled
    * button: that advertises a capability they cannot have.
    */
-  it('gives a guest no button at all, even when the desk has actions', () => {
+  it('gives a non-owner no button at all, even when the desk has actions', () => {
     render(
       <Outposts
         isOwner={false}

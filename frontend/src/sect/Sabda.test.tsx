@@ -1,10 +1,11 @@
 /**
  * Sabda — three of these behaviours are contractual, not cosmetic:
  *
- *   1. SECURITY.md §2: a guest is read-only. `POST /chat` is
- *      requireAuth(["bridge","owner"]), so the composer must be absent for a
- *      guest and the transcript must still be readable (GET /chat is
- *      requireAny). Hiding the history would be the UI inventing a refusal.
+ *   1. Signed out there is no composer, because every /chat route needs a
+ *      session. The panel must say so rather than offering an input that is
+ *      guaranteed to 401 — a control that cannot work is a worse lie than
+ *      silence. (This used to be the guest rule: read the transcript, do not
+ *      speak. There is no guest, so there is no transcript either.)
  *   2. The server's frame shapes. `typing` carries `{ sender }` and
  *      `reaction` carries `{ messageId, reactions[] }`. The old office read
  *      `d?.who`, which is permanently undefined, so its typing indicator
@@ -34,14 +35,12 @@ const jsonRes = (body: unknown, status = 200) =>
   ({ ok: status >= 200 && status < 300, status, json: async () => body }) as Response
 
 describe('Sabda — panel', () => {
-  it('shows the transcript to a guest but gives them no composer', () => {
+  it('gives a signed-out viewer no composer, and says why', () => {
     render(
-      <Sabda messages={[msg({ text: 'riwayat tetap terbaca' })]} typing={null}
-        refusal={null} guest loaded onSend={noop} onReact={noop} />,
+      <Sabda messages={[]} typing={null}
+        refusal={null} signedOut loaded onSend={noop} onReact={noop} />,
     )
-    // GET /chat is requireAny: the guest reads.
-    expect(screen.getByText('riwayat tetap terbaca')).toBeTruthy()
-    // POST /chat is not: no input to mislead them with.
+    // No input to mislead them with: POST /chat would 401.
     expect(screen.queryByLabelText('Sabda')).toBeNull()
     expect(screen.getByTestId('sabda-guest')).toBeTruthy()
   })
@@ -49,7 +48,7 @@ describe('Sabda — panel', () => {
   it('gives a member a composer and sends the trimmed text', async () => {
     const onSend = vi.fn()
     render(
-      <Sabda messages={[]} typing={null} refusal={null} guest={false} loaded
+      <Sabda messages={[]} typing={null} refusal={null} signedOut={false} loaded
         onSend={onSend} onReact={noop} />,
     )
     await userEvent.type(screen.getByLabelText('Sabda'), '  tutup gerbang  {Enter}')
@@ -59,7 +58,7 @@ describe('Sabda — panel', () => {
   it('keeps /niu-mode local — it is view state, not a message', async () => {
     const onSend = vi.fn()
     render(
-      <Sabda messages={[]} typing={null} refusal={null} guest={false} loaded
+      <Sabda messages={[]} typing={null} refusal={null} signedOut={false} loaded
         onSend={onSend} onReact={noop} />,
     )
     await userEvent.type(screen.getByLabelText('Sabda'), '/niu-mode{Enter}')
@@ -69,7 +68,7 @@ describe('Sabda — panel', () => {
   it("surfaces the server's refusal instead of swallowing it", () => {
     render(
       <Sabda messages={[]} typing={null} refusal="Perguruan menolak sabda ini."
-        guest={false} loaded onSend={noop} onReact={noop} />,
+        signedOut={false} loaded onSend={noop} onReact={noop} />,
     )
     expect(screen.getByTestId('sabda-refusal').textContent).toContain('menolak')
   })
@@ -77,7 +76,7 @@ describe('Sabda — panel', () => {
   it('renders reactions already on a message', () => {
     render(
       <Sabda messages={[msg({ reactions: ['🔥', '🚀'] })]} typing={null} refusal={null}
-        guest={false} loaded onSend={noop} onReact={noop} />,
+        signedOut={false} loaded onSend={noop} onReact={noop} />,
     )
     expect(screen.getByText('🔥')).toBeTruthy()
     expect(screen.getByText('🚀')).toBeTruthy()
@@ -94,9 +93,9 @@ describe('useSabda — the server contract', () => {
     expect(fetchImpl.mock.calls[0][0]).toContain('/chat')
   })
 
-  it('retries a 401 history fetch — it means "no guest session yet", not "denied"', async () => {
+  it('retries a 401 history fetch — it means "no session yet", not "denied"', async () => {
     // Reproduces the cold-load race seen in a real browser: GET /chat fires
-    // before SectApp's GET /kiosk has minted the session.
+    // before the session cookie has landed.
     let n = 0
     const fetchImpl = vi.fn(async () => {
       n += 1

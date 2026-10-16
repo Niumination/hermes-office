@@ -24,7 +24,7 @@ Anda mengetik perintah di Telegram. Di layar kantor, pada detik yang sama:
 | Agen selesai | Karakter kembali tenang |
 
 Semuanya tercatat permanen di rantai catatan, bisa diputar ulang, dan bisa
-dilihat tamu tanpa membocorkan isi percakapan.
+dilihat di papan tanpa membocorkan isi percakapan.
 
 ---
 
@@ -192,7 +192,7 @@ Telegram, id tugas A2A, atau UUID Anda sendiri.
 `desktop`, `a2a`, `cron`) — bukan mesin mana yang merelainya. Kantor memakainya
 untuk memperlihatkan cara Anda sebenarnya memberi perintah.
 
-`title` tampil apa adanya bagi pemilik dan **diredaksi untuk tamu**, jadi isi
+`title` tampil apa adanya di papan amanat, jadi isi
 label pendek — bukan seluruh prompt.
 
 Amanat bertahan melewati restart: transisinya dicatat ke rantai dan papan

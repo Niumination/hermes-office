@@ -30,18 +30,17 @@ export const QiRing: React.FC<{
   snapshot: BurnSnapshot | null
 }> = ({ state, snapshot }) => {
   const g = snapshot?.global
-  // Three different situations that a single "— — —" used to flatten into one:
+  // Two situations that a single "— — —" used to flatten into one. (A third,
+  // `redacted`, existed while a guest could read this ring with the figures
+  // stripped; there is no guest, so the server always sends real numbers.)
   //
-  //   redacted  — a guest; the server removed the figures, so there is nothing
-  //               to show and pretending otherwise would be a fabrication.
-  //   unbounded — an owner with no hourly limit configured. The SPEND is known
-  //               ($1.25), only the proportion is not. Blanking it hid a real
-  //               number behind a privacy state it was never in.
+  //   unbounded — no hourly limit configured. The SPEND is known ($1.25),
+  //               only the proportion is not. Blanking it hid a real number
+  //               behind a privacy state it was never in.
   //   bounded   — spend and limit both known; the ring is a true proportion.
-  const redacted = Boolean(g?.redacted)
   const spent = g?.spentHourUsd ?? null
   const limit = g?.limitHourUsd ?? null
-  const bounded = !redacted && g?.ratio != null && limit != null
+  const bounded = g?.ratio != null && limit != null
   const ratio = bounded ? Math.max(0, Math.min(1, g!.ratio!)) : 0
   const qi = QI_VAR[state]
 
@@ -50,8 +49,7 @@ export const QiRing: React.FC<{
       className="sect-stat"
       style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}
       title={
-        redacted ? 'Anggaran diredaksi untuk tamu'
-          : bounded ? `${Math.round(ratio * 100)}% dari pagu jam ini`
+        bounded ? `${Math.round(ratio * 100)}% dari pagu jam ini`
           : 'Belanja diketahui; pagu per jam belum dikonfigurasi'
       }
     >
@@ -82,8 +80,7 @@ export const QiRing: React.FC<{
           {QI_NAMES[state].nameId}
         </div>
         <div className="figure" style={{ fontSize: 'var(--sect-t-xs)', color: 'var(--sect-mist)' }}>
-          {redacted ? 'Tamu · diredaksi'
-            : spent == null ? '—'
+            {spent == null ? '—'
             : bounded ? `$${spent.toFixed(2)} / $${limit!.toFixed(2)}`
             : `$${spent.toFixed(2)} · tanpa pagu`}
         </div>

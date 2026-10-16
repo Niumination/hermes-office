@@ -48,16 +48,14 @@ describe('Hall', () => {
     expect(screen.getByText('Niu')).toBeTruthy()
   })
 
-  it('tells a guest their figures were redacted by the server, not hidden by the UI', () => {
+  it('carries no viewer-class notice: there is only one class of viewer', () => {
+    // The hall used to stamp "Tamu — angka diredaksi" over the plate so a
+    // guest knew the blank budgets were the server's doing and not the UI's.
+    // With the guest role gone that notice could only ever be false.
     render(<Hall room="lobby" hall={hall('lobby')} plate="/p.webp"
-                 locked={false} guest cultivators={[]} />)
-    expect(screen.getByText(/Tamu — angka/)).toBeTruthy()
-  })
-
-  it('does not show the guest notice inside the veil, where it would be noise', () => {
-    render(<Hall room="ceo-office" hall={hall('ceo-office')} plate="/p.webp"
-                 locked guest cultivators={[]} />)
-    expect(screen.queryByText(/Tamu — angka/)).toBeNull()
+                 locked={false} cultivators={[]} />)
+    expect(screen.queryByText(/Tamu/)).toBeNull()
+    expect(screen.queryByText(/diredaksi/)).toBeNull()
   })
 
   it('says a hall is empty rather than rendering a blank floor', () => {

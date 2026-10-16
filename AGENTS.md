@@ -111,7 +111,7 @@ second tick in 9 runs out of 10.
 - "X must not happen" → a plain sleep is correct; waiting longer can only
   make it harder to pass, never easier
 
-And never let a clock reach an assertion by accident. The kiosk stamps
+And never let a clock reach an assertion by accident. The standup stamps
 `Date.now()` into the page; the redaction tests sweep the whole document for
 forbidden substrings; a 13-digit epoch contains arbitrary 3-digit runs. That
 cost ~20 minutes of red CI per day in one-second windows. Fixtures pin the
@@ -124,7 +124,7 @@ clock **and assert the pin cannot collide**.
 - the per-source token model (`TOKEN_SOURCES`, `{source, hash}`)
 - the redaction pipeline
 - the `channel_msg` privacy contract
-- guest sanitization — it must hold on **both** REST and WebSocket
+- authorization — it must hold on **both** REST and WebSocket
 - **an anchor failure must never deny an action or kill the process.** The
   ledger is evidence, not an authority.
 

@@ -6,8 +6,9 @@
  * operator to distrust the board, and a board nobody trusts is worse than no
  * board. `unknown` must stay distinct from `failed` in every path.
  *
- * The second group is the guest boundary: this repo is published through a
- * Tailscale Funnel, so "guest" is "anyone". Internal URLs and error detail
+ * The second group covers what reaches a client. This repo is published
+ * through a tunnel, so anything served without auth is served to anyone;
+ * the answer is that nothing is. Internal URLs and error detail
  * must not reach them.
  */
 
@@ -15,7 +16,7 @@ import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  parseDesks, probeDesk, redactDesk, DeskBoard,
+  parseDesks, probeDesk, DeskBoard,
   DESK_OK, DESK_FAILED, DESK_STALE, DESK_UNKNOWN,
 } from "../server/desks.js";
 
@@ -168,19 +169,16 @@ describe("probeDesk — states are honest", () => {
   });
 });
 
-describe("guest boundary", () => {
-  test("redaction removes the url-bearing detail but keeps the state", () => {
-    const full = {
-      id: "a", label: "A", hall: null, note: "internal note", kind: "http",
-      state: DESK_FAILED, lastTs: 1, checkedTs: 2,
-      detail: "HTTP 500 from http://10.0.0.4:7455/api/health",
-    };
-    const r = redactDesk(full);
-    assert.equal(r.state, DESK_FAILED, "a guest still learns it is unwell");
-    assert.equal(r.detail, null);
-    assert.equal(r.redacted, true);
-    assert.equal(JSON.stringify(r).includes("10.0.0.4"), false);
-    assert.equal(JSON.stringify(r).includes("internal note"), false);
+describe("one principal", () => {
+  test("the desk redactor is gone, not merely unused", async () => {
+    // `redactDesk` blanked `detail` and `note` so a read-only visitor could
+    // see an outpost was unwell without learning its internal host or what
+    // the error said. With no such visitor, hiding the error from the one
+    // person who can fix it was pure cost. Asserting it is *absent* matters:
+    // a dormant redactor invites a second principal back in without anyone
+    // re-doing the threat model.
+    const mod = await import("../server/desks.js");
+    assert.equal(mod.redactDesk, undefined);
   });
 });
 
@@ -260,27 +258,6 @@ describe("DeskBoard", () => {
     ]);
     // The argv is the dangerous half: it names binaries and paths on the host.
     assert.ok(!JSON.stringify(snap).includes("RAHASIA"), "run must never reach a client");
-  });
-
-  test("a guest sees no actions at all, not an empty list", async () => {
-    const board = new DeskBoard({
-      file: "/desks.json",
-      deps: {
-        readFileImpl: async () => JSON.stringify({
-          desks: [{
-            id: "a",
-            probe: { kind: "http", url: "http://x/" },
-            actions: [{ id: "restart", label: "Mulai ulang", run: ["echo", "hi"] }],
-          }],
-        }),
-        fetchImpl: async () => res(200, {}),
-      },
-    });
-    await board.load();
-    await board.refresh();
-
-    const guestView = redactDesk(board.snapshot()[0]);
-    assert.equal("actions" in guestView, false);
   });
 
   test("removing a desk from config drops its stale result", async () => {

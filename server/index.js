@@ -19,7 +19,6 @@ import { otlpToEvents } from "./otlp.js";
 import { FlightRecorder } from "./ledger.js";
 import { AnchorStore, startAnchoring, redactUrl } from "./anchor.js";
 import { buildReplay, sample, summarize } from "./replay.js";
-import { kioskModel, renderKiosk } from "./kiosk.js";
 import { buildStandup, renderText as renderStandupText, renderMarkdown as renderStandupMarkdown } from "./standup.js";
 import { renderMarkdown, renderJson } from "./dossier.js";
 import { BurnRateTracker, parsePerAgentBudget } from "./burnrate.js";
@@ -38,15 +37,19 @@ assertConfig();
 const bus = new OfficeEventBus();
 const startTime = Date.now();
 
-/** @type {Map<WebSocket, {isGuest: boolean, ip: string}>} */
+/** @type {Map<WebSocket, {ip: string, source: string}>} */
 const wsClients = new Map();
 
 function broadcast(event) {
+  // One frame for every socket. This used to branch on `meta.isGuest` and
+  // send `bus.frameFor(event, true)` to guest connections — the WS half of
+  // the redaction pipeline, and the half that leaked first when only REST
+  // was reviewed. With one principal the map value is no longer read here.
   const raw = JSON.stringify({ channel: "event", data: event });
-  for (const [ws, meta] of wsClients) {
+  for (const ws of wsClients.keys()) {
     if (ws.readyState !== WebSocket.OPEN) continue;
     try {
-      ws.send(meta.isGuest ? bus.frameFor(event, true) : raw);
+      ws.send(raw);
     } catch {}
   }
 }
@@ -260,7 +263,7 @@ function recordGovernance(type, payload, meta) {
  * Fold task-bearing events onto the board.
  *
  * No extra broadcast happens here on purpose. The event itself already goes
- * out through `bus.on("event", broadcast)` above, already guest-sanitized, so
+ * out through `bus.on("event", broadcast)` above, so
  * a client knows a task moved by watching the traffic it is receiving anyway.
  * Emitting a second `tasks_changed` frame would mean two wire formats that
  * can disagree, and a fold implemented once on the server and again in the
@@ -314,27 +317,17 @@ app.post("/budget/check", requireAuth(["bridge", "owner"]), (req, res) => {
 /**
  * Current burn state — drives the UI physics layer and external alerting.
  *
- * A guest gets the *temperature* but not the *invoice*: enough for the room to
+ * Owner-only, like every data route here: hourly spend is a competitive
+ * disclosure and there is no second principal to show a softened version to.
+ * This used to serve a redacted shape giving the *temperature* but not the
+ * *invoice*; that shape existed only for guests, and guests are gone.
+ *
+ * Kept for context: the burn state drives the UI physics layer, so it must
  * visibly catch fire, nothing that discloses what this business spends on AI
  * or which agent is expensive. Hourly spend is a competitive disclosure.
  */
-app.get("/burn", requireAny, (req, res) => {
-  const snap = burn.snapshot();
-  if (req.identity?.role !== "guest") return res.json(snap);
-  res.json({
-    global: {
-      state: snap.global.state,
-      ratio: snap.global.ratio,
-      limitHourUsd: snap.global.limitHourUsd == null ? null : 0,
-      spentHourUsd: 0,
-      spentDayUsd: 0,
-      limitDayUsd: null,
-      lifetimeUsd: 0,
-      redacted: true,
-    },
-    agents: snap.agents.map((a) => ({ agent: a.agent, state: a.state, redacted: true })),
-    ts: snap.ts,
-  });
+app.get("/burn", requireAny, (_req, res) => {
+  res.json(burn.snapshot());
 });
 
 // ---------------------------------------------------------------------------
@@ -489,7 +482,7 @@ app.post("/policy/check", requireAuth(["bridge", "owner"]), (req, res) => {
 // Fase 4 — Flight Recorder
 //
 // Owner-only, without exception. The ledger is the one place where the facts
-// redacted from guests in Fase 3 are all written down together: who spent
+// recorded in Fase 3 are all written down together: who spent
 // what, which tools are gated, which agent tried to reach past its scope.
 // A read-only visitor has no business here, and a bridge token — which any
 // agent process holds — least of all, since the agents are the subjects of
@@ -533,83 +526,9 @@ app.get("/ledger/verify", requireOwner, ledgerRequired, (req, res) => {
 });
 
 /**
- * Mint a read-only guest session for a browser that has none.
- *
- * Ported from upstream for `GET /`. Note what it changes about the threat
- * model: where this server is published publicly, "anonymous visitor on the
- * internet" and "guest" become the SAME principal. Every `requireAny` route
- * is then effectively world-readable and the guest redaction is not
- * defence-in-depth — it is the only boundary. See docs/SECURITY.md §3.
- *
- * Fase 13 extends this to `GET /kiosk`, deliberately and narrowly. A wall
- * display opens one URL at boot and has no way to log in; without this it
- * shows a 401 forever. The surface added is a page that is guest-redacted by
- * construction and renders no dollars even for an owner, so it grants a
- * public viewer nothing they could not already read from `/`.
- */
-function autoGuestSession(req, res, next) {
-  try {
-    if (!authenticate(req) && config.tokens.guest) {
-      const sid = createSession(config.tokens.guest);
-      if (sid) {
-        res.setHeader("Set-Cookie", sessionCookieHeader(sid));
-        // Graft the cookie onto THIS request too, not just the response.
-        // Without it the minting request still fails its own auth check: the
-        // browser only sends the cookie on the NEXT request. `GET /` never
-        // noticed because it serves static files with no auth, but a wall
-        // display opening /kiosk once at boot would show a 401 and sit there
-        // until someone walked over and reloaded it.
-        req.headers.cookie =
-          (req.headers.cookie ? req.headers.cookie + "; " : "") + `office_session=${sid}`;
-      }
-    }
-  } catch {
-    // Never let session minting break page delivery.
-  }
-  next();
-}
-
-/**
- * Wall-display status page.
- *
- * Deliberately renders the GUEST view even for an owner session — see the
- * header of server/kiosk.js. The screen is on a wall; the person who set it
- * up was logged in and will never think about that cookie again. Dollars
- * require `?reveal=1` AND an owner session, opt-in and visible in the URL.
- */
-app.get("/kiosk", autoGuestSession, requireAny, (req, res) => {
-  const isOwner = req.identity?.role === "owner";
-  const reveal = isOwner && req.query.reveal === "1";
-
-  const snap = floor.snapshot();
-  const burnSnap = burn.snapshot();
-
-  const model = kioskModel({
-    // Always pass the redacted shape unless revealing: building the model
-    // from full data and hiding it in the template is how a refactor leaks.
-    policy: {
-      rooms: snap.rooms.map((r) => ({
-        room: r.room, label: r.label, trust: r.trust, state: r.state,
-        occupants: r.occupants.map((o) => ({ agent: o.agent })),
-      })),
-      pendingApprovals: snap.pendingApprovals,
-    },
-    burn: reveal
-      ? burnSnap
-      : { global: { state: burnSnap.global.state, ratio: burnSnap.global.ratio } },
-    reveal,
-  });
-
-  res.type("text/html; charset=utf-8");
-  // A wall screen must never be served from a stale proxy cache.
-  res.setHeader("Cache-Control", "no-store");
-  res.send(renderKiosk(model));
-});
-
-/**
  * Time Machine — reconstruct office state across a time range.
  *
- * Owner-only and never guest-sanitised: a replay carries dollars, tool names
+ * Owner-only: a replay carries dollars, tool names
  * and approver identities in every frame. There is no redacted version of
  * this endpoint on purpose — a half-redacted replay would be an incident
  * artifact with holes in exactly the places an investigator needs.
@@ -715,7 +634,7 @@ app.get("/ledger", requireOwner, ledgerRequired, (req, res) => {
  *
  * Owner only, with no `?reveal` escape hatch like the kiosk has: this is a
  * ranked list of what went wrong, which agents are stuck and what they are
- * estimated to have cost. There is no version of that worth showing a guest,
+ * estimated to have cost. There is no version of that worth publishing,
  * so the route simply does not offer one.
  *
  * `?hours=` sets the window (default 24, capped at a week — past that the
@@ -800,27 +719,14 @@ app.get("/dossier", requireOwner, ledgerRequired, (req, res) => {
 /**
  * The floor plan as data — the audit artifact, not a YAML file.
  *
- * A guest sees the building: room names, trust levels, who is where. It does
- * NOT see the tool allow/deny lists, the approval gates or the budgets —
- * that is a map of exactly where the privilege boundaries are, which is the
- * first thing an attacker would want.
+ * Owner-only. This used to serve a cut-down building view — room names,
+ * trust levels, who is where, but never the tool allow/deny lists, approval
+ * gates or budgets, because that is a map of exactly where the privilege
+ * boundaries are. With no guest principal left, there is nobody to serve the
+ * cut-down version to, and the full snapshot goes only to the owner.
  */
-app.get("/policy", requireAny, (req, res) => {
-  const snap = floor.snapshot();
-  if (req.identity?.role !== "guest") return res.json(snap);
-  res.json({
-    defaultRoom: snap.defaultRoom,
-    rooms: snap.rooms.map((r) => ({
-      room: r.room,
-      label: r.label,
-      trust: r.trust,
-      state: r.state,
-      occupants: r.occupants.map((o) => ({ agent: o.agent })),
-      redacted: true,
-    })),
-    pendingApprovals: snap.pendingApprovals,
-    ts: snap.ts,
-  });
+app.get("/policy", requireAny, (_req, res) => {
+  res.json(floor.snapshot());
 });
 
 /**
@@ -841,24 +747,13 @@ app.post("/agents/:agent/room", requireOwner, (req, res) => {
 /**
  * The approval queue — what is waiting at a door right now.
  *
- * A guest learns that a door is being knocked on, and roughly where, but not
- * which agent wants which privileged tool. "deployer wants kubectl in the
- * server room" is an attack plan handed to a read-only visitor.
+ * Owner-only. The redacted variant existed so a read-only visitor could
+ * learn a door was being knocked on without learning which agent wanted
+ * which privileged tool — "deployer wants kubectl in the server room" is an
+ * attack plan. No visitor, no variant.
  */
-app.get("/approvals", requireAny, (req, res) => {
-  const pending = floor.pendingApprovals();
-  if (req.identity?.role !== "guest") return res.json({ pending });
-  res.json({
-    pending: pending.map((a) => ({
-      id: a.id,
-      kind: a.kind,
-      room: a.room,
-      status: a.status,
-      createdAt: a.createdAt,
-      expiresAt: a.expiresAt,
-      redacted: true,
-    })),
-  });
+app.get("/approvals", requireAny, (_req, res) => {
+  res.json({ pending: floor.pendingApprovals() });
 });
 
 /** An agent polls its own request; a bridge may read, only an owner decides. */
@@ -888,13 +783,13 @@ const PERMANENT_CAST = [
 /**
  * Amanat — what the fleet is working on.
  *
- * `requireAny`, like /policy and /roster: a visitor is allowed to see that
- * work is moving and that something is blocked. The titles and repo names are
- * redacted for guests inside `snapshot`, matching how a2a summaries are
- * already handled — the shape of the work is public, its subject is not.
+ * `requireAny`: the owner's browser and the bridges may read it. Titles and
+ * repo names used to be redacted inside `snapshot` for guests; that argument
+ * ("the shape of the work is public, its subject is not") had exactly one
+ * audience, and that audience no longer exists.
  */
-app.get("/tasks", requireAny, (req, res) => {
-  res.json(taskBoard.snapshot({ isGuest: req.identity?.role === "guest" }));
+app.get("/tasks", requireAny, (_req, res) => {
+  res.json(taskBoard.snapshot());
 });
 
 app.get("/roster", requireAny, (_req, res) => {
@@ -910,23 +805,17 @@ app.get("/roster", requireAny, (_req, res) => {
   res.json({ agents: [...PERMANENT_CAST, ...dynamic], server: "1.0" });
 });
 
-// Session bootstrap for browsers (WS can't send headers): POST /auth/session
-// with Bearer token → HttpOnly office_session cookie used for WS + /chat.
-/**
- * Auto-guest: a browser arriving without a session gets a read-only guest
- * cookie on first page load, so the public page shows real presence without
- * the owner pasting a token.
- *
- * Ported from upstream. Note what it changes about the threat model: this
- * server is published through a Tailscale Funnel, so "anonymous visitor on
- * the public internet" and "guest" are now the SAME principal. Every
- * `requireAny` route is therefore effectively world-readable, and the guest
- * redaction in sanitizeForGuest and on /burn, /policy and /approvals is no
- * longer defence-in-depth — it is the only boundary. See docs/SECURITY.md §3.
- */
-app.get("/", autoGuestSession);
-
-app.post("/auth/session", (req, res) => {
+  // Session bootstrap for browsers (WS can't send headers): POST /auth/session
+  // with Bearer token → HttpOnly office_session cookie used for WS + /chat.
+  //
+  // `GET /` used to mint a read-only guest cookie here so an anonymous
+  // visitor saw a redacted office. That is gone. This server is published
+  // through a tunnel, which made "anonymous visitor on the public internet"
+  // and "guest" the same principal: every requireAny route was effectively
+  // world-readable and the redaction was the only boundary rather than
+  // defence-in-depth. The office now serves its shell to anyone and its data
+  // to no one until they hold an owner session.
+  app.post("/auth/session", (req, res) => {
   const identity = authenticate(req);
   if (!identity) return res.status(401).json({ error: "Tidak terotorisasi" });
   const sid = createSession(getBearer(req));
@@ -1076,7 +965,7 @@ app.use("/proof", createProofRouter({
 // GET /github/feed was retired on 2026-10-12. It returned git_push events from
 // the ring buffer for a panel the Sect UI migration removed, so it had no
 // reader left — and an endpoint with no reader is surface that still has to be
-// authenticated, sanitized for guests, and reasoned about in SECURITY.md.
+// authenticated and reasoned about in SECURITY.md.
 // The events themselves did not go anywhere: they are still in the buffer and
 // still reach /debug/events (owner) and the WebSocket. Nothing was lost except
 // a second door to the same room.
@@ -1154,7 +1043,6 @@ wss.on("connection", (ws, req) => {
   }
 
   const meta = {
-    isGuest: identity.role === "guest",
     ip: req.socket.remoteAddress ?? "unknown",
     source: identity.source,
   };
@@ -1288,7 +1176,6 @@ httpServer.listen(config.port, config.host, () => {
       a2aMac: config.hermesA2aMacUrl ? "on" : "off",
       ledger: config.ledger?.enabled ? "on" : "off",
       otlp: config.tokens?.otlp ? "on" : "off",
-      guestAutoSession: config.tokens?.guest ? "on" : "off",
     })
   );
 });

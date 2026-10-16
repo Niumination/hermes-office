@@ -1,7 +1,7 @@
 # Hermes Office — Frontend
 
 Isometric pixel-art visualisation of the Niumination agent fleet (cloud, mac,
-boss, cron-runner, octo, guest-ghost). Ported from Claude-Office
+boss, cron-runner, octo). Ported from Claude-Office
 (https://github.com/W17ANT/agent-office, MIT) with the Claude Code chat/AI
 dependencies removed; chat now talks to the same-origin `office-server`.
 
@@ -17,7 +17,6 @@ Open with query flags:
 | Flag | Effect |
 |---|---|
 | `?mock=1` | In-app mock event feeder — office animates with no server |
-| `?guest=1` | Guest mode: read-only, chat input hidden |
 
 ## Build
 
@@ -43,7 +42,6 @@ npm ci && npm run build      # emits dist/
 - `src/hermes/OfficeStage.tsx` — the ported office renderer/animation loop.
 - `src/hermes/wib.ts` — WIB (UTC+7) day/night cycle (06:00–18:00 day).
 - `src/hermes/niu.ts` — Niu-mode palette + ID strings, persisted to `niu_mode`.
-- `src/hermes/guest.ts` — guest-mode flag (`hermes_guest` / `?guest=1`).
 
 ## Attribution
 

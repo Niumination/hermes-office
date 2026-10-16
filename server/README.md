@@ -19,16 +19,16 @@ npm start                            # http://127.0.0.1:7333
 | `POST /event` | bridge (cloud/mac) | event contract, 16KB body, 120/min + burst 30/5s per token |
 | `GET /health` | none | uptime, ws clients, buffer size |
 | `GET /roster` | any token | static roster |
-| `GET /chat`, `POST /chat` (+`/reply /seen /react /typing /completions`) | role-scoped | guests read-only; `@mac` → A2A peer (1 turn, 60s cooldown) |
+| `GET /chat`, `POST /chat` (+`/reply /seen /react /typing /completions`) | `requireAny`/`requireAuth` | `@mac` → A2A peer (1 turn, 60s cooldown) |
 | `GET /debug/events?limit=N` | owner | ring buffer peek |
-| `WS /ws` | Bearer + origin allowlist | `hello` handshake, `event` frames, guest-filtered |
+| `WS /ws` | Bearer + origin allowlist | `hello` handshake, `event` frames; one frame shape for every socket |
 
 ## Event pipeline
 
 `POST /event` → auth (hash lookup) → rate limit → strict schema (unknown type = 400,
 `office_chat` internal-only) → string clamp (500 / text 4000) → secret redaction
 (sk-/ghp_/github_pat_/vik_/xox…/JWT/Bearer/key-value) → ring buffer (7d / 100k rows)
-→ WS broadcast (guest connections receive `sanitizeForGuest()`-filtered frames).
+→ WS broadcast (every authenticated socket receives the same frame).
 
 ## Tests
 

@@ -1,15 +1,14 @@
 /**
  * Warrant — the owner's way in.
  *
- * The office had no login. `GET /` is wired to `autoGuestSession`, so every
- * browser that opens the page is minted a guest cookie and stays a guest
- * forever: `POST /auth/session` is the only route that raises an identity, it
- * requires a Bearer token, and nothing in `frontend/src` had ever called it.
+ * The office had no login: `GET /` minted a guest cookie, so every browser
+ * became a guest and stayed one forever. Everything gated on `requireOwner`
+ * — the ledger, the dossier, the replay, the Pos Jaga action buttons — was
+ * unreachable from a browser by construction, and the product's whole owner
+ * surface existed only for `curl`.
  *
- * The cost was not cosmetic. Everything gated on `requireOwner` — the ledger,
- * the dossier, the replay, and the Pos Jaga action buttons that were built,
- * tested and deployed — was unreachable from a browser by construction. The
- * product's whole owner surface existed only for `curl`.
+ * With guest mode removed this is no longer one door among several. It is
+ * THE door: signed out, the office serves its shell and nothing else.
  *
  * Three rules this component follows, all of them inherited from how the rest
  * of the UI treats the server's answers:
@@ -28,8 +27,8 @@
 import React, { useState } from 'react'
 
 interface Props {
-  /** True when the viewer is a guest — the only case with a door to open. */
-  isGuest: boolean
+  /** True when the viewer holds no session — the only case with a door to open. */
+  signedOut: boolean
   /** Injected in tests; defaults to the global. */
   fetchImpl?: typeof fetch
   /** Injected in tests so the success path does not reload the runner. */
@@ -63,12 +62,12 @@ async function refusalFor(res: Response): Promise<string> {
   return `Server menjawab ${res.status}`
 }
 
-export const Warrant: React.FC<Props> = ({ isGuest, fetchImpl, onEntered }) => {
+export const Warrant: React.FC<Props> = ({ signedOut, fetchImpl, onEntered }) => {
   const [state, setState] = useState<State>({ kind: 'shut' })
   const [token, setToken] = useState('')
 
   // An owner is already through the door.
-  if (!isGuest) return null
+  if (!signedOut) return null
 
   const doFetch = fetchImpl ?? fetch
 
@@ -91,7 +90,7 @@ export const Warrant: React.FC<Props> = ({ isGuest, fetchImpl, onEntered }) => {
       // from here and this component should not be holding a bearer secret in
       // React state a second longer than the request needs it.
       setToken('')
-      // Everything on the page was fetched as a guest — redacted budgets, no
+      // Nothing on the page was fetched with standing — no ladder, no
       // ledger, no action buttons. A reload is the honest way to re-ask every
       // one of those questions as the owner, rather than hand-patching state
       // and hoping nothing stayed stale.

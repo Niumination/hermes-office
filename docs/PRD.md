@@ -139,16 +139,23 @@ per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
   **~78%** dan menaikkan penyelesaian 67%→96% justru dengan mengarahkan,
   bukan menghentikan.)
 
-### Persona 4: Tamu / pengunjung anonim
+### Persona 4: pengunjung anonim — **dihapus (Okt 2026)**
 
-- **US8:** Saya melihat kantor hidup dan paham produknya dalam 10 detik,
-  **tanpa** melihat satu pun dolar, nama alat, atau identitas pemberi
-  persetujuan.
+- **US8 (dicabut):** "Saya melihat kantor hidup dan paham produknya dalam 10
+  detik, tanpa melihat satu pun dolar, nama alat, atau identitas pemberi
+  persetujuan."
 
-> ⚠ Persona 4 bukan hipotetis. `GET /` mencetak sesi tamu read-only untuk
-> browser mana pun yang belum punya. Kalau instance disajikan ke internet,
-> **"pengunjung anonim" == "tamu"**, dan redaksi tamu adalah satu-satunya
-> batas yang ada. Lihat SECURITY.md §3.
+> ⚠ Persona ini bukan hipotetis, dan itulah masalahnya. `GET /` dulu
+> mencetak sesi tamu read-only untuk browser mana pun yang belum punya.
+> Karena instance disajikan ke internet lewat tunnel, **"pengunjung anonim"
+> == "tamu"**, sehingga redaksi tamu adalah satu-satunya batas yang ada —
+> belasan cabang per-field yang harus benar semuanya, menggantikan satu
+> pertanyaan: apakah pemanggil punya token.
+>
+> US8 melayani demo, bukan pengguna. Kantor ini punya satu penghuni. Persona
+> 4 dicabut bersama peran `guest`, token tamu, rute `/kiosk`, dan seluruh
+> pipeline redaksi. Pengunjung tanpa sesi kini melihat halaman masuk dan
+> tidak ada data. Lihat SECURITY.md §3.
 
 ---
 
@@ -219,8 +226,10 @@ menit, **sekali pakai, terikat ke `{agent, tool}`**, resolusi ganda → 409.
 dengan aksi `allow | advise | restrict | throttle | deny`.
 
 Desainnya **mengarahkan sebelum menghentikan**. `budget_state` disiarkan
-**hanya saat transisi**, dan tidak pernah membawa angka dolar — jadi tamu
-melihat suhu tanpa melihat uang.
+**hanya saat transisi**, dan tidak pernah membawa angka dolar — suhu dan
+nominal adalah dua fakta berbeda, dan event transisi hanya menyiarkan yang
+pertama. (Dulu alasannya supaya tamu melihat suhu tanpa melihat uang; tidak
+ada tamu lagi, tapi pemisahan itu tetap benar sebagai desain event.)
 
 ### F4 · Perekam Penerbangan + Dossier (Fase 4)
 
@@ -295,7 +304,7 @@ kepatuhan menuntutnya, chat karena pengguna mengharapkannya.
 
 ## 8. Spesifikasi API
 
-27 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
+26 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
 beserta guard tiap rute, dan `scripts/check-docs.py` memverifikasi tabel itu
 dua arah** — rute di `index.js` tanpa baris tabel gagal, rute terdokumentasi
 yang tidak ada juga gagal.
@@ -364,7 +373,7 @@ ada satu daftar.
 
 | # | Risiko | Prob. | Dampak | Mitigasi |
 |---|---|---|---|---|
-| R1 | **Auto-guest** membuat instance publik tanpa disadari | Tinggi | Tinggi | Redaksi tamu diuji di dua tempat; terdokumentasi menonjol; `state`+`ratio` sengaja lolos |
+| R1 | **Auto-guest** membuat instance publik tanpa disadari | ~~Tinggi~~ | ~~Tinggi~~ | **Ditutup Okt 2026**: peran tamu dicabut, bukan diredaksi lebih ketat. Tanpa sesi hanya `/health` dan cangkang halaman masuk yang terjawab. Dijaga `scripts/check-live.sh` §2–4 |
 | R2 | Semconv GenAI berubah sebelum rilis bertag | Tinggi | Sedang | Normalisasi sudah menangani banyak generasi; itu justru produknya |
 | R3 | Vendor menambahkan tata kelola biaya native | Sedang | Tinggi | Pilar C (kepatuhan) paling sulit ditiru vendor; perdalam di sana |
 | R4 | Ekor ledger dipotong tanpa terdeteksi | Rendah | Tinggi | **Ditutup Fase 11** lewat penambatan. Sisa risiko: tambatan lokal-saja lemah terhadap root — pasang `OFFICE_ANCHOR_WEBHOOKS` |
@@ -389,8 +398,11 @@ ada satu daftar.
 | Pixel art | Donghua 3D (Fase 5) |
 | 12–16 hari untuk v1.0 | v1.0 terkirim; v2 menambah Fase 0–9 di atasnya |
 
-**Yang tidak berubah, dan tidak boleh berubah:** model token per-sumber,
-pipeline redaksi, kontrak privasi `channel_msg`, dan sanitasi tamu.
+**Yang tidak berubah, dan tidak boleh berubah:** model token per-sumber dan
+kontrak privasi `channel_msg`. (Pipeline redaksi dan sanitasi tamu dulu ada
+di daftar ini; keduanya dicabut Okt 2026 atas keputusan pemilik — lihat
+SECURITY.md §3. Yang menggantikannya adalah batas tunggal: tidak ada sesi,
+tidak ada data.)
 
 ---
 
@@ -419,10 +431,9 @@ pipeline redaksi, kontrak privasi `channel_msg`, dan sanitasi tamu.
 | `BURN-RATE.md` | Ambang, aksi, perilaku transisi |
 | `POLICY.md` | Skema ruangan, urutan `decide()`, siklus hidup persetujuan |
 | `STANDUP.md` | Bacaan pagi: ambang temuan, determinisme, apa yang rantai tak bisa klaim |
-| `KIOSK.md` | Layar dinding: penurunan hak otomatis, basi, auto-guest |
 | `REPLAY.md` | Time Machine: determinisme, pra-gulung, batas |
 | `FLIGHT-RECORDER.md` | Konstruksi rantai, apa yang tidak dideteksi, angka kinerja |
-| `SECURITY.md` | Model ancaman, auto-guest, kontrak tamu |
+| `SECURITY.md` | Model ancaman, auth satu-pemilik, coordinated disclosure |
 | `EVENTS.md` | 12 event publik + 5 internal |
 | `DEPLOYMENT.md` | Operasi, variabel env, matikan-dengan-rapi |
 | `UI-SPEC.md` | Bahasa visual, layout, aksesibilitas |

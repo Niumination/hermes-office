@@ -98,7 +98,7 @@ caller is stopped **at** the cap rather than one call past it.
 
 Full snapshot — global and per-agent spend, limits, ratios, states, call and
 token counts, plus the active policy. Any authenticated identity may read it,
-including `guest`; this drives the UI.
+for every authenticated role; this drives the UI.
 
 ## Accounting
 

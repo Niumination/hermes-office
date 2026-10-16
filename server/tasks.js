@@ -202,7 +202,7 @@ export class TaskBoard {
     if (persist && this.record) {
       // Title is deliberately included: an auditor reading the chain six
       // months later needs to know what the task *was*, and the chain is
-      // already owner-only. Guests never read the ledger.
+      // already owner-only.
       this.record(
         "task_transition",
         {
@@ -357,14 +357,11 @@ export class TaskBoard {
   /**
    * Board snapshot.
    *
-   * @param {{isGuest?: boolean}} [opts]
-   *
-   * Guest redaction matches `sanitizeForGuest` on a2a summaries: a visitor may
-   * see that four tasks are running and one is blocked — the shape of the
-   * work — but not what any of it is about. Titles and repo names are the
-   * parts that leak a client's business.
+   * This used to take an `isGuest` flag and blank out titles and repo names,
+   * on the argument that a visitor may see the shape of the work but not its
+   * subject. There is no visitor. The board is the owner's.
    */
-  snapshot({ isGuest = false } = {}) {
+  snapshot() {
     const lanes = Object.fromEntries(TASK_LANES.map((l) => [l.id, []]));
 
     for (const t of this.tasks.values()) {
@@ -378,15 +375,9 @@ export class TaskBoard {
         updatedTs: t.updatedTs,
         blocked: BLOCKED.has(t.state),
       };
-      if (isGuest) {
-        view.title = t.title ? "[redacted]" : null;
-        view.repo = t.repo ? "[redacted]" : null;
-        view.redacted = true;
-      } else {
-        view.title = t.title ?? null;
-        view.repo = t.repo ?? null;
-        view.peer = t.peer ?? null;
-      }
+      view.title = t.title ?? null;
+      view.repo = t.repo ?? null;
+      view.peer = t.peer ?? null;
       lanes[view.lane].push(view);
     }
 
@@ -402,7 +393,6 @@ export class TaskBoard {
       blocked: lanes.blocked.length,
       dropped: this.dropped,
       rebuilt: this.rebuilt,
-      redacted: isGuest,
     };
   }
 

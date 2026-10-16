@@ -185,16 +185,12 @@ export const SectApp: React.FC = () => {
   useEffect(() => {
     let alive = true
     void (async () => {
-      let l = await fetchLadder()
-      if (!l) {
-        // No session yet. `GET /kiosk` is one of exactly two routes that mint
-        // an auto-guest session (the other is `GET /`, which Vite owns in dev,
-        // so it never reaches the server). Touching it once turns an anonymous
-        // visitor into a guest who may see the mountain with its budgets
-        // redacted — which is the designed guest experience, not a fallback.
-        try { await fetch('/kiosk', { credentials: 'include' }) } catch { /* offline */ }
-        l = await fetchLadder()
-      }
+      // No session, no data. This used to touch `GET /kiosk` to mint an
+      // auto-guest session so an anonymous visitor saw a redacted mountain.
+      // That route is gone: the office has one occupant, and the way in is
+      // the owner token through Warrant. A null ladder is not a failure
+      // state here — it is the locked door, and the shell renders it.
+      const l = await fetchLadder()
       if (!alive || !l) { if (alive) setLadder(l); return }
 
       // Seed the halls from the server's floor plan before trusting the
@@ -345,13 +341,12 @@ export const SectApp: React.FC = () => {
   }, [rosterAgents, tracked, presence, room, ladder, burn])
 
   const rung = ladder?.rungs.find((r) => r.room === room)
-  // A guest sits at viewerTier -1, but the server does NOT 403 a guest asking
-  // about a hall — it answers 200 with the budgets redacted. Veiling the whole
-  // mountain for guests would be the UI inventing a refusal the server never
-  // made, which is the exact dishonesty the veil exists to avoid. So the veil
-  // is reserved for a viewer who HAS standing and still lacks enough of it.
-  const isGuest = (ladder?.viewerTier ?? -1) < 0
-  const locked = Boolean(rung && ladder && !isGuest && rung.tier > ladder.viewerTier)
+  // Signed out means the server answered 401 and there is no ladder at all —
+  // not a viewer with a low tier. There is no second principal any more: you
+  // are the owner or you are outside. The veil stays reserved for a viewer
+  // who HAS standing and still lacks enough of it for one particular hall.
+  const signedOut = !ladder
+  const locked = Boolean(rung && ladder && rung.tier > ladder.viewerTier)
   const hall = SECT_HALLS[room]
   const plate = platePath(room, 'sect', ROOMS[room]?.background?.day ?? '')
 
@@ -385,7 +380,7 @@ export const SectApp: React.FC = () => {
 
         <Seal />
 
-        <Warrant isGuest={isGuest} />
+        <Warrant signedOut={signedOut} />
 
         <button
           type="button"
@@ -417,7 +412,6 @@ export const SectApp: React.FC = () => {
           hall={hall}
           plate={plate}
           locked={locked}
-          guest={isGuest}
           cultivators={cultivators}
           ghosts={ghosts}
         />
@@ -522,7 +516,7 @@ export const SectApp: React.FC = () => {
             loaded={posts.loaded}
             stale={posts.stale}
             lastOkTs={posts.lastOkTs}
-            isOwner={!isGuest}
+            isOwner={!signedOut}
           />
         ) : tab === 'sabda' ? (
           <Sabda
@@ -530,7 +524,7 @@ export const SectApp: React.FC = () => {
             typing={sabda.typing}
             refusal={sabda.refusal}
             loaded={sabda.loaded}
-            guest={isGuest}
+            signedOut={signedOut}
             onSend={(t) => { void sabda.send(t) }}
             onReact={(id, emoji) => { void sabda.react(id, emoji) }}
           />

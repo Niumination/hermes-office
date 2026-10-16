@@ -29,7 +29,7 @@ cd ~/niumination/hermes-office
 
 # 2. Secret
 cp .env.office.example .env.office
-# isi: OFFICE_CLOUD_TOKEN, OFFICE_MAC_TOKEN, OFFICE_OWNER_TOKEN, (ops) OFFICE_GUEST_TOKEN
+# isi: OFFICE_CLOUD_TOKEN, OFFICE_MAC_TOKEN, OFFICE_OWNER_TOKEN
 # generate: openssl rand -hex 24 (satu per token)
 chmod 600 .env.office
 
@@ -208,13 +208,16 @@ Thread ID topik juga dipakai relay laporan warga agroclimate (`POST /api/reports
      string sehingga membuang heartbeat bentuk-objek diam-diam, termasuk setiap
      `agent_spawned` yang `agent`-nya objek menurut skema. Keduanya diperbaiki
      dengan menormalkan ke `id ?? name`.
-- **Auto-guest**: `GET /` menerbitkan session guest read-only dari
-  `OFFICE_GUEST_TOKEN` (wajib terisi). Guest = read-only: presence + feed
-  tampil; chat ke agent, detail event, **dan seluruh permukaan audit** tidak.
-  Jangan memberikan `OFFICE_OWNER_TOKEN` ke browser publik untuk
-  "memperbaiki" ini — auto-guest memang desainnya begitu.
-- **Konsekuensi keamanan auto-guest**: karena funnel bersifat publik, redaksi
-  guest adalah satu-satunya batas. Lihat docs/SECURITY.md §3 dan §9a.
+- **Satu pemilik, satu pintu**: `GET /` menyajikan cangkang halaman masuk dan
+  **tidak** mencetak sesi. Satu-satunya pencetak sesi adalah `POST /auth/session`
+  dengan `Authorization: Bearer <OFFICE_OWNER_TOKEN>`, yang membalas cookie
+  `office_session` (HttpOnly, SameSite=Lax, 12 jam). Rute data mana pun tanpa
+  sesi menjawab **401**.
+- **Mode tamu sudah dicabut** (Okt 2026). Dulu `GET /` dan `GET /kiosk`
+  menerbitkan sesi tamu read-only, sehingga karena funnel bersifat publik,
+  redaksi per-field adalah satu-satunya batas. Token tamu, rute `/kiosk`, dan
+  seluruh pipeline redaksi sudah dihapus — jangan menambahkannya kembali untuk
+  "memudahkan demo". Lihat docs/SECURITY.md §3.
 
 ## 11. Status Deployment Aktual (Okt 2026)
 
@@ -318,7 +321,8 @@ H=https://<host-anda>
 
 curl -sS -o /dev/null -w '%{http_code}\n' $H/                 # harap 200
 curl -sS -o /dev/null -w '%{http_code}\n' $H/policy           # harap 401 (tanpa sesi)
-curl -sS -c /tmp/c.txt -o /dev/null -w '%{http_code}\n' $H/kiosk   # mencetak sesi tamu
+curl -sS -c /tmp/c.txt -o /dev/null -w '%{http_code}\n' \\
+  -X POST -H "Authorization: Bearer $OFFICE_OWNER_TOKEN" $H/auth/session   # mencetak sesi
 curl -sS -b /tmp/c.txt -o /dev/null -w '%{http_code}\n' $H/policy  # harap 200, teredaksi
 
 # Yang paling sering terlewat: upgrade WebSocket DENGAN header Origin.
@@ -332,10 +336,10 @@ Di UI, tiga hal harus benar sekaligus:
 
 - bilah atas berbunyi **`terhubung · v<versi>`**, bukan `luring`;
 - cincin Tenaga menampilkan salah satu dari tiga keadaan yang sah
-  (`Tamu · diredaksi` / `$x · tanpa pagu` / `$x / $y`) — bukan tiga setrip;
+  (`—` bila belum terukur / `$x · tanpa pagu` / `$x / $y`) — bukan tiga setrip;
 - lencana **Segel** menampilkan jumlah catatan bila Anda pemilik, dan **tidak
-  muncul sama sekali** bila Anda tamu. Segel yang tampil tapi mati justru
-  mengiklankan log audit yang tak boleh dibaca tamu.
+  muncul sama sekali** bila probe-nya ditolak. Segel yang tampil tapi mati
+  justru mengiklankan log audit yang tak bisa dibaca pemanggilnya.
 
 ### 12.4 `ALLOWED_ORIGINS` — jebakan yang sudah tiga kali memakan korban
 
@@ -376,7 +380,7 @@ Tambahkan juga, sesuai kebutuhan:
 | kode | artinya |
 |---|---|
 | `403` | origin **ditolak** — tambahkan ke `ALLOWED_ORIGINS`, restart |
-| `401` | origin **lolos**, sesinya yang belum ada — jalankan `GET /kiosk` dulu |
+| `401` | origin **lolos**, sesinya yang belum ada — jalankan `POST /auth/session` dulu |
 | `101` | sambungan naik, benar |
 
 `curl` **tanpa** header `Origin` mengembalikan `101` meskipun konfigurasinya

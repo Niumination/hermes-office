@@ -23,7 +23,6 @@ import { narrate } from "../server/dossier.js";
 // at ITS load. So the env has to exist before the first import of the chain —
 // hence dynamic import below rather than a static one at the top of the file.
 process.env.OFFICE_OWNER_TOKEN = "owner-router-test-token";
-process.env.OFFICE_GUEST_TOKEN = "guest-router-test-token";
 
 let createDesksRouter;
 let server;
@@ -100,19 +99,19 @@ describe("desks action router — the guards live here, not in the helpers", () 
     assert.match((await second.json()).error, /cooldown/);
   });
 
-  test("a guest gets 403, and learns nothing about which actions exist", async (t) => {
+  test("an unknown token gets 401, and learns nothing about which actions exist", async (t) => {
     const board = makeBoard([ACTION]);
     let spawned = 0;
     await mount(board, { runActionImpl: async () => { spawned++; return { ok: true, exitCode: 0, ms: 1, error: null }; } });
     t.after(() => server.close());
 
-    // Both a real and an imaginary action must answer identically: 403 before
-    // any lookup. A guest who can tell "action not found" from "forbidden" can
-    // enumerate the owner's action list through the error code alone.
-    const real = await post("/desks/pos-a/actions/restart", process.env.OFFICE_GUEST_TOKEN);
-    const fake = await post("/desks/pos-a/actions/tidak-ada", process.env.OFFICE_GUEST_TOKEN);
-    assert.equal(real.status, 403);
-    assert.equal(fake.status, 403);
+    // Both a real and an imaginary action must answer identically, before any
+    // lookup. A caller who can tell "action not found" from "unauthorized"
+    // can enumerate the owner's action list through the error code alone.
+    const real = await post("/desks/pos-a/actions/restart", "no-such-token");
+    const fake = await post("/desks/pos-a/actions/tidak-ada", "no-such-token");
+    assert.equal(real.status, 401);
+    assert.equal(fake.status, 401);
     assert.equal(spawned, 0);
   });
 

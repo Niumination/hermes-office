@@ -32,7 +32,6 @@ export const config = {
     cloud: process.env.OFFICE_CLOUD_TOKEN || "",
     mac: process.env.OFFICE_MAC_TOKEN || "",
     owner: process.env.OFFICE_OWNER_TOKEN || "",
-    guest: process.env.OFFICE_GUEST_TOKEN || "",
     // Dedicated token for OTLP exporters. Role resolves to "bridge" via the
     // existing mapping, so it can POST events but never read /debug.
     otlp: process.env.OFFICE_OTLP_TOKEN || "",

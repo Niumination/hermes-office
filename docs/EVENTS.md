@@ -91,7 +91,7 @@ Task yang dikirim keluar oleh instance.
   "url": "https://github.com/Niumination/brain"
 }
 ```
-- `privat: true` → event ini TIDAK dikirim ke guest (server-side filter)
+- `privat: true` → menandai repo privat; dicatat di babad tanpa menyaring penerima
 - Karakter `octo` muncul di meja GitHub selama 30s
 
 ### `channel_msg`
@@ -132,7 +132,7 @@ Status layanan per host (M-B: dikirim poller systemd cloud & mac-relay v2; saat 
 | unit | ✓ | nama systemd unit / launchd label / cron job |
 | kind | | `systemd` \| `cron` \| `launchd` |
 | state | ✓ | `active` \| `failed` \| `inactive` (whitelist) |
-| detail | | opsional, clamp 500; **guest**: path/URL internal di-sanitize (`[path]`), detail ber-IP internal dibuang |
+| detail | | opsional, clamp 500 |
 
 ## 3b. Event Internal (Fase 2–3) — `INTERNAL_ONLY`
 

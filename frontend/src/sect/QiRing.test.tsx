@@ -1,6 +1,6 @@
 /**
  * The qi ring has to tell three situations apart, and the first version of it
- * did not. It folded "the server redacted this" and "no hourly limit is
+ * did not. It folded "the figures are missing" and "no hourly limit is
  * configured" into one blank `— — —`, which hid a figure the viewer was
  * entitled to see behind a privacy state they were not in.
  */
@@ -37,9 +37,12 @@ describe('QiRing', () => {
     expect(screen.getByText('$1.25 · tanpa pagu')).toBeTruthy()
   })
 
-  it('shows nothing but the redaction notice for a guest', () => {
-    render(<QiRing state="normal" snapshot={snap({ spentHourUsd: 0, redacted: true })} />)
-    expect(screen.getByText('Tamu · diredaksi')).toBeTruthy()
+  it('shows an em dash, not a dollar figure, when spend is unknown', () => {
+    // The third state this ring used to carry was "redacted for a guest".
+    // There is no guest, so an absent figure now means exactly one thing:
+    // nobody has measured it yet. Printing "$0.00" would assert a zero the
+    // server never sent.
+    render(<QiRing state="normal" snapshot={snap({ spentHourUsd: undefined })} />)
     expect(screen.queryByText(/\$/)).toBeNull()
   })
 

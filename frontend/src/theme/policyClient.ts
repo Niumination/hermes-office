@@ -3,41 +3,25 @@
  *
  * The ladder's altitude is the policy's own budgetHourlyUsd (see theme/sect.ts):
  * the order is never written down here, it is the policy's. This module is
- * only the fetch + the adaptation for the two kinds of viewer.
+ * only the fetch and the adaptation.
  *
- * An owner sees the real budgets, so `sectLadder()` works as designed and the
- * rungs carry dollar caps.
- *
- * A guest's /policy is redacted (SECURITY.md §3): budgets are dropped, because
- * a map of where the money can be spent is the first thing an attacker wants.
- * The ladder still has to draw *something* — the mountain IS the floor plan —
- * so for a guest the tier comes from the room's `trust` level, which the guest
- * policy does expose. Trust is a coarser ladder than budget by design: the
- * guest sees the shape of the mountain, not its price.
- *
- * Guest caps are 0 and hidden by the caller: a guest never sees a dollar in
- * this product, and `sectLadder` would have nothing truthful to put there.
+ * It used to have two paths. A guest's /policy was redacted — budgets
+ * dropped, because a map of where the money can be spent is the first thing
+ * an attacker wants — so the guest ladder was built from the room's `trust`
+ * level instead, a coarser ordering with every cap forced to 0. That path is
+ * gone with the guest role: /policy is owner-only and always carries real
+ * budgets, so there is exactly one way to build a rung.
  */
 
-import type { SectRung, SectHall } from './sect'
+import type { SectRung } from './sect'
 import { SECT_HALLS, sectLadder, type PolicyRoomLike } from './sect'
 import type { RoomId } from '../rooms'
 
-/** Trust level → altitude for a guest. Coarser than budget, same direction. */
-const TRUST_TIER: Record<string, number> = {
-  idle: 0,
-  untrusted: 1,
-  standard: 2,
-  privileged: 3,
-}
-
 export interface PolicySnapshot {
-  /** Ladder rungs, lowest hall first — same shape for guest and owner. */
+  /** Ladder rungs, lowest hall first. */
   rungs: SectRung[]
-  /** Highest tier this viewer may enter. A guest sits at -1: nothing. */
+  /** Highest tier this viewer may enter. */
   viewerTier: number
-  /** True when the server redacted the budgets. Caps are 0 and must be hidden. */
-  redacted: boolean
   /**
    * Who the SERVER says is standing in each hall, agent id -> room.
    *
@@ -45,7 +29,7 @@ export interface PolicySnapshot {
    * empty on every page load and stays empty until something happens to move
    * — which on a quiet fleet can be minutes. The floor plan is the one place
    * that already knows, and it was being fetched and thrown away: `occupants`
-   * arrives on the wire for guest and owner alike and nothing read it.
+   * arrives on the wire and nothing read it.
    *
    * This is the server's answer, not a guess assembled from event shapes.
    */
@@ -66,28 +50,17 @@ interface ServerRoom {
   occupants?: Array<{ agent?: string }>
   /** The server marks redaction per ROOM, not on the document — see the note
    *  in ladderFromPolicy. Declared here so callers stop casting to reach it. */
-  redacted?: boolean
 }
 
 interface ServerPolicy {
   rooms?: ServerRoom[]
-  redacted?: boolean
   /** Where the server places an agent it has not been told about. */
   defaultRoom?: string
 }
 
-/** A guest sees the mountain but may not enter any hall (the server 403s). */
-const GUEST_VIEWER_TIER = -1
+/** No rungs at all means no standing: nothing on the mountain opens. */
+const NO_STANDING = -1
 
-/**
- * Build the ladder from a fetched /policy document.
- *
- * For an owner this is a straight `sectLadder()` call. For a guest it walks
- * the rooms itself, because the redacted shape does not carry budgets and
- * `sectLadder` would return an empty ladder — every rung would silently
- * disappear, which is exactly the "a check that stops running is not a check"
- * failure this repo has already paid for once.
- */
 /**
  * agent -> room, for every room the mountain actually draws.
  *
@@ -111,41 +84,18 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
   const placements = placementsFrom(rooms)
   const defaultRoom =
     typeof policy.defaultRoom === 'string' ? (policy.defaultRoom as RoomId) : undefined
-  // The server puts `redacted: true` on each ROOM for a guest, not on the
-  // document — see server/index.js `GET /policy`. Reading only the top-level
-  // flag meant the guest took the owner path, found every budget dropped, and
-  // got an empty ladder: the rail vanished and the whole theme looked dead.
-  const redacted =
-    policy.redacted === true || rooms.some((r) => (r as { redacted?: boolean }).redacted === true)
 
-  if (!redacted) {
-    const byId: Record<string, PolicyRoomLike> = {}
-    for (const r of rooms) {
-      if (typeof r.budgetHourlyUsd === 'number') byId[r.room] = { budgetHourlyUsd: r.budgetHourlyUsd }
-    }
-    const rungs = sectLadder(byId)
-    // An owner may go anywhere the policy lets the kiosk go: the top of the
-    // ladder. canEnter() is tier<=viewerTier, so the highest tier opens all.
-    const top = rungs.reduce((m, r) => Math.max(m, r.tier), GUEST_VIEWER_TIER)
-    return { rungs, viewerTier: top, redacted: false, placements, defaultRoom }
+  const byId: Record<string, PolicyRoomLike> = {}
+  for (const r of rooms) {
+    if (typeof r.budgetHourlyUsd === 'number') byId[r.room] = { budgetHourlyUsd: r.budgetHourlyUsd }
   }
-
-  // Guest: rooms without a hall name are still dropped, same rule as the owner
-  // path — a room off the mountain is off the mountain for everybody.
-  const tiers = new Set<number>()
-  const rungs: SectRung[] = rooms
-    .map((r) => {
-      const hall: SectHall | undefined = SECT_HALLS[r.room as RoomId]
-      const tier = TRUST_TIER[r.trust ?? 'untrusted'] ?? TRUST_TIER.untrusted
-      if (hall) tiers.add(tier)
-      return { room: r.room as RoomId, hall, capUsd: 0, tier }
-    })
-    .filter((r): r is SectRung => Boolean(r.hall))
-    // Same comparator as sectLadder(): budget is gone, so trust orders it and
-    // the room id breaks ties deterministically.
-    .sort((a, b) => a.tier - b.tier || a.room.localeCompare(b.room))
-
-  return { rungs, viewerTier: GUEST_VIEWER_TIER, redacted: true, placements, defaultRoom }
+  const rungs = sectLadder(byId)
+  // The viewer may go anywhere the policy describes: the top of the ladder.
+  // canEnter() is tier <= viewerTier, so the highest tier opens all of them.
+  // An empty ladder yields -1, which opens nothing — the honest answer when
+  // the policy carries no budgeted room at all.
+  const top = rungs.reduce((m, r) => Math.max(m, r.tier), NO_STANDING)
+  return { rungs, viewerTier: top, placements, defaultRoom }
 }
 
 /** Fetch /policy with credentials and adapt it to the ladder. Never throws:

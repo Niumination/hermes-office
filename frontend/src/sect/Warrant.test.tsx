@@ -19,12 +19,12 @@ const refuse = (status: number, error?: string) =>
 
 describe('Warrant', () => {
   it('renders nothing for a viewer who already has standing', () => {
-    const { container } = render(<Warrant isGuest={false} />)
+    const { container } = render(<Warrant signedOut={false} />)
     expect(container).toBeEmptyDOMElement()
   })
 
   it('offers a guest a way in', () => {
-    render(<Warrant isGuest />)
+    render(<Warrant signedOut />)
     expect(screen.getByRole('button', { name: /masuk/i })).toBeTruthy()
   })
 
@@ -32,7 +32,7 @@ describe('Warrant', () => {
     const user = userEvent.setup()
     const fetchImpl = vi.fn().mockResolvedValue(ok())
     const onEntered = vi.fn()
-    render(<Warrant isGuest fetchImpl={fetchImpl as unknown as typeof fetch} onEntered={onEntered} />)
+    render(<Warrant signedOut fetchImpl={fetchImpl as unknown as typeof fetch} onEntered={onEntered} />)
 
     await user.click(screen.getByRole('button', { name: /masuk/i }))
     await user.type(screen.getByLabelText(/token pemilik/i), 'owner-token-abc')
@@ -54,7 +54,7 @@ describe('Warrant', () => {
     const onEntered = vi.fn()
     render(
       <Warrant
-        isGuest
+        signedOut
         fetchImpl={vi.fn().mockResolvedValue(ok()) as unknown as typeof fetch}
         onEntered={onEntered}
       />,
@@ -74,7 +74,7 @@ describe('Warrant', () => {
     const user = userEvent.setup()
     render(
       <Warrant
-        isGuest
+        signedOut
         fetchImpl={vi.fn().mockResolvedValue(refuse(401, 'Tidak terotorisasi')) as unknown as typeof fetch}
         onEntered={vi.fn()}
       />,
@@ -93,7 +93,7 @@ describe('Warrant', () => {
     const user = userEvent.setup()
     render(
       <Warrant
-        isGuest
+        signedOut
         fetchImpl={vi.fn().mockResolvedValue(refuse(429)) as unknown as typeof fetch}
         onEntered={vi.fn()}
       />,
@@ -111,7 +111,7 @@ describe('Warrant', () => {
     const user = userEvent.setup()
     render(
       <Warrant
-        isGuest
+        signedOut
         fetchImpl={vi.fn().mockRejectedValue(new TypeError('offline')) as unknown as typeof fetch}
         onEntered={vi.fn()}
       />,
@@ -127,7 +127,7 @@ describe('Warrant', () => {
   it('will not submit an empty token', async () => {
     const user = userEvent.setup()
     const fetchImpl = vi.fn()
-    render(<Warrant isGuest fetchImpl={fetchImpl as unknown as typeof fetch} onEntered={vi.fn()} />)
+    render(<Warrant signedOut fetchImpl={fetchImpl as unknown as typeof fetch} onEntered={vi.fn()} />)
     await user.click(screen.getByRole('button', { name: /masuk/i }))
     await user.click(screen.getByRole('button', { name: /^masuk$/i }))
     expect(fetchImpl).not.toHaveBeenCalled()

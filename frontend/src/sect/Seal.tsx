@@ -9,7 +9,7 @@
  *
  * Two behaviours are inherited deliberately from the old badge:
  *
- *   - It renders NOTHING once a probe is refused. Showing a guest a disabled
+ *   - It renders NOTHING once a probe is refused. Showing a viewer a disabled
  *     "verify" control would advertise an audit log they cannot read.
  *   - The head hash is shown in full and selectable. Truncating it would
  *     remove the only defence against tail truncation: an operator copying
@@ -26,7 +26,7 @@ import React, { useEffect, useState } from 'react'
 
 interface Head { seq: number; hash: string; records: number }
 
-/** GET /proof — see server/proof.js. Shapes differ for owner and guest; the
+/** GET /proof — see server/proof.js. One shape, owner-only; the
  *  fields this component reads are present in both, except `served` /
  *  `verifiedBundle`, which only an owner is allowed to see. */
 interface Proof {

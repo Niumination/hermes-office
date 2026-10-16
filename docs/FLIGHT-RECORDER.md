@@ -103,7 +103,7 @@ berhash sama dan bisa ditukar tanpa terdeteksi.
 ## 5. Endpoint
 
 Semuanya **owner-only, tanpa kecuali**. Ledger adalah satu-satunya tempat semua
-fakta yang diredaksi dari guest di Fase 3 tertulis lengkap. Token bridge —
+fakta yang dulu diredaksi dari tamu di Fase 3 tertulis lengkap. Token bridge —
 yang dipegang setiap proses agen — justru paling tidak boleh, karena agen
 adalah **subjek** catatan ini.
 

@@ -27,7 +27,7 @@ Buka halamannya, dan lihat: karakter Hermes Cloud mengetik saat mengerjakan tuga
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Arsitektur teknis, data flow, layout repo |
 | [docs/EVENTS.md](docs/EVENTS.md) | Kontrak event lengkap (sumber kebenaran bridge↔server) |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deploy, systemd, proxy, operasi |
-| [docs/SECURITY.md](docs/SECURITY.md) | Model ancaman, auth, sanitasi guest |
+| [docs/SECURITY.md](docs/SECURITY.md) | Model ancaman, auth satu-pemilik |
 | [docs/UI-SPEC.md](docs/UI-SPEC.md) | Spesifikasi visual & interaksi |
 | [docs/SPIKES.md](docs/SPIKES.md) | Rencana validasi M0 |
 
@@ -37,7 +37,7 @@ Buka halamannya, dan lihat: karakter Hermes Cloud mengetik saat mengerjakan tuga
 - **M1** — Foundation: office-server + frontend jalan di server
 - **M2** — Real integration: bridge Cloud & Mac, GitHub watcher
 - **M3** — Chat & panels
-- **M4** — Niu-mode, guest mode, polish → v1.0
+- **M4** — Niu-mode, polish → v1.0
 
 ## Lisensi & Kredit
 

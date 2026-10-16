@@ -115,7 +115,6 @@ export const Hall: React.FC<{
   hall: SectHall | undefined
   plate: string
   locked: boolean
-  guest?: boolean
   cultivators: Cultivator[]
   /**
    * Agents the roster lists that the server has placed nowhere. Drawn in
@@ -124,7 +123,7 @@ export const Hall: React.FC<{
    * the exact lie the floor plan was fixed to stop telling.
    */
   ghosts?: Cultivator[]
-}> = ({ room, hall, plate, locked, guest, cultivators, ghosts = [] }) => {
+}> = ({ room, hall, plate, locked, cultivators, ghosts = [] }) => {
   return (
     <main className="sect-stage" aria-label={hall ? `${hall.nameId} — ${hall.nameEn}` : room}>
       <div
@@ -186,12 +185,6 @@ export const Hall: React.FC<{
             {ghosts.map((g) => <Disciple key={g.id} c={g} />)}
           </div>
         </div>
-      )}
-
-      {guest && !locked && (
-        <p className="sect-hall__guest sect-script" title="Tamu: angka anggaran diredaksi oleh server">
-          Tamu — angka diredaksi
-        </p>
       )}
 
       <div className="sect-hall__plate">

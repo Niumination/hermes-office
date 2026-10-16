@@ -1,7 +1,11 @@
 /**
  * auth.js — Bearer token per-source auth (SECURITY.md §2).
  * Roles: cloud-bridge, mac-bridge (POST /event, GET /roster),
- *        owner (everything except /event), guest (read-only, filtered).
+ *        owner (everything except /event).
+ *
+ * There is no guest role. This office has one occupant; a read-only public
+ * view described a deployment that never existed, and every route that
+ * accepted it widened the blast radius for no one's benefit.
  */
 import { createHash } from "crypto";
 import { config } from "./config.js";
@@ -26,7 +30,7 @@ export function getBearer(req) {
  * Resolve request identity. Returns null when unauthorized.
  * Accepts Bearer header (bridges/tools) or office_session cookie (browser,
  * obtained via POST /auth/session — keeps tokens out of URLs and logs).
- * @returns {{ source: "cloud"|"mac"|"owner"|"guest", role: "bridge"|"owner"|"guest" } | null}
+ * @returns {{ source: "cloud"|"mac"|"owner", role: "bridge"|"owner" } | null}
  */
 export function authenticate(req) {
   let token = getBearer(req);
@@ -38,15 +42,10 @@ export function authenticate(req) {
   const h = hashToken(token);
   for (const entry of TOKEN_SOURCES) {
     if (entry.hash === h) {
-      return {
-        source: entry.source,
-        role:
-          entry.source === "owner"
-            ? "owner"
-            : entry.source === "guest"
-              ? "guest"
-              : "bridge",
-      };
+        return {
+          source: entry.source,
+          role: entry.source === "owner" ? "owner" : "bridge",
+        };
     }
   }
   return null;
@@ -88,4 +87,4 @@ export function requireAuth(roles) {
 
 export const requireBridge = requireAuth(["bridge", "owner"]);
 export const requireOwner = requireAuth(["owner"]);
-export const requireAny = requireAuth(["bridge", "owner", "guest"]);
+export const requireAny = requireAuth(["bridge", "owner"]);

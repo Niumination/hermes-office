@@ -110,24 +110,6 @@ export function buildProof({ report, served, ledger }) {
   };
 }
 
-/** Strip everything a guest must not see. */
-export function redactForGuest(proof) {
-  return {
-    ledger: proof.ledger
-      ? { ok: proof.ledger.ok, trustworthy: proof.ledger.trustworthy }
-      : null,
-    verification: proof.verification
-      ? {
-          verifiedAt: proof.verification.verifiedAt,
-          gatesGreen: proof.verification.gatesGreen,
-          gatesTotal: proof.verification.gatesTotal,
-        }
-      : null,
-    reportMissing: proof.reportMissing,
-    bundleMatches: proof.bundleMatches,
-    redacted: true,
-  };
-}
 
 export function createProofRouter({ requireAny, verifyLedger }) {
   const router = express.Router();
@@ -151,7 +133,7 @@ export function createProofRouter({ requireAny, verifyLedger }) {
         : null,
     });
 
-    res.json(req.identity?.role === "guest" ? redactForGuest(proof) : proof);
+    res.json(proof);
   });
 
   return router;

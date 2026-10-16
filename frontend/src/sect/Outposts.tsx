@@ -11,7 +11,7 @@
  * trains an operator to ignore red, and then the real failure goes unseen.
  *
  * Phase one: observation only, no buttons. Phase two adds owner-only action
- * buttons with confirmation dialogs and visible cooldown. Guests see the same
+ * buttons with confirmation dialogs and visible cooldown. Signed out the
  * panel as phase one — no buttons, no action list.
  */
 import React, { useState, useCallback } from 'react'
@@ -202,7 +202,7 @@ export default function Outposts(props: OutpostsProps) {
 
               {o.note && <p className="sect-post__note">{o.note}</p>}
 
-              {/* Shown verbatim when the server sends it; a guest gets null
+              {/* Shown verbatim when the server sends it; a probe that has
                   because the detail is where internal hosts leak. */}
               {o.detail && <p className="sect-post__detail">{o.detail}</p>}
 

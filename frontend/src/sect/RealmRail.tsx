@@ -22,7 +22,6 @@ export const RealmRail: React.FC<{
 }> = ({ ladder, current, occupancy, onEnter }) => {
   const rungs = ladder?.rungs ?? []
   const viewerTier = ladder?.viewerTier ?? -1
-  const redacted = Boolean(ladder?.redacted)
 
   return (
     <nav className="sect-rail" aria-label="Tataran — tingkatan aula">
@@ -66,7 +65,6 @@ export const RealmRail: React.FC<{
 
               <span className="sect-rung__cap">
                 {locked ? <span className="sect-rung__lock">Kunci</span>
-                  : redacted ? '—'
                   : r.capUsd > 0 ? `$${r.capUsd}` : '·'}
               </span>
             </button>

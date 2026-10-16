@@ -24,7 +24,7 @@ export function createChatRouter(broadcast, _emitChatEvent) {
     res.json({ messages: getMessages({ since, limit }) });
   });
 
-  // --- user message from office UI (guests are read-only — SECURITY.md §2) ---
+  // --- user message from office UI (owner-only — SECURITY.md §2) ---
   r.post("/", requireAuth(["bridge", "owner"]), jsonOnly, (req, res) => {
     const { text } = req.body ?? {};
     const sender = clampString(req.body?.sender) || "owner";

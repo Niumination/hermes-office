@@ -8,7 +8,7 @@
 # GitHub rate limit polling someone else's repositories. Neither failed loudly,
 # because both looked configured.
 #
-# Test fixtures are allowed to contain internal-looking addresses: the guest
+# Test fixtures are allowed to contain internal-looking addresses: the
 # sanitizer is specifically tested for stripping them, so forbidding them there
 # would delete the test's reason to exist.
 set -euo pipefail

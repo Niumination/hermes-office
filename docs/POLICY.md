@@ -107,7 +107,7 @@ with who performed it and broadcast as `agent_moved`.
 | `GET /approvals/:id` | one request, so an agent can poll its own |
 | `POST /approvals/:id` | `{"approve": true\|false}` — **owner only** |
 
-Reading the queue is not privileged; deciding it is. A guest can see that
+Reading the queue and deciding it are the same standing. The owner sees that
 something is waiting but cannot resolve it.
 
 Approvals expire after `OFFICE_APPROVAL_TTL_MIN` (default 5). Expired and
