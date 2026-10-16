@@ -65,7 +65,15 @@ function hhmm(ts?: number): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
-export const Chronicle: React.FC<{ events: HermesEnvelope[] }> = ({ events }) => {
+export const Chronicle: React.FC<{
+  events: HermesEnvelope[]
+  /**
+   * False when there is no session, so the ledger was never read. "Sunyi" is
+   * a claim about the fleet; with no session it was really a claim about our
+   * own permissions, printed in the fleet's voice.
+   */
+  known?: boolean
+}> = ({ events, known = true }) => {
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -83,10 +91,17 @@ export const Chronicle: React.FC<{ events: HermesEnvelope[] }> = ({ events }) =>
   return (
     <div className="sect-log" ref={ref}>
       {recent.length === 0 && (
-        <p className="sect-log__empty">
-          Belum ada catatan.<br />
-          <span className="sect-script" style={{ opacity: 0.6 }}>Sunyi</span>
-        </p>
+        known ? (
+          <p className="sect-log__empty">
+            Belum ada catatan.<br />
+            <span className="sect-script" style={{ opacity: 0.6 }}>Sunyi</span>
+          </p>
+        ) : (
+          <p className="sect-log__empty">
+            Babad tidak terbaca.<br />
+            <span className="sect-script" style={{ opacity: 0.6 }}>Belum masuk</span>
+          </p>
+        )
       )}
       {recent.map((e, i) => {
         const d = describe(e)

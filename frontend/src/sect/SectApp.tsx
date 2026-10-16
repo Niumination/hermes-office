@@ -404,7 +404,20 @@ export const SectApp: React.FC = () => {
 
         <div className="sect-stat">
           <span className="caps">Murid</span>
-          <span className="sect-stat__v">{Object.values(occupancy).reduce((a, b) => a + b, 0)}</span>
+          {/*
+            Signed out, every occupancy source answers 401, `occupancy` stays
+            `{}`, and this sum used to render a confident `0` — a count the
+            office had never been told. An em dash is the honest glyph: the
+            question was asked and refused, not asked and answered zero.
+          */}
+          <span
+            className={`sect-stat__v${signedOut ? ' sect-stat__v--unknown' : ''}`}
+            title={signedOut
+              ? 'Belum masuk — kantor tidak menjawab berapa yang hadir'
+              : 'Jumlah yang ditempatkan di seluruh kantor'}
+          >
+            {signedOut ? '—' : Object.values(occupancy).reduce((a, b) => a + b, 0)}
+          </span>
         </div>
 
         <Seal />
@@ -448,6 +461,7 @@ export const SectApp: React.FC = () => {
           hall={hall}
           plate={plate}
           locked={locked}
+          occupancyKnown={!signedOut}
           cultivators={cultivators}
           ghosts={ghosts}
         />
@@ -473,7 +487,7 @@ export const SectApp: React.FC = () => {
             title="Papan Amanat — apa yang sedang dikerjakan"
           >
             Amanat
-            <span className="sect-float__count">{amanat.total}</span>
+            <span className="sect-float__count">{signedOut ? '—' : amanat.total}</span>
             {amanat.blocked > 0 && (
               <span className="sect-float__alert">{amanat.blocked} menunggu</span>
             )}
@@ -498,7 +512,7 @@ export const SectApp: React.FC = () => {
           </span>
           <span className="sect-status__sep" />
           <span className="sect-status__item">
-            {cultivators.length} di balai ini
+            {signedOut ? 'penghuni tak diketahui' : `${cultivators.length} di balai ini`}
           </span>
           {ghosts.length > 0 && (
             <span className="sect-status__item sect-status__item--dim">
@@ -507,7 +521,7 @@ export const SectApp: React.FC = () => {
           )}
           <span className="sect-status__sep" />
           <span className="sect-status__item">
-            {amanat.total} amanat
+            {signedOut ? '— amanat' : `${amanat.total} amanat`}
             {amanat.blocked > 0 && (
               <strong className="sect-status__alert"> · {amanat.blocked} menunggu Anda</strong>
             )}
@@ -565,10 +579,14 @@ export const SectApp: React.FC = () => {
             onReact={(id, emoji) => { void sabda.react(id, emoji) }}
           />
         ) : tab === 'chronicle' ? (
-          <Chronicle events={events} />
+          <Chronicle events={events} known={!signedOut} />
         ) : (
           <div className="sect-log">
-            {roster.length === 0 && <p className="sect-log__empty">Belum ada murid.</p>}
+            {roster.length === 0 && (
+              <p className="sect-log__empty">
+                {signedOut ? 'Daftar murid tidak terbaca — belum masuk.' : 'Belum ada murid.'}
+              </p>
+            )}
             {roster.map((r) => {
               const h = r.room ? roomAt(office, r.room) : undefined
               return (

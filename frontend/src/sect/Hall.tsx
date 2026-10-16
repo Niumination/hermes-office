@@ -117,6 +117,18 @@ export const Hall: React.FC<{
   hall: SectHall | undefined
   plate: string
   locked: boolean
+  /**
+   * False when the office refused to say who is here — no session, so
+   * `/policy occupants` answered 401 and the floor plan is unread.
+   *
+   * An empty court and an unread court are not the same claim, and this
+   * screen used to make the second one look like the first: signed out, it
+   * drew "Balai kosong" over an office it had never been allowed to see.
+   * MIRAI's roster already had the word for this state and called it
+   * `unreachable` — "a seat whose files cannot be read is unreachable, never
+   * an exception". Hermes Office had no such word, so it reached for zero.
+   */
+  occupancyKnown: boolean
   cultivators: Cultivator[]
   /**
    * Agents the roster lists that the server has placed nowhere. Drawn in
@@ -125,7 +137,7 @@ export const Hall: React.FC<{
    * the exact lie the floor plan was fixed to stop telling.
    */
   ghosts?: Cultivator[]
-}> = ({ room, hall, plate, locked, cultivators, ghosts = [] }) => {
+}> = ({ room, hall, plate, locked, occupancyKnown, cultivators, ghosts = [] }) => {
   return (
     <main className="sect-stage" aria-label={hall ? `${hall.nameId} — ${hall.nameEn}` : room}>
       <div
@@ -143,7 +155,12 @@ export const Hall: React.FC<{
 
         {!locked && (
           <div className="sect-court">
-            {cultivators.length === 0 ? (
+            {!occupancyKnown ? (
+              <p className="sect-court__unknown sect-script">
+                Tidak diketahui
+                <small>Belum masuk — kantor tidak menjawab siapa yang ada di sini</small>
+              </p>
+            ) : cultivators.length === 0 ? (
               <p className="sect-court__empty sect-script">Balai kosong</p>
             ) : (
             // placeAll returns back-to-front, so painting in order gives

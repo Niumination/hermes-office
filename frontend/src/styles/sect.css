@@ -2217,6 +2217,56 @@ body {
 }
 
 
+/* ===================================================================
+   Tidak diketahui ≠ kosong.
+   Keadaan belum-masuk dulu memakai gaya yang sama persis dengan balai
+   yang benar-benar sepi, jadi penolakan 401 terlihat seperti jawaban.
+   Gaya ini sengaja dibedakan: redup, miring, dan membawa sebabnya.
+   WAJIB di atas blok @media — lihat catatan di sana.
+   =================================================================== */
+.sect-court__unknown {
+  position: absolute;
+  inset-inline: 0;
+  top: 46%;
+  display: grid;
+  gap: 0.3rem;
+  justify-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+/*
+  The hall art behind this is a lit gold screen, so the first version of this
+  notice was placed straight onto it at 42% ink and simply vanished — legible
+  in the DOM, unreadable on the screen. Caught by looking, not by a metric.
+  The plate below is what makes the words survive the backdrop they land on.
+*/
+.sect-court__unknown > * {
+  display: inline-block;
+  padding: 0.3rem 0.85rem;
+  border-radius: 0.5rem;
+  background: color-mix(in oklch, var(--sect-night, oklch(18% .02 160)) 76%, transparent);
+  backdrop-filter: blur(3px);
+  box-shadow: 0 1px 10px oklch(0% 0 0 / 0.45);
+}
+.sect-court__unknown {
+  color: color-mix(in oklch, var(--sect-ink) 82%, transparent);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+.sect-court__unknown small {
+  font-style: normal;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: color-mix(in oklch, var(--sect-ink) 62%, transparent);
+  max-width: 30ch;
+  line-height: 1.45;
+}
+.sect-stat__v--unknown {
+  color: color-mix(in oklch, var(--sect-ink) 38%, transparent);
+  font-variant-numeric: normal;
+}
+
+
 @media (max-width: 1180px) {
   /* Columns are `auto` now, so narrowing is a width change on the rail
      itself rather than a template rewrite. */
