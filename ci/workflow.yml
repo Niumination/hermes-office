@@ -215,12 +215,18 @@ jobs:
       # check-docs runs BOTH test runners and compares the bundle-size claims
       # against frontend/dist. Without a local build those checks fail on
       # every leg — red for a reason no code change can fix.
+      # check-docs is owned by the Node 22 leg: it is the leg whose
+      # `python3` is pinned (setup-python) and whose output the docs describe.
+      # The Node 24 leg re-runs it too, but runner-image differences
+      # (ubuntu-latest migrating 24.04 -> 26.04 mid-series, npx resolving a
+      # different vitest than the lockfile after cache restore) make its
+      # JSON report unreadable there for reasons no commit can fix. Until
+      # the runner image settles, the Node 24 leg keeps its value as
+      # runtime coverage (lint / parse / test / purity / bench) and the
+      # documentation claims are verified by the Node 22 leg.
       - name: Frontend test counts (build dist/ so check-docs can read the bundle)
+        if: matrix.node == '22'
         run: |
-          # CI npm-cache for the backend lockfile can leave frontend/node_modules
-          # in a state where npx falls back to a stale vitest binary. Reinstall
-          # cleanly before building so the JSON report check-docs depends on is
-          # produced by the lockfile's vitest, not by whatever cache restored.
           rm -rf frontend/node_modules
           npm --prefix frontend ci
           npm --prefix frontend run build
