@@ -420,8 +420,12 @@ export const SectApp: React.FC = () => {
   // claims nothing. Same rule as the left/right facing in cast.ts — decoration
   // is allowed to be arbitrary, but it must never be mistaken for a fact.
   const PLATES: RoomId[] = ['lobby', 'main-office', 'meeting-room', 'mac-studio', 'server-room', 'ceo-office', 'kitchen', 'nap-room']
+  // Hashed over the NAMESPACED reference, not the bare id. `root` exists in
+  // both offices, so hashing `room` dealt both of them the same plate and the
+  // Mac's ecosystem root and LightVela's were drawn as the same place. The
+  // backdrop claims nothing, but it must not claim two places are one.
   let h = 2166136261
-  for (let i = 0; i < room.length; i++) { h ^= room.charCodeAt(i); h = Math.imul(h, 16777619) }
+  for (let i = 0; i < here.length; i++) { h ^= here.charCodeAt(i); h = Math.imul(h, 16777619) }
   const backdrop = PLATES[Math.abs(h) % PLATES.length]
   const plate = platePath(backdrop, 'sect', ROOMS[backdrop]?.background?.day ?? '')
 
