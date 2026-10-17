@@ -852,6 +852,46 @@ def main() -> int:
                 f"{rel} quotes a retracted licence price in a table row: "
                 f"{offenders[0][:70]!r} — see docs/PRICING.md")
 
+    # The viewer tier is gone, and this check is its inverse.
+    #
+    # Trust tiers were retracted in 20248f2, but the idea survived in the
+    # frontend wearing a different coat: rungs were ranked by budget band,
+    # the rank was called `tier`, `viewerTier` was defined as the HIGHEST
+    # rank present, and `canEnter` compared the two. True by construction,
+    # so the veil it gated could never be raised — a guarantee shaped like
+    # one but holding nothing, and a second principal kept alive in the
+    # types of a one-owner office.
+    #
+    # Inverted rather than deleted, same as the price table above: this is
+    # exactly the retraction that gets quietly undone, because "which rooms
+    # may this viewer see" is a natural-sounding question to re-ask. Room
+    # budgets stay — `capUsd` is the spending brake and a fact about policy.
+    FORBIDDEN_STANDING = ("viewerTier", "canEnter", "sect-veil")
+    for rel in ("frontend/src/theme/sect.ts", "frontend/src/theme/policyClient.ts",
+                "frontend/src/sect/Hall.tsx", "frontend/src/sect/SectApp.tsx"):
+        path = os.path.join(ROOT, rel)
+        if not os.path.exists(path):
+            failures.append(f"{rel} is gone; the viewer-tier retraction check cannot run")
+            checks += 1
+            continue
+        checks += 1
+        src_txt = open(path, encoding="utf-8").read()
+        # Prose may name the retracted thing — the files explain what was
+        # removed and why, deliberately. Only live code may not.
+        #
+        # Strip real comments, not lines that merely look like one. A first
+        # cut matched on leading `*`, `//`, `/*`, which left the interior of
+        # every block comment counted as code — and the retraction note in
+        # sect.ts, whose whole subject is the forbidden words, tripped the
+        # check it was written to explain.
+        code = re.sub(r"/\*.*?\*/", "", src_txt, flags=re.S)
+        code = re.sub(r"(?m)^\s*//.*$", "", code)
+        back = [w for w in FORBIDDEN_STANDING if w in code]
+        if back:
+            failures.append(
+                f"{rel} brings back a retracted viewer standing ({', '.join(back)}) — "
+                f"this office has one owner; see the note in frontend/src/theme/sect.ts")
+
     # Each language version must point at the other, and at its own-language
     # pricing page. A dead language switcher is how a translation starts
     # being invisible, and then being forgotten.

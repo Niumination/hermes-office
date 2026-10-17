@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sectLadder, canEnter, type PolicyRoomLike } from './sect'
+import { sectLadder, type PolicyRoomLike } from './sect'
 
 // A miniature of the real floor-plan policy. Mirroring the shape rather than
 // importing the server keeps this a frontend test, but the "every governed
@@ -38,10 +38,13 @@ describe('sect theme', () => {
     expect(rungs[rungs.length - 1].room).toBe('belum-dipetakan')
   })
 
-  it('gives rooms on the same budget the same tier', () => {
-    const byRoom = Object.fromEntries(sectLadder(POLICY).map((r) => [r.room, r.tier]))
-    expect(byRoom['mac/tools']).toBe(byRoom['mac/vault'])
-    expect(byRoom['belum-dipetakan']).toBeGreaterThan(byRoom['mac/tools'])
+  it('orders rooms by what they may spend, and by nothing else', () => {
+    // Was 'gives rooms on the same budget the same tier'. The tier rank is
+    // retracted; the ordering it was derived from is the real guarantee and
+    // survives on its own.
+    const caps = Object.fromEntries(sectLadder(POLICY).map((r) => [r.room, r.capUsd]))
+    expect(caps['mac/tools']).toBe(caps['mac/vault'])
+    expect(caps['belum-dipetakan']).toBeGreaterThan(caps['mac/tools'])
   })
 
   it('leaves ungoverned rooms off the mountain', () => {
@@ -83,14 +86,19 @@ describe('sect theme', () => {
     expect(blob).not.toMatch(/budget|usd|tier|\$\d/i)
   })
 
-  it('refuses halls above the viewer tier, like the server already does', () => {
+  /*
+    RETRACTED, inverted: 'refuses halls above the viewer tier'.
+
+    There is no viewer tier to be above. `canEnter` and `tier` are gone, and
+    this is the check that stops them returning by the back door: a rung may
+    carry what a room may SPEND and nothing resembling a standing to clear.
+  */
+  it('publishes no standing a viewer could be measured against', () => {
     const ladder = sectLadder(POLICY)
-    const infra = ladder.find((r) => r.room === 'lightvela/infra')!
-    const intake = ladder.find((r) => r.room === 'belum-dipetakan')!
-    expect(canEnter(intake, 0)).toBe(false)   // tier 0 sits below $0.25
-    expect(canEnter(intake, intake.tier)).toBe(true)
-    expect(canEnter(infra, intake.tier)).toBe(false)
-    expect(canEnter(infra, infra.tier)).toBe(true)
+    expect(ladder.length).toBeGreaterThan(0)
+    for (const rung of ladder) {
+      expect(Object.keys(rung).sort()).toEqual(['capUsd', 'hall', 'room'])
+    }
   })
 })
 

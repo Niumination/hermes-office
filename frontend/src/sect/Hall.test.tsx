@@ -2,10 +2,15 @@
  * The hall is where the UI is most tempted to lie. Two temptations in
  * particular are tested here:
  *
- *   - Veiling a hall the viewer is actually allowed to see, which invents a
- *     refusal the server never made.
- *   - Rendering cultivators behind the veil anyway, which leaks the very thing
- *     the veil claims to be hiding.
+ *   - Claiming a refusal the server never made.
+ *   - Reporting an unread floor as an empty one.
+ *
+ * RETRACTED: the two veil tests. The veil could only be raised by
+ * `locked`, which compared a rung's budget-band rank against the HIGHEST
+ * rank present — false by construction, so the curtain was unreachable and
+ * its wording promised a per-hall 403 this one-owner office cannot issue.
+ * The guarantees are inverted below rather than dropped: no alert may
+ * appear, and no cultivator may be withheld, for ANY hall.
  */
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
@@ -30,51 +35,44 @@ const cul = (over = {}) => ({
 
 describe('Hall', () => {
   it('shows the hall name in Chinese and the gloss beside it, never instead of it', () => {
-    render(<Hall room="ceo-office" hall={hall('ceo-office')} plate="/p.webp"
-                 locked={false} occupancyKnown cultivators={[]} />)
+    render(<Hall room="ceo-office" hall={hall('ceo-office')} plate="/p.webp" occupancyKnown cultivators={[]} />)
     expect(screen.getByText(hall('ceo-office').nameId)).toBeTruthy()
     expect(screen.getByText(hall('ceo-office').nameEn)).toBeTruthy()
   })
 
-  it('renders no cultivator at all behind the veil', () => {
-    render(<Hall room="ceo-office" hall={hall('ceo-office')} plate="/p.webp"
-                 locked occupancyKnown cultivators={[cul(), cul({ id: 'a2', name: 'Rahasia' })]} />)
-    expect(screen.getByRole('alert')).toBeTruthy()
-    expect(screen.queryByText('Niu')).toBeNull()
-    expect(screen.queryByText('Rahasia')).toBeNull()
-  })
-
-  it('does not veil a hall the viewer may enter', () => {
-    render(<Hall room="lobby" hall={hall('lobby')} plate="/p.webp"
-                 locked={false} occupancyKnown cultivators={[cul()]} />)
+  it('never veils a hall, and never withholds who is standing in it', () => {
+    // Inverse of the two retracted veil tests. There is one owner: a hall the
+    // office can draw at all is a hall they may see, so an occupant that
+    // reached this component must reach the screen.
+    render(<Hall room="mac/dinas" hall={hall('mac/dinas')} plate="/p.webp"
+                 occupancyKnown cultivators={[cul(), cul({ id: 'a2', name: 'Rahasia' })]} />)
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.getByText('Niu')).toBeTruthy()
+    expect(screen.getByText('Rahasia')).toBeTruthy()
   })
 
   it('carries no viewer-class notice: there is only one class of viewer', () => {
     // The hall used to stamp "Tamu — angka diredaksi" over the plate so a
     // guest knew the blank budgets were the server's doing and not the UI's.
     // With the guest role gone that notice could only ever be false.
-    render(<Hall room="lobby" hall={hall('lobby')} plate="/p.webp"
-                 locked={false} occupancyKnown cultivators={[]} />)
+    render(<Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown cultivators={[]} />)
     expect(screen.queryByText(/Tamu/)).toBeNull()
     expect(screen.queryByText(/diredaksi/)).toBeNull()
   })
 
   it('says a hall is empty rather than rendering a blank floor', () => {
-    render(<Hall room="kitchen" hall={hall('kitchen')} plate="/p.webp"
-                 locked={false} occupancyKnown cultivators={[]} />)
+    render(<Hall room="kitchen" hall={hall('kitchen')} plate="/p.webp" occupancyKnown cultivators={[]} />)
     expect(screen.getByText(/Balai kosong/)).toBeTruthy()
   })
 
   it('falls back to the room id when a hall has no sect name yet', () => {
-    render(<Hall room="lobby" hall={undefined} plate="/p.webp" locked={false} occupancyKnown cultivators={[]} />)
+    render(<Hall room="lobby" hall={undefined} plate="/p.webp" occupancyKnown cultivators={[]} />)
     expect(screen.getByText('lobby')).toBeTruthy()
   })
 
   it('carries the qi state onto the cultivator so burn is visible as aura', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
             cultivators={[cul({ qi: 'critical', state: 'away' })]} />,
     )
     const fig = container.querySelector('.sect-cul')!
@@ -92,7 +90,7 @@ describe('Hall', () => {
 describe('Hall — the cast', () => {
   it('draws the character art when a sprite is given', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul({ sprite: '/sprites/donghua/elder-front-left.webp' })]} />,
     )
     const img = container.querySelector('img.sect-cul__art') as HTMLImageElement | null
@@ -102,7 +100,7 @@ describe('Hall — the cast', () => {
 
   it('marks a drawn disciple so the CSS can give the qi ring a floor, not a halo', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul({ sprite: '/sprites/donghua/elder-front-left.webp' })]} />,
     )
     expect(container.querySelector('.sect-cul--art')).toBeTruthy()
@@ -110,7 +108,7 @@ describe('Hall — the cast', () => {
 
   it('still uses the mark when no sprite is given, exactly as before', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul()]} />,
     )
     expect(container.querySelector('img.sect-cul__art')).toBeNull()
@@ -119,7 +117,7 @@ describe('Hall — the cast', () => {
 
   it('falls back to the mark when the image fails, so a half-deploy is not an empty office', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul({ sprite: '/sprites/donghua/missing.webp' })]} />,
     )
     const img = container.querySelector('img.sect-cul__art') as HTMLImageElement
@@ -130,7 +128,7 @@ describe('Hall — the cast', () => {
 
   it('hides the art from the accessibility tree — the name beside it is the content', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul({ sprite: '/sprites/donghua/elder-front-left.webp' })]} />,
     )
     expect(container.querySelector('img.sect-cul__art')?.getAttribute('alt')).toBe('')
@@ -145,7 +143,7 @@ describe('Hall — ghosts', () => {
 
   it('shows a rostered agent that was never placed, instead of pretending it does not exist', () => {
     render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[]} ghosts={[ghost('mac'), ghost('boss')]} />,
     )
     expect(screen.getByText('mac')).toBeTruthy()
@@ -154,7 +152,7 @@ describe('Hall — ghosts', () => {
 
   it('keeps ghosts OUT of the court, which is the server floor plan', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul()]} ghosts={[ghost('mac')]} />,
     )
     const court = container.querySelector('.sect-court:not(.sect-court--ghosts)')!
@@ -164,7 +162,7 @@ describe('Hall — ghosts', () => {
 
   it('says in words that a ghost has never been seen, so it is not read as presence', () => {
     render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[]} ghosts={[ghost('mac')]} />,
     )
     expect(screen.getByText(/belum pernah terlihat/i)).toBeTruthy()
@@ -172,24 +170,27 @@ describe('Hall — ghosts', () => {
 
   it('still reports an empty court when only ghosts exist — nobody is actually here', () => {
     render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[]} ghosts={[ghost('mac')]} />,
     )
     expect(screen.getByText('Balai kosong')).toBeTruthy()
   })
 
-  it('draws no ghost strip behind the veil, same rule as cultivators', () => {
+  it('draws the ghost strip for any hall, since none is veiled', () => {
+    // Was 'draws no ghost strip behind the veil'. With the veil retracted the
+    // rule inverts with it: a roster entry the office knows about is shown,
+    // and the strip itself is what keeps it from being mistaken for presence.
     const { container } = render(
-      <Hall room="ceo-office" hall={hall('ceo-office')} plate="/p.webp" locked={true}
+      <Hall room="mac/dinas" hall={hall('mac/dinas')} plate="/p.webp"
         occupancyKnown cultivators={[]} ghosts={[ghost('mac')]} />,
     )
-    expect(container.querySelector('.sect-court--ghosts')).toBeNull()
-    expect(screen.queryByText('mac')).toBeNull()
+    expect(container.querySelector('.sect-court--ghosts')).toBeTruthy()
+    expect(screen.getByText('mac')).toBeTruthy()
   })
 
   it('renders nothing extra when there are no ghosts', () => {
     const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" locked={false} occupancyKnown
+      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul()]} />,
     )
     expect(container.querySelector('.sect-court--ghosts')).toBeNull()
@@ -203,16 +204,14 @@ describe('Hall — ghosts', () => {
    * single rendering.
    */
   it('does not call an unread court an empty one', () => {
-    render(<Hall room="root" hall={hall('ceo-office')} plate="/p.webp"
-                 locked={false} occupancyKnown={false} cultivators={[]} />)
+    render(<Hall room="root" hall={hall('ceo-office')} plate="/p.webp" occupancyKnown={false} cultivators={[]} />)
     expect(screen.queryByText('Balai kosong')).toBeNull()
     expect(screen.getByText(/Tidak diketahui/)).toBeTruthy()
     expect(screen.getByText(/Belum masuk/)).toBeTruthy()
   })
 
   it('still says empty when it genuinely knows the court is empty', () => {
-    render(<Hall room="root" hall={hall('ceo-office')} plate="/p.webp"
-                 locked={false} occupancyKnown cultivators={[]} />)
+    render(<Hall room="root" hall={hall('ceo-office')} plate="/p.webp" occupancyKnown cultivators={[]} />)
     expect(screen.getByText('Balai kosong')).toBeTruthy()
     expect(screen.queryByText(/Tidak diketahui/)).toBeNull()
   })

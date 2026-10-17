@@ -45,10 +45,12 @@ describe('ladderFromPolicy — owner', () => {
     expect(ceo.capUsd).toBe(10)
   })
 
-  it('opens every hall for an owner', () => {
-    expect(snap.viewerTier).toBeGreaterThanOrEqual(
-      Math.max(...snap.rungs.map((r) => r.tier)),
-    )
+  it('publishes no viewer standing at all', () => {
+    // Was 'opens every hall for an owner', asserted through `viewerTier`.
+    // That field was the maximum of the ranks it was compared against, so it
+    // opened everything by construction and proved nothing. Retracted and
+    // inverted: the snapshot must not carry a standing for anyone.
+    expect('viewerTier' in snap).toBe(false)
   })
 
   it('keeps a room the policy governs but no office has a name for', () => {
@@ -70,17 +72,16 @@ describe('ladderFromPolicy — owner', () => {
 describe('ladderFromPolicy — no budgets at all', () => {
   // The guest document (trust levels, no budgets) is no longer served to
   // anybody. What remains is the degenerate case: a policy that names rooms
-  // but budgets none of them. The ladder must then be empty and viewerTier
-  // must be -1 — opening nothing — rather than quietly granting the top rung
-  // of an empty set.
+  // but budgets none of them. The ladder must then be empty, rather than
+  // inventing rungs for rooms the policy gave no cap.
   const snap = ladderFromPolicy({ rooms: [{ room: 'lobby' }, { room: 'ceo-office' }] })
 
   it('draws no rung it cannot place on the mountain by budget', () => {
     expect(snap.rungs).toHaveLength(0)
   })
 
-  it('grants no standing rather than defaulting to the top', () => {
-    expect(snap.viewerTier).toBe(-1)
+  it('grants no standing, because it has none to grant', () => {
+    expect('viewerTier' in snap).toBe(false)
   })
 
   it('still reads the occupants, so the halls are not lost with the rungs', () => {

@@ -405,13 +405,9 @@ export const SectApp: React.FC = () => {
     [tracked, office],
   )
 
-  const rung = ladder?.rungs.find((r) => r.room === room)
-  // Signed out means the server answered 401 and there is no ladder at all —
-  // not a viewer with a low tier. There is no second principal any more: you
-  // are the owner or you are outside. The veil stays reserved for a viewer
-  // who HAS standing and still lacks enough of it for one particular hall.
+  // Signed out means the server answered 401 and there is no ladder at all.
+  // There is no second principal: you are the owner or you are outside.
   const signedOut = !ladder
-  const locked = Boolean(rung && ladder && rung.tier > ladder.viewerTier)
   // The hall's name is now a FACT about the owner's filesystem, not a mood:
   // `nameId` is what they call the folder, `nameEn` is where it lives on disk.
   // An unknown room resolves to undefined and Hall falls back to the raw id —
@@ -516,7 +512,6 @@ export const SectApp: React.FC = () => {
           room={room}
           hall={hall}
           plate={plate}
-          locked={locked}
           occupancyKnown={!signedOut}
           cultivators={cultivators}
           ghosts={ghosts}

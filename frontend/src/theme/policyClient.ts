@@ -19,8 +19,7 @@ import { sectLadder, type PolicyRoomLike } from './sect'
 export interface PolicySnapshot {
   /** Ladder rungs, lowest hall first. */
   rungs: SectRung[]
-  /** Highest tier this viewer may enter. */
-  viewerTier: number
+
   /**
    * Who the SERVER says is standing in each hall, agent id -> room.
    *
@@ -63,9 +62,6 @@ interface ServerPolicy {
   defaultRoom?: string
 }
 
-/** No rungs at all means no standing: nothing on the mountain opens. */
-const NO_STANDING = -1
-
 /**
  * agent -> room, for every placement the server reports.
  *
@@ -102,12 +98,11 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
     if (typeof r.budgetHourlyUsd === 'number') byId[r.room] = { budgetHourlyUsd: r.budgetHourlyUsd }
   }
   const rungs = sectLadder(byId)
-  // The viewer may go anywhere the policy describes: the top of the ladder.
-  // canEnter() is tier <= viewerTier, so the highest tier opens all of them.
+  // RETRACTED with `tier`: there is one owner, so there was never a second
+  // standing to compare against. See the note in theme/sect.ts.
   // An empty ladder yields -1, which opens nothing — the honest answer when
   // the policy carries no budgeted room at all.
-  const top = rungs.reduce((m, r) => Math.max(m, r.tier), NO_STANDING)
-  return { rungs, viewerTier: top, placements, defaultRoom }
+  return { rungs, placements, defaultRoom }
 }
 
 /** Fetch /policy with credentials and adapt it to the ladder. Never throws:

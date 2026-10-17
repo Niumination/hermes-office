@@ -116,7 +116,6 @@ export const Hall: React.FC<{
   room: string
   hall: SectHall | undefined
   plate: string
-  locked: boolean
   /**
    * False when the office refused to say who is here — no session, so
    * `/policy occupants` answered 401 and the floor plan is unread.
@@ -137,7 +136,7 @@ export const Hall: React.FC<{
    * the exact lie the floor plan was fixed to stop telling.
    */
   ghosts?: Cultivator[]
-}> = ({ room, hall, plate, locked, occupancyKnown, cultivators, ghosts = [] }) => {
+}> = ({ room, hall, plate, occupancyKnown, cultivators, ghosts = [] }) => {
   return (
     <main className="sect-stage" aria-label={hall ? `${hall.nameId} — ${hall.nameEn}` : room}>
       <div
@@ -153,49 +152,47 @@ export const Hall: React.FC<{
       <div className="sect-hall__vig" aria-hidden="true" />
       <div className="sect-hall__frame" aria-hidden="true" />
 
-        {!locked && (
-          <div className="sect-court">
-            {!occupancyKnown ? (
-              <p className="sect-court__unknown sect-script">
-                Tidak diketahui
-                <small>Belum masuk — kantor tidak menjawab siapa yang ada di sini</small>
-              </p>
-            ) : cultivators.length === 0 ? (
-              <p className="sect-court__empty sect-script">Balai kosong</p>
-            ) : (
-            // placeAll returns back-to-front, so painting in order gives
-            // correct overlap without any per-figure z juggling here.
-            placeAll(cultivators).map((c) => (
-              <Disciple
+        <div className="sect-court">
+          {!occupancyKnown ? (
+            <p className="sect-court__unknown sect-script">
+              Tidak diketahui
+              <small>Belum masuk — kantor tidak menjawab siapa yang ada di sini</small>
+            </p>
+          ) : cultivators.length === 0 ? (
+            <p className="sect-court__empty sect-script">Balai kosong</p>
+          ) : (
+          // placeAll returns back-to-front, so painting in order gives
+          // correct overlap without any per-figure z juggling here.
+          placeAll(cultivators).map((c) => (
+            <Disciple
+              key={c.id}
+              c={c}
+              placed={{ station: c.station, scale: c.scale, z: c.z }}
+            />
+          ))
+        )}
+
+        {/* Nameplates ride in their own layer above every figure.
+            Inside the figure they inherited that figure's depth, so a
+            disciple standing in front cropped the name of the one behind
+            — `code-reviewer` read as `e-reviewer`. Bodies still occlude
+            each other by depth; only the captions float clear. */}
+        {cultivators.length > 0 && (
+          <div className="sect-court__plates" aria-hidden="true">
+            {placeAll(cultivators).map((c) => (
+              <span
                 key={c.id}
-                c={c}
-                placed={{ station: c.station, scale: c.scale, z: c.z }}
-              />
-            ))
-          )}
-
-          {/* Nameplates ride in their own layer above every figure.
-              Inside the figure they inherited that figure's depth, so a
-              disciple standing in front cropped the name of the one behind
-              — `code-reviewer` read as `e-reviewer`. Bodies still occlude
-              each other by depth; only the captions float clear. */}
-          {cultivators.length > 0 && (
-            <div className="sect-court__plates" aria-hidden="true">
-              {placeAll(cultivators).map((c) => (
-                <span
-                  key={c.id}
-                  className="sect-court__plate"
-                  style={{ left: `${c.station.x}%`, top: `${c.station.y}%` }}
-                >
-                  {c.name}
-                </span>
-              ))}
-            </div>
-          )}
+                className="sect-court__plate"
+                style={{ left: `${c.station.x}%`, top: `${c.station.y}%` }}
+              >
+                {c.name}
+              </span>
+            ))}
+          </div>
+        )}
         </div>
-      )}
 
-      {!locked && ghosts.length > 0 && (
+      {ghosts.length > 0 && (
         <div className="sect-court sect-court--ghosts">
           <p className="sect-court__label sect-script">
             Tercatat di daftar — belum pernah terlihat
@@ -214,19 +211,6 @@ export const Hall: React.FC<{
         </div>
       </div>
 
-      {locked && (
-        <div className="sect-veil" role="alert">
-          <div>
-            <p className="sect-veil__name">Lenyap di Balik Kabut</p>
-            <p className="sect-veil__en">The cloud is too deep to see through</p>
-            <p className="sect-veil__why">
-              Aula ini di atas tataran Anda. Servernya menolak dengan 403 — tampilan
-              ini tidak menyembunyikan data yang sudah dikirim, server memang
-              tidak pernah mengirimkannya.
-            </p>
-          </div>
-        </div>
-      )}
     </main>
   )
 }

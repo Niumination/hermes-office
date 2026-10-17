@@ -92,14 +92,22 @@ export interface SectRung {
   hall: SectHall
   /** Straight from the policy. Never rounded, never re-stated. */
   capUsd: number
-  /**
-   * 0 at the foot of the mountain and upward. Rooms on the same budget share
-   * a tier, because two rooms that cost the same grant the same power — the
-   * kitchen and the nap room are both idle rooms at $0, and drawing one above
-   * the other would invent a hierarchy the policy does not have.
-   */
-  tier: number
 }
+
+/*
+  RETRACTED: `tier`, and `canEnter(rung, viewerTier)` with it.
+
+  The trust tiers came out in 20248f2, but the idea survived here in
+  disguise: rungs were ranked by budget band and that rank was called a
+  tier, `viewerTier` was then defined as the HIGHEST rank present, and
+  `canEnter` compared the two. A predicate that is true by construction is
+  not a guarantee, it is a decoration shaped like one — and it kept a
+  second principal alive in the type system of an office that has exactly
+  one owner.
+
+  Budgets stay: `capUsd` is the spending brake and a fact about policy.
+  What is gone is the standing ladder built on top of it.
+*/
 
 /**
  * Build the ladder from a policy document, lowest hall first.
@@ -120,23 +128,9 @@ export function sectLadder(rooms: Record<string, PolicyRoomLike>): SectRung[] {
     }))
     .sort((a, b) => a.capUsd - b.capUsd || a.room.localeCompare(b.room))
 
-  const bands = [...new Set(entries.map((e) => e.capUsd))].sort((a, b) => a - b)
-  return entries.map((e) => ({ ...e, tier: bands.indexOf(e.capUsd) }))
+  return entries
 }
 
-/**
- * Can a viewer holding `viewerTier` enter this rung?
- *
- * The office already does this server-side, and since 9c894ba it does it in
- * one place rather than a dozen: there is no guest token and no kiosk to
- * downgrade itself, so a request either carries the owner session or gets
- * 401. This is the same rule client-side, letting the UI refuse to draw a
- * hall it would not be allowed to read — rather than drawing it and hoping
- * the fetch fails.
- */
-export function canEnter(rung: SectRung, viewerTier: number): boolean {
-  return rung.tier <= viewerTier
-}
 
 // ── Tenaga: names for the burn states ──────────────────────────────────
 //
