@@ -14,7 +14,7 @@
 // A room with no policy entry (parking, rooftop, gym, manager-office) is not
 // a sect hall. It is not governed, so it has no standing on the mountain.
 
-import type { RoomId } from '../rooms'
+import { ROOMS, OFFICES } from '../eco/ecosystem'
 
 export interface SectHall {
   /**
@@ -40,16 +40,25 @@ export interface SectHall {
 /**
  * Naming only. Deliberately contains no ordering, no tier and no price: if a
  * number lived here it would be a second copy of the policy, free to drift.
+ *
+ * The eight hand-written halls that used to live here were the fork's, and
+ * six of them named nowhere. Names now come from the ecosystem model, which
+ * describes the rooms the owner actually works in.
  */
-export const SECT_HALLS: Partial<Record<RoomId, SectHall>> = {
-  lobby: { nameId: 'Gerbang Gunung', nameEn: 'Mountain Gate', band: 'Kaki Awan' },
-  'meeting-room': { nameId: 'Balai Musyawarah', nameEn: 'Council Hall', band: 'Pelataran' },
-  'main-office': { nameId: 'Gelanggang Latih', nameEn: 'Cultivation Court', band: 'Teras Tengah' },
-  'mac-studio': { nameId: 'Bilik Ramuan', nameEn: 'Elixir Room', band: 'Puncak Sisi' },
-  'server-room': { nameId: 'Bilik Rajah', nameEn: 'Array Chamber', band: 'Gunung Dalam' },
-  'ceo-office': { nameId: 'Balai Sesepuh', nameEn: 'Sect Master Hall', band: 'Puncak' },
-  kitchen: { nameId: 'Balai Santap', nameEn: 'Refectory', band: 'Lereng' },
-  'nap-room': { nameId: 'Bilik Hening', nameEn: 'Quiet Room', band: 'Lereng' },
+function hallFor(id: string): SectHall {
+  const room = ROOMS.find((r) => r.id === id)
+  if (room) {
+    return { nameId: room.label, nameEn: room.path, band: OFFICES[room.office].label }
+  }
+  /*
+    A governed room no office describes. It is NOT dropped: the policy is the
+    authority on which rooms exist and carry budget, and this file's job is to
+    name them, not to overrule them. Showing the id verbatim says plainly that
+    the room is real and the name is missing — the previous behaviour threw the
+    room away and left the ladder quietly shorter than the policy it was built
+    from.
+  */
+  return { nameId: id, nameEn: id, band: 'Belum dipetakan' }
 }
 
 /** The shape this needs from a policy room. Anything else is ignored. */
@@ -58,7 +67,7 @@ export interface PolicyRoomLike {
 }
 
 export interface SectRung {
-  room: RoomId
+  room: string
   hall: SectHall
   /** Straight from the policy. Never rounded, never re-stated. */
   capUsd: number
@@ -74,18 +83,20 @@ export interface SectRung {
 /**
  * Build the ladder from a policy document, lowest hall first.
  *
- * Rooms the policy does not govern are dropped, as are governed rooms with no
- * hall name — the second case is a gap in this file, not in the policy, and
- * it is better to leave the room off the mountain than to invent a name.
+ * Rooms the policy does not govern are dropped — that much is still right,
+ * since the policy is what grants standing. Governed rooms this file cannot
+ * name are NOT dropped any more. That rule was written as modesty ("better
+ * than inventing a name") but it let a gap in one naming table shorten the
+ * ladder built from the policy, which is a different and much worse edit: a
+ * budgeted room simply stopped existing, with nothing on screen to say so.
  */
 export function sectLadder(rooms: Record<string, PolicyRoomLike>): SectRung[] {
   const entries = Object.entries(rooms)
     .map(([id, room]) => ({
-      room: id as RoomId,
-      hall: SECT_HALLS[id as RoomId],
+      room: id,
+      hall: hallFor(id),
       capUsd: room?.budgetHourlyUsd ?? 0,
     }))
-    .filter((e): e is { room: RoomId; hall: SectHall; capUsd: number } => Boolean(e.hall))
     .sort((a, b) => a.capUsd - b.capUsd || a.room.localeCompare(b.room))
 
   const bands = [...new Set(entries.map((e) => e.capUsd))].sort((a, b) => a - b)

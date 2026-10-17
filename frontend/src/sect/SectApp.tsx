@@ -116,10 +116,11 @@ export const SectApp: React.FC = () => {
   // A room id from the ecosystem model, never a fork RoomId. 'root' exists
   // in both offices, which is why switching office cannot land nowhere.
   const [room, setRoom] = useState<string>('root')
-  // Follow the activity until the operator picks a hall themselves. Opening on
-  // an empty Gerbang Gunung while three disciples work two halls up makes the product
-  // look asleep; yanking the view around after someone has deliberately
-  // navigated is worse. So: follow by default, stop following on first click.
+  // Follow the activity until the operator picks a room themselves. Opening on
+  // an empty landing room while three disciples work elsewhere makes the
+  // product look asleep; yanking the view around after someone has
+  // deliberately navigated is worse. So: follow by default, stop following on
+  // first click.
   const followRef = useRef(true)
   const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda' | 'posts'>('chronicle')
   const [, tick] = useState(0)

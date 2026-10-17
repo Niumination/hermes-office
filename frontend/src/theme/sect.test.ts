@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { SECT_HALLS, sectLadder, canEnter, type PolicyRoomLike } from './sect'
+import { sectLadder, canEnter, type PolicyRoomLike } from './sect'
 
 // A miniature of the real floor-plan policy. Mirroring the shape rather than
 // importing the server keeps this a frontend test, but the "every governed
@@ -50,15 +50,28 @@ describe('sect theme', () => {
     expect(rooms).not.toContain('gym')
   })
 
-  it('drops a governed room rather than inventing a name for it', () => {
+  it('keeps a governed room it cannot name, and shows the id instead', () => {
+    // Inverted from "drops a governed room rather than inventing a name".
+    // That read as modesty and acted as deletion: a gap in the naming table
+    // made a budgeted room vanish from a ladder built out of the policy, with
+    // nothing on screen to admit it. The policy decides which rooms exist.
     const withUnknown = { ...POLICY, 'boiler-room': { budgetHourlyUsd: 4 } }
-    expect(sectLadder(withUnknown).map((r) => r.room)).not.toContain('boiler-room')
+    const rung = sectLadder(withUnknown).find((r) => r.room === 'boiler-room')
+    expect(rung).toBeTruthy()
+    expect(rung!.hall.nameId).toBe('boiler-room')
+    expect(rung!.hall.band).toBe('Belum dipetakan')
+  })
+
+  it('names a governed room from the ecosystem when it knows it', () => {
+    const rung = sectLadder({ infra: { budgetHourlyUsd: 2 } })[0]
+    expect(rung.hall.nameId).toBe('Infrastruktur & Monitoring')
   })
 
   it('states no price or order of its own', () => {
-    // If a number ever appears in SECT_HALLS it is a second copy of the
-    // policy, free to drift. This is the test that stops that.
-    const blob = JSON.stringify(SECT_HALLS)
+    // If a number ever appears in the naming layer it is a second copy of the
+    // policy, free to drift. This is the test that stops that. The names now
+    // come from the ecosystem model, so that is what gets checked.
+    const blob = JSON.stringify(sectLadder(POLICY).map((r) => r.hall))
     expect(blob).not.toMatch(/budget|usd|tier|\$\d/i)
   })
 

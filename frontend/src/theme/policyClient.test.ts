@@ -51,12 +51,19 @@ describe('ladderFromPolicy — owner', () => {
     )
   })
 
-  it('drops a room the policy governs but the sect has no name for', () => {
+  it('keeps a room the policy governs but no office has a name for', () => {
+    // Inverted. The policy is the authority on which rooms exist and what
+    // they may spend; a missing entry in a naming table is this codebase's
+    // gap, not the policy's, and it must not shorten the ladder. The room
+    // arrives carrying its own id as its name and a band that says plainly
+    // that nobody has mapped it.
     const withBoiler = ladderFromPolicy({
       ...OWNER_POLICY,
       rooms: [...OWNER_POLICY.rooms, { room: 'boiler-room', budgetHourlyUsd: 4 }],
     })
-    expect(withBoiler.rungs.map((r) => r.room)).not.toContain('boiler-room')
+    const rung = withBoiler.rungs.find((r) => r.room === 'boiler-room')
+    expect(rung).toBeTruthy()
+    expect(rung!.hall.band).toBe('Belum dipetakan')
   })
 })
 

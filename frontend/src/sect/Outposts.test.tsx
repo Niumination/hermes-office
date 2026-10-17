@@ -263,5 +263,28 @@ describe('useOutposts', () => {
     await act(async () => { await result.current.refresh() })
     expect(typeof result.current.lastOkTs).toBe('number')
   })
+
+  /**
+   * The lookup behind this used to be SECT_HALLS, and anything it did not
+   * recognise was dropped — described in the source as "the honest outcome".
+   * It was the opposite: the owner wrote a hall name into their own JSON and
+   * the screen decided not to repeat it back. These two tests pin both
+   * halves: a known room is glossed, an unknown one is still shown.
+   */
+  it('glosses a hall that names an ecosystem room', () => {
+    render(<Outposts
+      isOwner={false}
+      outposts={[post({ hall: 'infra' })]} problems={[]} loaded stale={false} lastOkTs={1} />)
+    expect(screen.getByText('Infrastruktur & Monitoring')).toBeTruthy()
+  })
+
+  it('still shows a hall it cannot match, rather than dropping it', () => {
+    render(<Outposts
+      isOwner={false}
+      outposts={[post({ hall: 'gudang-belakang' })]} problems={[]} loaded stale={false} lastOkTs={1} />)
+    const el = screen.getByText('gudang-belakang')
+    expect(el).toBeTruthy()
+    expect(el.className).toContain('sect-post__hall--unmatched')
+  })
 })
 

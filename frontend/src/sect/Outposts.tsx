@@ -16,15 +16,30 @@
  */
 import React, { useState, useCallback } from 'react'
 import type { Outpost, OutpostState } from './useOutposts'
-import { SECT_HALLS } from '../theme/sect'
+import { ROOMS } from '../eco/ecosystem'
 
 /**
- * A desk's `hall` is a free-form string from an owner-written JSON file, not
- * a RoomId the compiler can vouch for. Looking it up through a widened view
- * keeps an unknown hall from being a type error here and a crash there: an
- * unrecognised name simply renders no hall, which is the honest outcome.
+ * An outpost's `hall` is a free-form string from an owner-written JSON file,
+ * so it is matched against the ecosystem rooms rather than the fork's eight
+ * halls. Rooms are searched across BOTH offices on purpose: an outpost is a
+ * thing watched from a distance and has no reason to sit in whichever office
+ * the viewer happens to be looking at.
  */
-const HALL_BY_ID = SECT_HALLS as Record<string, { nameId: string } | undefined>
+const ROOM_LABEL: Record<string, string> = Object.fromEntries(
+  ROOMS.map((r) => [r.id, r.label]),
+)
+
+/**
+ * The old version dropped any name it did not recognise and called that "the
+ * honest outcome". It was not: the owner wrote a hall down, and the screen
+ * quietly decided not to repeat it. An unrecognised name is now shown as the
+ * owner typed it, marked as unmatched rather than deleted.
+ */
+function hallOf(raw: string | null | undefined): { text: string; known: boolean } | undefined {
+  if (!raw) return undefined
+  const known = ROOM_LABEL[raw]
+  return known ? { text: known, known: true } : { text: raw, known: false }
+}
 
 /** Sect names for the four states. */
 const STATE_LABEL: Record<OutpostState, string> = {
@@ -174,7 +189,7 @@ export default function Outposts(props: OutpostsProps) {
       )}
 
       {outposts.map((o) => {
-        const hall = o.hall ? HALL_BY_ID[o.hall] : undefined
+        const hall = hallOf(o.hall)
         const hasActions = isOwner && o.actions && o.actions.length > 0
         return (
           <article
@@ -193,7 +208,16 @@ export default function Outposts(props: OutpostsProps) {
               </header>
 
               <p className="sect-post__meta">
-                {hall && <span className="sect-post__hall">{hall.nameId}</span>}
+                {hall && (
+                  <span
+                    className={`sect-post__hall${hall.known ? '' : ' sect-post__hall--unmatched'}`}
+                    title={hall.known
+                      ? 'Ruang di ekosistem'
+                      : 'Nama ruang dari berkas Anda yang tidak cocok dengan ruang mana pun'}
+                  >
+                    {hall.text}
+                  </span>
+                )}
                 {hall && ' · '}
                 <span className="sect-post__kind">{o.kind === 'file' ? 'berkas' : 'http'}</span>
                 {o.lastTs != null && <> · terakhir {clock(o.lastTs)}</>}

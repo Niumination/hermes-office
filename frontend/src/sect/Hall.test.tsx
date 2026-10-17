@@ -11,14 +11,17 @@ import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import Hall from './Hall'
-import { SECT_HALLS } from '../theme/sect'
+import type { SectHall } from '../theme/sect'
 
-/** SECT_HALLS is indexed by string, so TS types every lookup as possibly
- *  undefined. A test may assert the hall exists; the component may not. */
-function hall(id: keyof typeof SECT_HALLS) {
-  const h = SECT_HALLS[id]
-  if (!h) throw new Error(`no sect hall named ${String(id)}`)
-  return h
+/**
+ * Hall takes a name triple and renders it; it has never cared where the names
+ * came from. These used to be pulled out of SECT_HALLS, so the fixtures were
+ * the fork's eight rooms and every test read as though a "ceo-office" existed.
+ * A local fixture keeps the component's contract under test without tying it
+ * to a vocabulary the office no longer speaks.
+ */
+function hall(id: string): SectHall {
+  return { nameId: `Balai ${id}`, nameEn: id, band: 'Uji' }
 }
 
 const cul = (over = {}) => ({

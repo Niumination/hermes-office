@@ -43,14 +43,15 @@ export const ARCHETYPES: readonly Archetype[] = [
 
 /**
  * Named agents this office actually runs. Keyed by id because identity beats
- * role: `boss` reports role "reviewer", but the Balai Sesepuh is his hall and
- * drawing the sect head as a junior scholar would be a worse answer than the
- * role lookup gives.
+ * role: `boss` reports role "reviewer", and drawing the person who runs the
+ * place as a junior scholar would be a worse answer than the role lookup
+ * gives. The hall that used to justify this — Balai Sesepuh — was a fork
+ * invention and is gone; the identity argument is what survives it.
  */
 const BY_ID: Record<string, Archetype> = {
-  boss: 'elder',        // Ketua — Balai Sesepuh
+  boss: 'elder',        // Ketua — the owner of the office
   cloud: 'cultivator',  // Awan — the generalist that does the work
-  mac: 'alchemist',     // Alat — Bilik Ramuan is the mac-studio
+  mac: 'alchemist',     // Alat — the Mac workstation
   octo: 'forge',
   github: 'forge',
   'cron-runner': 'physician',
