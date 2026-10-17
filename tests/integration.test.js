@@ -648,8 +648,8 @@ test("policy: /policy describes the full floor plan to an owner", async () => {
   const r = await fetch(BASE + "/policy", { headers: { Authorization: `Bearer ${TOKENS.owner}` } });
   assert.equal(r.status, 200);
   const j = await r.json();
-  assert.equal(j.defaultRoom, "lobby");
-  const sr = j.rooms.find((x) => x.room === "server-room");
+  assert.equal(j.defaultRoom, "belum-dipetakan");
+  const sr = j.rooms.find((x) => x.room === "lightvela/infra");
   assert.equal(sr.entryApproval, true);
   assert.ok(sr.approval.includes("deploy"));
   assert.equal((await fetch(BASE + "/policy")).status, 401, "but not anonymously");
@@ -657,22 +657,22 @@ test("policy: /policy describes the full floor plan to an owner", async () => {
 
 test("policy: an unassigned agent is confined to the lobby", async () => {
   const d = await policyCheck({ agent: "newcomer", tool: "deploy" });
-  assert.equal(d.room, "lobby");
+  assert.equal(d.room, "belum-dipetakan");
   assert.equal(d.allow, false);
-  assert.match(d.hint, /Server Room/, "the denial says where it would be allowed");
+  assert.match(d.hint, /Infrastruktur & Monitoring/, "the denial says where it would be allowed");
 });
 
 test("policy: only an owner may grant scope by moving an agent", async () => {
-  assert.equal((await moveAgent("mover", "main-office", TOKENS.cloud)).status, 403);
-  assert.equal((await moveAgent("mover", "main-office", "no-such-token")).status, 401);
-  const ok = await moveAgent("mover", "main-office", TOKENS.owner);
+  assert.equal((await moveAgent("mover", "mac/sites", TOKENS.cloud)).status, 403);
+  assert.equal((await moveAgent("mover", "mac/sites", "no-such-token")).status, 401);
+  const ok = await moveAgent("mover", "mac/sites", TOKENS.owner);
   assert.equal(ok.status, 200);
-  assert.equal((await ok.json()).room, "main-office");
+  assert.equal((await ok.json()).room, "mac/sites");
 });
 
 test("policy: moving an agent changes what it may do", async () => {
   assert.equal((await policyCheck({ agent: "scoped", tool: "write_file" })).allow, false);
-  await moveAgent("scoped", "main-office");
+  await moveAgent("scoped", "mac/sites");
   assert.equal((await policyCheck({ agent: "scoped", tool: "write_file" })).allow, true);
 });
 
@@ -680,17 +680,17 @@ test("policy: a nonexistent room is rejected, never silently granted", async () 
   const r = await moveAgent("ghost", "atlantis");
   assert.equal(r.status, 400);
   assert.match((await r.json()).error, /Unknown room/);
-  assert.equal((await policyCheck({ agent: "ghost", tool: "bash" })).room, "lobby");
+  assert.equal((await policyCheck({ agent: "ghost", tool: "bash" })).room, "belum-dipetakan");
 });
 
 test("policy: entering a privileged room is held at the door, then performed on approval", async () => {
-  const held = await moveAgent("climber", "server-room");
+  const held = await moveAgent("climber", "lightvela/infra");
   assert.equal(held.status, 202, "202 Accepted — the request exists but has not happened");
   const { approvalId } = await held.json();
   assert.ok(approvalId);
 
   // Still in the lobby while pending.
-  assert.equal((await policyCheck({ agent: "climber", tool: "bash" })).room, "lobby");
+  assert.equal((await policyCheck({ agent: "climber", tool: "bash" })).room, "belum-dipetakan");
 
   // It shows up in the queue.
   const queue = await (await fetch(BASE + "/approvals", {
@@ -713,11 +713,11 @@ test("policy: entering a privileged room is held at the door, then performed on 
   });
   assert.equal(done.status, 200);
   assert.equal((await done.json()).status, "approved");
-  assert.equal((await policyCheck({ agent: "climber", tool: "web_search" })).room, "server-room");
+  assert.equal((await policyCheck({ agent: "climber", tool: "web_search" })).room, "lightvela/infra");
 });
 
 test("policy: a gated tool needs its own sign-off even inside the room", async () => {
-  await moveAgent("op", "server-room");
+  await moveAgent("op", "lightvela/infra");
   const entry = await (await fetch(BASE + "/approvals", {
     headers: { Authorization: `Bearer ${TOKENS.owner}` },
   })).json();
@@ -749,14 +749,14 @@ test("policy: a gated tool needs its own sign-off even inside the room", async (
 });
 
 test("policy: a denied request leaves the agent where it was", async () => {
-  const held = await moveAgent("rejected", "server-room");
+  const held = await moveAgent("rejected", "lightvela/infra");
   const { approvalId } = await held.json();
   await fetch(BASE + `/approvals/${approvalId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKENS.owner}` },
     body: JSON.stringify({ approve: false }),
   });
-  assert.equal((await policyCheck({ agent: "rejected", tool: "web_search" })).room, "lobby");
+  assert.equal((await policyCheck({ agent: "rejected", tool: "web_search" })).room, "belum-dipetakan");
 
   // And it cannot be resolved a second time.
   const again = await fetch(BASE + `/approvals/${approvalId}`, {
@@ -773,13 +773,13 @@ test("policy: a room caps the model tier reachable inside it", async () => {
   assert.equal(d.action, "restrict");
   assert.ok(d.suggestModel);
 
-  await moveAgent("tiered", "main-office");
+  await moveAgent("tiered", "mac/sites");
   assert.equal((await policyCheck({ agent: "tiered", tool: "llm:x", model: "claude-opus-4" })).allow, true);
 });
 
 test("policy: bridges cannot forge governance events", async () => {
   for (const type of ["agent_moved", "approval_requested", "approval_resolved"]) {
-    const r = await post("/event", { type, agent: "x", room: "server-room", approvalId: "ap-1", state: "approved" }, TOKENS.cloud);
+    const r = await post("/event", { type, agent: "x", room: "lightvela/infra", approvalId: "ap-1", state: "approved" }, TOKENS.cloud);
     assert.equal(r.status, 400, type);
     assert.match((await r.json()).error, /internal-only/, type);
   }
@@ -832,7 +832,7 @@ test("the owner sees whole objects — nothing is redacted on the way out", asyn
 
   const policy = await getAs("/policy", TOKENS.owner);
   assert.ok(
-    policy.rooms.find((r) => r.room === "server-room").approval.includes("kubectl"),
+    policy.rooms.find((r) => r.room === "lightvela/infra").approval.includes("kubectl"),
     "the privilege map is the owner's to read"
   );
   for (const room of policy.rooms) {
@@ -841,14 +841,14 @@ test("the owner sees whole objects — nothing is redacted on the way out", asyn
 });
 
 test("approvals name the agent and the tool for the owner", async () => {
-  await moveAgent("secretive", "server-room");
+  await moveAgent("secretive", "lightvela/infra");
   const owner = await getAs("/approvals", TOKENS.owner);
   assert.ok(owner.pending.some((a) => a.agent === "secretive"));
   for (const a of owner.pending) assert.equal(a.redacted, undefined);
 });
 
 test("a single approval is readable by the owner and nobody else", async () => {
-  const held = await moveAgent("probe", "server-room");
+  const held = await moveAgent("probe", "lightvela/infra");
   const { approvalId } = await held.json();
   assert.equal(await statusAs(`/approvals/${approvalId}`), 401);
   assert.equal(await statusAs(`/approvals/${approvalId}`, TOKENS.owner), 200);
@@ -860,7 +860,7 @@ test("the socket streams whole events — there is no second frame shape", async
   const ws = await wsConnect(TOKENS.owner);
   await new Promise((r) => { setTimeout(r, 50); });
 
-  await moveAgent("wsprobe", "main-office");
+  await moveAgent("wsprobe", "mac/sites");
   await post("/event", {
     type: "tool_done", agentId: "wsprobe", tool: "llm:x",
     costUsd: 0.02, inputTokens: 1000,
@@ -909,7 +909,7 @@ test("ledger: a refusal is recorded with enough detail to reconstruct it", async
 });
 
 test("ledger: the whole approval lifecycle lands in the chain", async () => {
-  const held = await moveAgent("chainwalker", "server-room");
+  const held = await moveAgent("chainwalker", "lightvela/infra");
   const { approvalId } = await held.json();
   await post(`/approvals/${approvalId}`, { approve: true }, TOKENS.owner);
 
@@ -1066,7 +1066,7 @@ test("presence: an object-form agent is keyed by id/name, not [object Object]", 
 
 test("an event from a bridge places its agent in the default room", async () => {
   const before = await getAs("/policy", TOKENS.owner);
-  const lobbyBefore = before.rooms.find((r) => r.room === "lobby");
+  const lobbyBefore = before.rooms.find((r) => r.room === "belum-dipetakan");
   assert.ok(
     !lobbyBefore.occupants.some((o) => o.agent === "freshling"),
     "precondition: agent is not on the floor yet",
@@ -1077,13 +1077,13 @@ test("an event from a bridge places its agent in the default room", async () => 
 
   await waitFor(async () => {
     const snap = await getAs("/policy", TOKENS.owner);
-    const lobby = snap.rooms.find((r) => r.room === "lobby");
+    const lobby = snap.rooms.find((r) => r.room === "belum-dipetakan");
     return lobby.occupants.some((o) => o.agent === "freshling");
   });
 
   const after = await getAs("/policy", TOKENS.owner);
   const placed = after.rooms
-    .find((r) => r.room === "lobby")
+    .find((r) => r.room === "belum-dipetakan")
     .occupants.find((o) => o.agent === "freshling");
   assert.equal(placed.grantedBy, "auto", "the placement records that nobody signed for it");
 });
@@ -1095,13 +1095,13 @@ test("auto-placement never promotes an agent out of the room it was put in", asy
   await post("/event", { type: "tool_call", agentId: "climber", tool: "bash" }, TOKENS.cloud);
   await waitFor(async () => {
     const s = await getAs("/policy", TOKENS.owner);
-    return s.rooms.find((r) => r.room === "lobby").occupants.some((o) => o.agent === "climber");
+    return s.rooms.find((r) => r.room === "belum-dipetakan").occupants.some((o) => o.agent === "climber");
   });
 
   const moved = await fetch(BASE + "/agents/climber/room", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKENS.owner}` },
-    body: JSON.stringify({ room: "main-office" }),
+    body: JSON.stringify({ room: "mac/sites" }),
   });
   assert.equal(moved.status, 200);
 
@@ -1110,8 +1110,8 @@ test("auto-placement never promotes an agent out of the room it was put in", asy
   await post("/event", { type: "tool_call", agentId: "climber", tool: "bash" }, TOKENS.cloud);
 
   const snap = await getAs("/policy", TOKENS.owner);
-  const lobby = snap.rooms.find((r) => r.room === "lobby");
-  const office = snap.rooms.find((r) => r.room === "main-office");
+  const lobby = snap.rooms.find((r) => r.room === "belum-dipetakan");
+  const office = snap.rooms.find((r) => r.room === "mac/sites");
   assert.ok(!lobby.occupants.some((o) => o.agent === "climber"), "not dragged back to lobby");
   assert.ok(office.occupants.some((o) => o.agent === "climber"), "stays where the owner put it");
 });

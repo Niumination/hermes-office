@@ -23,13 +23,13 @@ function session() {
   reset();
   return [
     rec("policy_loaded", { source: "file" }, 1000),
-    rec("agent_moved", { agent: "ana", fromRoom: "lobby", room: "main-office", trust: 2 }, 2000),
-    rec("agent_moved", { agent: "budi", fromRoom: "lobby", room: "meeting-room", trust: 1 }, 3000),
-    rec("policy_decision", { agent: "budi", tool: "kubectl", room: "meeting-room", allow: false, reason: "tool denied in room" }, 4000),
-    rec("approval_requested", { approvalId: "ap-1", agent: "ana", tool: "deploy", kind: "tool", room: "server-room", expiresAt: 9999 }, 5000),
+    rec("agent_moved", { agent: "ana", fromRoom: "belum-dipetakan", room: "mac/sites", trust: 2 }, 2000),
+    rec("agent_moved", { agent: "budi", fromRoom: "belum-dipetakan", room: "mac/labs", trust: 1 }, 3000),
+    rec("policy_decision", { agent: "budi", tool: "kubectl", room: "mac/labs", allow: false, reason: "tool denied in room" }, 4000),
+    rec("approval_requested", { approvalId: "ap-1", agent: "ana", tool: "deploy", kind: "tool", room: "lightvela/infra", expiresAt: 9999 }, 5000),
     rec("budget_transition", { scope: "global", from: "normal", state: "warm", spentUsd: 1.234, limitUsd: 2 }, 6000),
     rec("approval_resolved", { approvalId: "ap-1", agent: "ana", tool: "deploy", state: "granted", decidedBy: "owner" }, 7000),
-    rec("agent_moved", { agent: "ana", fromRoom: "main-office", room: "server-room", trust: 3 }, 8000),
+    rec("agent_moved", { agent: "ana", fromRoom: "mac/sites", room: "lightvela/infra", trust: 3 }, 8000),
   ];
 }
 
@@ -48,7 +48,7 @@ describe("folding", () => {
       rec("chain_checkpoint", { headSeq: 1 }, 1100),
       rec("chain_anchored", { seq: 1 }, 1200),
       rec("dossier_exported", { records: 3 }, 1300),
-      rec("agent_moved", { agent: "ana", room: "lobby" }, 1400),
+      rec("agent_moved", { agent: "ana", room: "belum-dipetakan" }, 1400),
     ]);
     assert.equal(r.frames.length, 1);
     assert.equal(r.frames[0].type, "agent_moved");
@@ -59,8 +59,8 @@ describe("folding", () => {
     const last = r.frames.at(-1);
 
     assert.deepEqual(last.occupants, {
-      "meeting-room": ["budi"],
-      "server-room": ["ana"],
+      "mac/labs": ["budi"],
+      "lightvela/infra": ["ana"],
     });
   });
 
@@ -69,8 +69,8 @@ describe("folding", () => {
     const beforeMove = r.frames.find(f => f.ts === 7000);
     const afterMove = r.frames.find(f => f.ts === 8000);
 
-    assert.deepEqual(beforeMove.occupants["main-office"], ["ana"]);
-    assert.equal(afterMove.occupants["main-office"], undefined);
+    assert.deepEqual(beforeMove.occupants["mac/sites"], ["ana"]);
+    assert.equal(afterMove.occupants["mac/sites"], undefined);
   });
 
   test("places an agent from a decision when no move was recorded", () => {
@@ -78,20 +78,20 @@ describe("folding", () => {
     // during the window is invisible in every frame.
     reset();
     const r = buildReplay([
-      rec("policy_decision", { agent: "citra", tool: "ls", room: "kitchen", allow: true }, 1000),
+      rec("policy_decision", { agent: "citra", tool: "ls", room: "mac/tools", allow: true }, 1000),
     ]);
-    assert.deepEqual(r.frames[0].occupants, { kitchen: ["citra"] });
+    assert.deepEqual(r.frames[0].occupants, { "mac/tools": ["citra"] });
   });
 
   test("a recorded move overrides a room inferred from a decision", () => {
     reset();
     const r = buildReplay([
-      rec("policy_decision", { agent: "ana", tool: "ls", room: "kitchen", allow: true }, 1000),
-      rec("agent_moved", { agent: "ana", fromRoom: "kitchen", room: "ceo-office" }, 2000),
-      rec("policy_decision", { agent: "ana", tool: "ls", room: "kitchen", allow: true }, 3000),
+      rec("policy_decision", { agent: "ana", tool: "ls", room: "mac/tools", allow: true }, 1000),
+      rec("agent_moved", { agent: "ana", fromRoom: "mac/tools", room: "mac/dinas" }, 2000),
+      rec("policy_decision", { agent: "ana", tool: "ls", room: "mac/tools", allow: true }, 3000),
     ]);
     // The stale room on the third record must NOT drag her back.
-    assert.deepEqual(r.frames.at(-1).occupants, { "ceo-office": ["ana"] });
+    assert.deepEqual(r.frames.at(-1).occupants, { "mac/dinas": ["ana"] });
   });
 });
 
@@ -160,7 +160,7 @@ describe("burn state", () => {
 
   test("spentAsOfSeq is null before any money is recorded", () => {
     reset();
-    const r = buildReplay([rec("agent_moved", { agent: "ana", room: "lobby" }, 1000)]);
+    const r = buildReplay([rec("agent_moved", { agent: "ana", room: "belum-dipetakan" }, 1000)]);
     assert.equal(r.frames[0].spentAsOfSeq, null);
     assert.equal(r.frames[0].spentUsd, 0);
   });
@@ -184,8 +184,8 @@ describe("seeding — state before the window opens", () => {
 
     assert.equal(r.frames.length, 1);
     assert.deepEqual(r.frames[0].occupants, {
-      "meeting-room": ["budi"],
-      "server-room": ["ana"],
+      "mac/labs": ["budi"],
+      "lightvela/infra": ["ana"],
     });
   });
 
@@ -248,21 +248,21 @@ describe("determinism — the property that makes this evidence", () => {
   test("occupant lists are sorted, not insertion-ordered", () => {
     reset();
     const r = buildReplay([
-      rec("agent_moved", { agent: "zara", room: "lobby" }, 1000),
-      rec("agent_moved", { agent: "adi", room: "lobby" }, 2000),
-      rec("agent_moved", { agent: "mira", room: "lobby" }, 3000),
+      rec("agent_moved", { agent: "zara", room: "belum-dipetakan" }, 1000),
+      rec("agent_moved", { agent: "adi", room: "belum-dipetakan" }, 2000),
+      rec("agent_moved", { agent: "mira", room: "belum-dipetakan" }, 3000),
     ]);
-    assert.deepEqual(r.frames.at(-1).occupants.lobby, ["adi", "mira", "zara"]);
+    assert.deepEqual(r.frames.at(-1).occupants["belum-dipetakan"], ["adi", "mira", "zara"]);
   });
 
   test("room keys are sorted", () => {
     reset();
     const r = buildReplay([
-      rec("agent_moved", { agent: "a", room: "server-room" }, 1000),
-      rec("agent_moved", { agent: "b", room: "kitchen" }, 2000),
-      rec("agent_moved", { agent: "c", room: "lobby" }, 3000),
+      rec("agent_moved", { agent: "a", room: "lightvela/infra" }, 1000),
+      rec("agent_moved", { agent: "b", room: "mac/tools" }, 2000),
+      rec("agent_moved", { agent: "c", room: "belum-dipetakan" }, 3000),
     ]);
-    assert.deepEqual(Object.keys(r.frames.at(-1).occupants), ["kitchen", "lobby", "server-room"]);
+    assert.deepEqual(Object.keys(r.frames.at(-1).occupants), ["belum-dipetakan", "lightvela/infra", "mac/tools"]);
   });
 
   test("a frame is a snapshot, not a live reference", () => {
@@ -279,7 +279,7 @@ describe("damage and limits", () => {
     reset();
     const r = buildReplay([
       { seq: 1, ts: 1000, type: "agent_moved", actor: null, payload: "{not json" },
-      rec("agent_moved", { agent: "ana", room: "lobby" }, 2000),
+      rec("agent_moved", { agent: "ana", room: "belum-dipetakan" }, 2000),
     ]);
     assert.equal(r.frames.length, 1);
     assert.equal(r.stats.scanned, 2, "the damaged record is still counted");
@@ -297,14 +297,14 @@ describe("damage and limits", () => {
 
   test("accepts an already-parsed payload object", () => {
     reset();
-    const r = buildReplay([{ seq: 1, ts: 1000, type: "agent_moved", payload: { agent: "ana", room: "lobby" } }]);
-    assert.deepEqual(r.frames[0].occupants, { lobby: ["ana"] });
+    const r = buildReplay([{ seq: 1, ts: 1000, type: "agent_moved", payload: { agent: "ana", room: "belum-dipetakan" } }]);
+    assert.deepEqual(r.frames[0].occupants, { "belum-dipetakan": ["ana"] });
   });
 
   test("a move with no room removes the agent from the floor", () => {
     reset();
     const r = buildReplay([
-      rec("agent_moved", { agent: "ana", room: "lobby" }, 1000),
+      rec("agent_moved", { agent: "ana", room: "belum-dipetakan" }, 1000),
       rec("agent_moved", { agent: "ana", room: null }, 2000),
     ]);
     assert.deepEqual(r.frames.at(-1).occupants, {});
@@ -322,7 +322,7 @@ describe("change descriptions", () => {
 
   test("a move names both rooms", () => {
     const r = buildReplay(session());
-    assert.equal(r.frames.find(f => f.ts === 2000).change, "ana → main-office (dari lobby)");
+    assert.equal(r.frames.find(f => f.ts === 2000).change, "ana → mac/sites (dari belum-dipetakan)");
   });
 
   test("a budget transition names both states", () => {

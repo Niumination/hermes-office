@@ -27,7 +27,7 @@ describe("tally", () => {
       decision("ana", "bash", "deny"),
       decision("ana", "bash", "deny"),
       decision("budi", "llm", "allow", { estimatedUsd: 0.5 }),
-      rec("agent_moved", { agent: "ana", room: "server-room" }),
+      rec("agent_moved", { agent: "ana", room: "lightvela/infra" }),
       rec("approval_requested", { agent: "ana", tool: "deploy" }),
       rec("approval_resolved", { agent: "ana", state: "approved", waitedMs: 30_000 }),
     ]);
@@ -108,7 +108,7 @@ describe("the quiet day — the feature most daily reports get wrong", () => {
   test("a busy but healthy day is still quiet — volume alone is not news", () => {
     const records = [
       ...nTimes(500, (i) => decision(`a${i % 9}`, "llm", "allow", { estimatedUsd: 0.001 })),
-      ...nTimes(50, (i) => rec("agent_moved", { agent: `a${i % 9}`, room: "main-office" })),
+      ...nTimes(50, (i) => rec("agent_moved", { agent: `a${i % 9}`, room: "mac/sites" })),
     ];
     assert.equal(buildStandup({ records, now: T0 }).quiet, true);
   });

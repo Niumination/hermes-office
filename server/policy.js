@@ -88,66 +88,193 @@ const anyMatch = (name, patterns) =>
   Array.isArray(patterns) && patterns.some((p) => matchesPattern(name, p));
 
 /**
- * Default floor plan. Mirrors the rooms the UI already draws, ordered from
- * least to most privileged. Rooms absent here inherit the default zone.
+ * Default floor plan — the owner's actual ecosystem.
+ *
+ * Until 2026-10-17 this table held eight rooms inherited from the fork the
+ * project started as: lobby, main-office, meeting-room, server-room,
+ * mac-studio, ceo-office, kitchen, nap-room. It described an office with
+ * staff. This one has two machines and fifteen folders.
+ *
+ * The shape comes from frontend/src/eco/ecosystem.ts, which was transcribed
+ * from the owner's AGENTS.md and project catalogue:
+ *
+ *   KANTOR  ->  RUANG      ->  MEJA  ->  AGEN
+ *   machine     category       repo     telegram topic
+ *
+ * Ids are namespaced `office/room` because `root` exists in BOTH offices and
+ * this map is flat. The same convention already names agents in the frontend
+ * cast table (`mac/orkestrator`, `lightvela/infra`).
+ *
+ * What refuses an action: a missing room, budgetHourlyUsd === 0, the deny
+ * list, the allow list, maxModelTier, and the approval gates. There is no
+ * trust rung — see the retraction at the head of this file.
+ *
+ * Removing a room does not freeze the agents in it. roomFor() checks that an
+ * assignment still names a room in this map and degrades to `defaultRoom`
+ * when it does not, so the eight fork rooms could be withdrawn without
+ * stranding anyone. decide()'s `no policy for this room` is reachable only
+ * when the default room itself is missing from this map — which is the one
+ * invariant this table must hold, and a test below holds it.
+ *
+ * Nothing was carried over, either: assignments live in an in-memory Map
+ * built empty at construction and never rehydrated at boot, so a restart
+ * already leaves every agent unplaced. There was no stored placement to
+ * migrate.
  */
+
+/** Production tooling. It lives on LightVela; the Mac is a workstation. */
+const PRODUCTION = ["deploy", "kubectl", "terraform"];
+/** Production tooling plus anything that reaches a shell or a database. */
+const HANDS_OFF = [...PRODUCTION, "bash", "shell", "psql"];
+
 export const DEFAULT_POLICY = {
-  defaultRoom: "lobby",
+  defaultRoom: "belum-dipetakan",
   rooms: {
-    // Intake. Where an unrecognised agent lands: read-only tools, the
-    // smallest allowance in the building.
-    lobby: {
-      label: "Lobby",
+    // Not a place. Where an agent sits when the office cannot say which room
+    // it belongs to — the same words the UI already prints for an unmapped
+    // agent. Read-only tools and the smallest allowance in the building.
+    "belum-dipetakan": {
+      label: "Belum dipetakan",
       tools: { allow: ["web_search", "read_file", "fetch", "llm:*"], deny: [] },
       maxModelTier: "cheap",
       budgetHourlyUsd: 0.25,
       approval: [],
     },
-    // Ordinary work. Most agents live here.
-    "main-office": {
-      label: "Main Office",
-      tools: { allow: ["*"], deny: ["bash", "shell", "deploy", "kubectl", "terraform", "psql"] },
+
+    // --- Mac: ~/Desktop/Niumination, structured, one-home rule -------------
+
+    // mirai + ecosystem-config. The orchestrator and the main agent work here.
+    "mac/root": {
+      label: "Root Ekosistem",
+      tools: { allow: ["*"], deny: PRODUCTION },
+      maxModelTier: "premium",
+      budgetHourlyUsd: 3.0,
+      approval: ["bash"],
+    },
+    // Shipped and tested: Niu-LKH, PemdiAcehTengah, niu-dash, cc-switch, ...
+    "mac/apps": {
+      label: "Apps",
+      tools: { allow: ["*"], deny: PRODUCTION },
       maxModelTier: "premium",
       budgetHourlyUsd: 2.0,
       approval: [],
     },
-    "meeting-room": {
-      label: "Meeting Room",
-      tools: { allow: ["*"], deny: ["bash", "shell", "deploy", "kubectl", "terraform", "psql"] },
+    // Backends and engines: sapa-ai, niu-cast, latticesend. These are the
+    // Mac-side things that eventually ship, so `deploy` is reachable here —
+    // with a signature on it.
+    "mac/services": {
+      label: "Services",
+      tools: { allow: ["*"], deny: ["kubectl", "terraform"] },
+      maxModelTier: "premium",
+      budgetHourlyUsd: 2.0,
+      approval: ["deploy", "bash"],
+    },
+    "mac/sites": {
+      label: "Sites",
+      tools: { allow: ["*"], deny: HANDS_OFF },
+      maxModelTier: "premium",
+      budgetHourlyUsd: 1.5,
+      approval: [],
+    },
+    "mac/desktop": {
+      label: "Desktop",
+      tools: { allow: ["*"], deny: HANDS_OFF },
+      maxModelTier: "premium",
+      budgetHourlyUsd: 1.5,
+      approval: [],
+    },
+    // No desks yet. Kept because the folder exists and agents land here.
+    "mac/agents": {
+      label: "Agents",
+      tools: { allow: ["*"], deny: PRODUCTION },
+      maxModelTier: "premium",
+      budgetHourlyUsd: 1.0,
+      approval: ["bash"],
+    },
+    // Experiments are allowed to fail, not allowed to be expensive.
+    "mac/labs": {
+      label: "Labs",
+      tools: { allow: ["*"], deny: HANDS_OFF },
+      maxModelTier: "standard",
+      budgetHourlyUsd: 0.5,
+      approval: [],
+    },
+    // asn-admin. The owner's rule is that ASN output must never reach a public
+    // repository. This table CANNOT enforce that: it gates tool names, and
+    // "which remote a commit goes to" is not one. The entry gate below is the
+    // honest part — a human signs off on entering — and the rest is a human
+    // rule that lives outside this file. Do not let the lock imply more.
+    "mac/dinas": {
+      label: "Dinas",
+      tools: { allow: ["*"], deny: HANDS_OFF },
       maxModelTier: "premium",
       budgetHourlyUsd: 1.0,
       approval: [],
+      entryApproval: true,
     },
-    // Privileged. Production tooling, and a human stands at the door.
-    "server-room": {
-      label: "Server Room",
+    // Obsidian vault, local. Reading and writing notes, nothing else.
+    "mac/brain": {
+      label: "Brain",
+      tools: { allow: ["read_file", "write_file", "web_search", "fetch", "llm:*"], deny: [] },
+      maxModelTier: "standard",
+      budgetHourlyUsd: 0.5,
+      approval: [],
+    },
+    // 238 skills, 21 domains. Read-mostly reference.
+    "mac/skills": {
+      label: "Skills",
+      tools: { allow: ["read_file", "write_file", "web_search", "llm:*"], deny: [] },
+      maxModelTier: "standard",
+      budgetHourlyUsd: 0.5,
+      approval: [],
+    },
+    // Empty on the owner's instruction: leave Tools and Vault alone for now.
+    // Zero allowance means decide() refuses everything here, which is the
+    // truthful answer for a room with nothing in it.
+    "mac/tools": {
+      label: "Tools",
+      tools: { allow: [] },
+      maxModelTier: "cheap",
+      budgetHourlyUsd: 0,
+      approval: [],
+    },
+    "mac/vault": {
+      label: "Vault",
+      tools: { allow: [] },
+      maxModelTier: "cheap",
+      budgetHourlyUsd: 0,
+      approval: [],
+      entryApproval: true,
+    },
+
+    // --- LightVela: ~/niumination, no folder taxonomy ----------------------
+
+    // hermes-office itself sits here.
+    "lightvela/root": {
+      label: "Root Ekosistem",
+      tools: { allow: ["*"], deny: ["kubectl", "terraform"] },
+      maxModelTier: "premium",
+      budgetHourlyUsd: 2.0,
+      approval: ["deploy", "bash"],
+    },
+    // 9router, Hermes Gateway, Office Octo, Hermes Cron, Agro-Climate. The
+    // only room in either office with production tooling, and a human stands
+    // at the door.
+    "lightvela/infra": {
+      label: "Infrastruktur & Monitoring",
       tools: { allow: ["*"] },
       maxModelTier: "premium",
       budgetHourlyUsd: 5.0,
       approval: ["deploy", "kubectl", "terraform", "psql", "bash"],
-      // Entering the room at all needs sign-off.
       entryApproval: true,
     },
-    "mac-studio": {
-      label: "Mac Studio",
-      tools: { allow: ["*"], deny: ["terraform"] },
+    "lightvela/content": {
+      label: "Content Studio",
+      tools: { allow: ["*"], deny: HANDS_OFF },
       maxModelTier: "premium",
-      budgetHourlyUsd: 3.0,
-      approval: ["deploy", "bash"],
-      entryApproval: true,
-    },
-    // Executive. Expensive thinking, no hands on production.
-    "ceo-office": {
-      label: "CEO Office",
-      tools: { allow: ["*"], deny: ["bash", "shell", "deploy", "kubectl", "terraform", "psql"] },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 10.0,
+      budgetHourlyUsd: 1.5,
       approval: [],
-      entryApproval: true,
     },
-    // Break rooms: an agent parked here is explicitly idle.
-    kitchen: { label: "Kitchen", tools: { allow: [] }, maxModelTier: "cheap", budgetHourlyUsd: 0, approval: [] },
-    "nap-room": { label: "Nap Room", tools: { allow: [] }, maxModelTier: "cheap", budgetHourlyUsd: 0, approval: [] },
   },
 };
 

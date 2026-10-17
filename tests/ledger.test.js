@@ -275,7 +275,7 @@ test("query: filters by type, subject and time window", () => {
   try {
     rec.record("policy_decision", { agent: "alice", action: "deny" }, { subject: "alice", ts: 1000 });
     rec.record("policy_decision", { agent: "bob", action: "allow" }, { subject: "bob", ts: 2000 });
-    rec.record("agent_moved", { agent: "alice", room: "server-room" }, { subject: "alice", ts: 3000 });
+    rec.record("agent_moved", { agent: "alice", room: "lightvela/infra" }, { subject: "alice", ts: 3000 });
 
     assert.equal(rec.query({ subject: "alice" }).length, 2);
     assert.equal(rec.query({ type: "agent_moved" }).length, 1);
@@ -310,7 +310,7 @@ test("dossier: never overstates what the hash chain proves", () => {
 test("dossier: narrates an approval in language a non-engineer can read", () => {
   const s = narrate({
     seq: 9, ts: Date.now(), type: "approval_requested",
-    payload: { approvalId: "ap-3-x", agent: "deployer", kind: "tool", tool: "kubectl", room: "server-room" },
+    payload: { approvalId: "ap-3-x", agent: "deployer", kind: "tool", tool: "kubectl", room: "lightvela/infra" },
   });
   assert.match(s, /deployer requested human approval to run/);
   assert.match(s, /blocked pending a decision/);
@@ -321,7 +321,7 @@ test("dossier: Art. 14 section quantifies the human intervention", () => {
   const now = Date.now();
   const records = [
     { seq: 1, ts: now, type: "approval_requested",
-      payload: { approvalId: "ap-1", agent: "deployer", kind: "tool", tool: "kubectl", room: "server-room" } },
+      payload: { approvalId: "ap-1", agent: "deployer", kind: "tool", tool: "kubectl", room: "lightvela/infra" } },
     { seq: 2, ts: now + 4000, type: "approval_resolved",
       payload: { approvalId: "ap-1", agent: "deployer", state: "denied", decidedBy: "owner", waitedMs: 4000, tool: "kubectl" } },
   ];
@@ -344,7 +344,7 @@ test("dossier: an attacker-chosen agent name cannot forge document structure", (
   const md = renderMarkdown({
     records: [
       { seq: 1, ts: Date.now(), type: "approval_requested",
-        payload: { approvalId: "ap-1", agent: hostile, kind: "tool", tool: "k|c", room: "server-room" } },
+        payload: { approvalId: "ap-1", agent: hostile, kind: "tool", tool: "k|c", room: "lightvela/infra" } },
       { seq: 2, ts: Date.now() + 1, type: "approval_resolved",
         payload: { approvalId: "ap-1", agent: hostile, state: "approved", decidedBy: "owner", waitedMs: 1, tool: "k|c" } },
     ],
@@ -393,7 +393,7 @@ test("dossier: every refusal can be attributed to a named rule", () => {
     records: [{
       seq: 3, ts: Date.now(), type: "policy_decision",
       payload: { agent: "deployer", tool: "kubectl", action: "deny", scope: "room",
-                 room: "lobby", reason: "kubectl is outside the scope of Lobby" },
+                 room: "belum-dipetakan", reason: "kubectl is outside the scope of Lobby" },
     }],
     verification: { ok: true, checked: 1, firstSeq: 3, lastSeq: 3, head: "h" },
     period: { fromIso: "2026-10-01T00:00:00Z", toIso: "2026-10-02T00:00:00Z" },

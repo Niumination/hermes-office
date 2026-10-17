@@ -38,8 +38,8 @@ test("validates every known event type with golden payload", () => {
     service_status: { host: "cloud", unit: "hermes-office", kind: "systemd", state: "active", detail: "uptime 3d" },
     budget_state: { scope: "agent", subject: "cloud", state: "hot", spentUsd: 1.2, limitUsd: 2 },
     office_chat: { text: "hello" },
-    agent_moved: { agent: "cloud", fromRoom: "lobby", room: "main-office", grantedBy: "owner" },
-    approval_requested: { approvalId: "ap-1", agent: "cloud", room: "server-room", tool: "deploy" },
+    agent_moved: { agent: "cloud", fromRoom: "belum-dipetakan", room: "mac/sites", grantedBy: "owner" },
+    approval_requested: { approvalId: "ap-1", agent: "cloud", room: "lightvela/infra", tool: "deploy" },
     approval_resolved: { approvalId: "ap-1", agent: "cloud", state: "approved", resolvedBy: "owner" },
   };
 
