@@ -217,6 +217,11 @@ jobs:
       # every leg — red for a reason no code change can fix.
       - name: Frontend test counts (build dist/ so check-docs can read the bundle)
         run: |
+          # CI npm-cache for the backend lockfile can leave frontend/node_modules
+          # in a state where npx falls back to a stale vitest binary. Reinstall
+          # cleanly before building so the JSON report check-docs depends on is
+          # produced by the lockfile's vitest, not by whatever cache restored.
+          rm -rf frontend/node_modules
           npm --prefix frontend ci
           npm --prefix frontend run build
 
