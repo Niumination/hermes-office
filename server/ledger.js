@@ -205,14 +205,44 @@ export class FlightRecorder {
     if (!LEDGER_TYPES.includes(type)) {
       throw new Error(`ledger: unknown record type "${type}"`);
     }
-    const seq = this.seq + 1;
+    // Serialize the whole read-append-advance: another FlightRecorder that
+    // shares this DB (dev tool, manual audit script, a second boot) can
+    // insert in between our tail read and our write; the lock closes that
+    // window. better-sqlite3 is single-threaded per connection, so the lock
+    // is per process-instance — the window it guards is one synchronous
+    // stretch, and the retry below is what actually heals cross-process drift.
     const prevHash = this.headHash;
-    const payloadJson = canonicalJson(payload ?? {});
-    const hash = hashRecord({ seq, ts, prevHash, type, actor, payloadJson });
-
-    this._insert.run({ seq, ts, type, actor, subject, payload: payloadJson, prevHash, hash });
-    this.seq = seq;
-    this.headHash = hash;
+    let seq = this.seq + 1;
+    let payloadJson, hash;
+    try {
+      const self = this;
+      this.db.transaction(() => {
+        const tail = self._tail.get();
+        self.seq = tail ? tail.seq : 0;
+        self.headHash = tail ? tail.hash : GENESIS_HASH;
+        seq = self.seq + 1;
+        payloadJson = canonicalJson(payload ?? {});
+        hash = hashRecord({ seq, ts, prevHash: self.headHash, type, actor, payloadJson });
+        self._insert.run({ seq, ts, type, actor, subject, payload: payloadJson, prevHash: self.headHash, hash });
+        self.seq = seq;
+        self.headHash = hash;
+      }).run();
+    } catch {
+      // UNIQUE(seq) collision: the in-memory tail is stale because a
+      // second writer (or a prior stale state of this instance) claimed
+      // the next slot. Re-read the real tail once and retry — the chain
+      // rule is "prevHash = actual last record", so resyncing is the
+      // spec-compliant repair, not a workaround.
+      const tail = this._tail.get();
+      this.seq = tail ? tail.seq : 0;
+      this.headHash = tail ? tail.hash : GENESIS_HASH;
+      seq = this.seq + 1;
+      payloadJson = canonicalJson(payload ?? {});
+      hash = hashRecord({ seq, ts, prevHash: this.headHash, type, actor, payloadJson });
+      this._insert.run({ seq, ts, type, actor, subject, payload: payloadJson, prevHash: this.headHash, hash });
+      this.seq = seq;
+      this.headHash = hash;
+    }
     this.sinceCheckpoint += 1;
 
     if (type !== "chain_checkpoint" && this.sinceCheckpoint >= this.checkpointEvery) {

@@ -41,7 +41,7 @@ policy.js     736   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   392   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       403   Fase 1 — OTel GenAI → event Hermes
-ledger.js     393   Fase 4 — rantai hash append-only
+ledger.js     423   Fase 4 — rantai hash append-only
 standup.js    465   Fase 14 — bacaan pagi; deterministik, tanpa panggilan model
 replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
