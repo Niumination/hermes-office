@@ -97,22 +97,22 @@ if [ "$KEEP" = "0" ]; then
 
   # A normal morning: five agents at their desks.
   for a in ana budi citra dewi eka; do
-    curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"main-office"}' "$B/agents/$a/room"
+    curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"lightvela/root"}' "$B/agents/$a/room"
   done
   say "five agents at their desks"
 
   # One agent needs the server room. That room requires approval, so this
   # parks a decision in front of a human instead of just happening.
-  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"server-room"}' "$B/agents/citra/room"
+  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"lightvela/infra"}' "$B/agents/citra/room"
   say "citra asked to enter the server room — approval pending"
 
   # An agent stuck in a loop against a tool the meeting room forbids. This is
   # the finding buyers recognise instantly: it is not an attack, it is a bot
   # retrying, and every retry costs money upstream even though nothing runs.
-  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"meeting-room"}' "$B/agents/budi/room"
+  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"mac/agents"}' "$B/agents/budi/room"
   for _ in $(seq 1 9); do
     curl -s -o /dev/null -X POST "${OWNER[@]}" \
-      -d '{"agent":"budi","tool":"kubectl","room":"meeting-room","estimatedUsd":0.02}' \
+      -d '{"agent":"budi","tool":"kubectl","room":"mac/agents","estimatedUsd":0.02}' \
       "$B/policy/check"
   done
   say "budi denied 9x for kubectl — a retry loop, not an intruder"
@@ -126,8 +126,8 @@ if [ "$KEEP" = "0" ]; then
   say "ana burned through the hourly budget — normal -> warm -> hot -> tripped"
 
   # A second day of history so the standup has something to compare against.
-  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"kitchen"}' "$B/agents/eka/room"
-  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"lobby"}' "$B/agents/dewi/room"
+  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"mac/desktop"}' "$B/agents/eka/room"
+  curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"belum-dipetakan"}' "$B/agents/dewi/room"
 fi
 
 HEAD=$(curl -s "${OWNER[@]}" "$B/ledger/verify" | head -c 400)

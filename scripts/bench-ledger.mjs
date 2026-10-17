@@ -137,10 +137,12 @@ async function main() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${TOK.owner}`,
         },
-        body: JSON.stringify({ room: "main-office" }),
+        // lightvela/root — an allow-all premium room that exists in DEFAULT_POLICY
+        // after the kantor/ruang namespacing (old ids like `main-office` are gone).
+        body: JSON.stringify({ room: "lightvela/root" }),
       });
       if (!r.ok && r.status !== 202) {
-        console.log(`FAIL: could not place bench-agent-${a} in main-office ` +
+        console.log(`FAIL: could not place bench-agent-${a} in lightvela/root ` +
           `(HTTP ${r.status}); the load would measure denials, not throughput`);
         return 1;
       }

@@ -56,9 +56,10 @@ BURN = {
 }
 
 ROOM_ORDER = [
-    "lobby", "main-office", "meeting-room", "manager-office",
-    "ceo-office", "server-room", "mac-studio", "kitchen",
-    "nap-room", "gym", "rooftop", "parking",
+    "belum-dipetakan",
+    "lightvela/root", "lightvela/infra", "lightvela/content",
+    "mac/root", "mac/apps", "mac/services", "mac/sites",
+    "mac/desktop", "mac/agents", "mac/labs",
 ]
 
 
