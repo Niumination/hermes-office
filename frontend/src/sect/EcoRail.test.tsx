@@ -72,9 +72,12 @@ describe('EcoRail', () => {
   })
 
   it('draws occupancy only where someone actually is', () => {
+    // Fixture keyed by reference, as SectApp actually keys it. It used to say
+    // `{ apps: 2 }` — a bare id no caller ever sends — so this test went on
+    // passing over a rail whose badge could not appear in the running app.
     const { container } = render(
       <EcoRail office="mac" room="root" onOffice={noop} onEnter={noop}
-               occupancy={{ apps: 2, services: 0 }} />,
+               occupancy={{ 'mac/apps': 2, 'mac/services': 0 }} />,
     )
     const badges = [...container.querySelectorAll('.eco-rail-floor__here')]
     // `services: 0` is a known zero and still draws nothing: a badge reading
@@ -106,6 +109,40 @@ describe('EcoRail', () => {
       .toContain('Mac')
     fireEvent.click(screen.getByText('LightVela'))
     expect(onOffice).toHaveBeenCalledWith('lightvela')
+  })
+
+  /*
+    The occupancy map is keyed by ecosystem reference (`mac/root`), because
+    `root` exists in both offices and a bare id cannot tell the two apart.
+    The rail used to read it with the bare id, so the lookup always missed and
+    this badge could never appear no matter how busy the room was. These two
+    tests pin both halves: the right key shows, the wrong key must not.
+  */
+  it('shows the occupancy badge for a room keyed by its office reference', () => {
+    render(
+      <EcoRail office="mac" room="root" onOffice={noop} onEnter={noop}
+        occupancy={{ 'mac/root': 2 }} />,
+    )
+    expect(screen.getByTitle('2 di ruangan ini')).toBeTruthy()
+  })
+
+  it('does not credit a room with occupants recorded under a bare id', () => {
+    // A bare 'root' is ambiguous between the two offices. Counting it here
+    // would let LightVela's occupants appear on the Mac's floor.
+    render(
+      <EcoRail office="mac" room="root" onOffice={noop} onEnter={noop}
+        occupancy={{ root: 2 }} />,
+    )
+    expect(screen.queryByTitle('2 di ruangan ini')).toBeNull()
+  })
+
+  it('keeps the two offices apart when both have a root with occupants', () => {
+    render(
+      <EcoRail office="lightvela" room="root" onOffice={noop} onEnter={noop}
+        occupancy={{ 'mac/root': 7, 'lightvela/root': 1 }} />,
+    )
+    expect(screen.getByTitle('1 di ruangan ini')).toBeTruthy()
+    expect(screen.queryByTitle('7 di ruangan ini')).toBeNull()
   })
 
   it('names the filesystem root it is describing', () => {

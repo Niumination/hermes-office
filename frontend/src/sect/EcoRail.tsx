@@ -31,6 +31,7 @@ import React from 'react'
 import {
   OFFICES, OFFICE_ORDER, roomsOf, desksOf,
   type OfficeId,
+  roomRef,
 } from '../eco/ecosystem'
 
 export const EcoRail: React.FC<{
@@ -71,7 +72,11 @@ export const EcoRail: React.FC<{
           const desks = desksOf(office, r.id)
           // `undefined` and `0` are different answers and are drawn
           // differently: no session means unknown, not empty.
-          const here = occupancy?.[r.id]
+          // Keyed by ecosystem reference, because `root` exists in both
+          // offices and a bare id cannot tell them apart. Reading it with
+          // `r.id` meant the lookup always missed and this badge could never
+          // appear, however busy the room was.
+          const here = occupancy?.[roomRef(office, r.id)]
           return (
             <li key={r.id}>
               <button

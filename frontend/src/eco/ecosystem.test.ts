@@ -246,4 +246,16 @@ describe('room references', () => {
     // resolving it to one would be the fabrication this model exists to stop.
     expect(roomByRef('belum-dipetakan')).toBeUndefined()
   })
+
+  /*
+    The trap that cost two real defects: `roomAt` takes a BARE id and a ref
+    looks enough like an id to pass through a call site unnoticed. It must
+    answer undefined rather than ever resolving one, so the mistake stays a
+    visible nothing instead of a plausible wrong room.
+  */
+  it('roomAt refuses an office reference and never resolves it to a room', () => {
+    expect(roomAt('mac', 'root')).toBeDefined()
+    expect(roomAt('mac', 'mac/root')).toBeUndefined()
+    expect(roomAt('lightvela', 'lightvela/infra')).toBeUndefined()
+  })
 })

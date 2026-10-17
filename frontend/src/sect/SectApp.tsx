@@ -81,7 +81,13 @@ const PRESENT_MS = 10 * 60 * 1000
 
 interface RosterRow {
   id: string
-  room?: RoomId
+  /**
+   * An ecosystem reference — `office/room`, e.g. `mac/root` — not a bare id
+   * and not a fork RoomId. This field used to be typed `RoomId` and filled
+   * through an `as` cast, which is precisely what let two lookups below go on
+   * resolving it with the wrong function without tsc ever objecting.
+   */
+  room?: string
   task?: string
   seen: number
   online: boolean
@@ -296,7 +302,7 @@ export const SectApp: React.FC = () => {
   const roster = useMemo<RosterRow[]>(() => {
     const rows: RosterRow[] = tracked.map((t) => ({
       id: t.id,
-      room: t.room as RoomId | undefined,
+      room: t.room,
       task: t.task,
       seen: t.seen,
       online: presence[t.id]?.online ?? now - t.seen <= PRESENT_MS,
@@ -648,7 +654,14 @@ export const SectApp: React.FC = () => {
               </p>
             )}
             {roster.map((r) => {
-              const h = r.room ? roomAt(office, r.room) : undefined
+              // roomByRef, not roomAt: the tracked room is `mac/root`, which
+              // never equals a bare room id, so roomAt answered undefined for
+              // every agent the office had actually placed and this tab told
+              // the owner "belum menampakkan diri" about agents standing in a
+              // hall one tab away. It also resolved against the office ON
+              // SCREEN, so an agent in the other office would have been
+              // labelled with a room it is not in.
+              const h = r.room ? roomByRef(r.room) : undefined
               return (
                 <article
                   key={r.id}
