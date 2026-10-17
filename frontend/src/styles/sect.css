@@ -801,6 +801,13 @@ body {
   bottom: auto;
   width: auto;
   max-width: 46%;
+  /*
+    `display` was never declared here, so flex-direction, align-items and gap
+    below were all inert and the strip fell back to block layout — the caption
+    and the figures landed on top of each other and the caption was
+    unreadable. It looked deliberate in the source and wrong only on screen.
+  */
+  display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
@@ -813,7 +820,13 @@ body {
   margin: 0;
   font-size: var(--sect-t-xs);
   letter-spacing: 0.08em;
-  color: color-mix(in oklch, var(--sect-mist) 70%, transparent);
+  /* Lands on painted roofline, not on flat colour, so it carries its own
+     backing rather than trusting whatever is behind it. */
+  color: color-mix(in oklch, var(--sect-ink) 80%, transparent);
+  background: color-mix(in oklch, var(--sect-night, oklch(18% .02 160)) 72%, transparent);
+  backdrop-filter: blur(3px);
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.4rem;
 }
 
 .sect-court__row {
