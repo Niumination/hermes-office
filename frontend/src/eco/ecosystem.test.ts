@@ -3,6 +3,7 @@ import {
   OFFICES, OFFICE_ORDER, ROOMS, DESKS, AGENTS,
   roomsOf, desksOf, agentsOf, deskAt, agentAt, roomAt,
   pinnedAgents, mayWorkAt, placeAgent, describePlacement,
+  roomRef, roomByRef, officeOfRef,
 } from './ecosystem'
 
 /**
@@ -216,5 +217,33 @@ describe('desks are repositories', () => {
     for (const d of DESKS) {
       if (d.repo !== null) expect(d.repo).toMatch(/^Niumination\/[\w.\-]+$/)
     }
+  })
+})
+
+describe('room references', () => {
+  it('round-trips every declared room', () => {
+    for (const r of ROOMS) {
+      expect(roomByRef(roomRef(r.office, r.id))).toBe(r)
+      expect(officeOfRef(roomRef(r.office, r.id))).toBe(r.office)
+    }
+  })
+
+  it('refuses a bare id, because `root` exists in both offices', () => {
+    // This is the whole reason references are namespaced. Resolving `root`
+    // would have to pick an office, and picking one invents a location.
+    expect(ROOMS.filter((r) => r.id === 'root')).toHaveLength(2)
+    expect(roomByRef('root')).toBeUndefined()
+    expect(officeOfRef('root')).toBeUndefined()
+  })
+
+  it('refuses a reference to an office that does not exist', () => {
+    expect(roomByRef('aws/root')).toBeUndefined()
+    expect(roomByRef('mac/kolam-renang')).toBeUndefined()
+  })
+
+  it('does not resolve the policy default, which names no place', () => {
+    // The server governs `belum-dipetakan` on purpose. It is not a room, and
+    // resolving it to one would be the fabrication this model exists to stop.
+    expect(roomByRef('belum-dipetakan')).toBeUndefined()
   })
 })

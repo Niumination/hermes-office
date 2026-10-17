@@ -12,31 +12,56 @@
  */
 import type { OfficeEvent } from '../types'
 import type { HermesEnvelope } from './types'
-import type { RoomId } from '../rooms'
+import { roomRef, type RoomRef } from '../eco/ecosystem'
+import { UNMAPPED_ROOM } from '../theme/sect'
 
 export function isKnownEventType(type: string): boolean {
   return KNOWN_TYPES.has(type)
 }
 
-/** Default room per event source/agent (DUAL-SPACE-DESIGN M-A §5.2). */
-export function targetRoomFor(env: HermesEnvelope): RoomId {
+/**
+ * Where an event puts its agent, as an `office/room` reference.
+ *
+ * This used to answer with the fork's rooms — mac-studio, server-room,
+ * main-office. None of them exist in the owner's ecosystem, so every agent
+ * the socket placed landed in a room the office could not draw and was never
+ * rendered at all. That was the seam between the two room models, and this
+ * function was the whole of it.
+ *
+ * What an envelope actually tells us is a MACHINE: `mac` or `cloud`. It does
+ * not tell us a category of repositories, which is what a room is here. So a
+ * machine lands at that machine's ecosystem root, where its main agent sits,
+ * and nothing finer is claimed.
+ *
+ * The exception is a service: 9router, Hermes Gateway, Office Octo and
+ * Hermes Cron are all desks in `lightvela/infra` in the ecosystem model, so
+ * an event about a service running there can say so without inventing
+ * anything.
+ *
+ * An envelope from neither machine is NOT guessed into a room. It goes to the
+ * policy's default, which is the server's word for "governed, placed nowhere".
+ */
+export function targetRoomFor(env: HermesEnvelope): RoomRef {
   const d = env as any
+  const machine = (who: unknown): RoomRef =>
+    who === 'mac' ? roomRef('mac', 'root')
+      : who === 'cloud' ? roomRef('lightvela', 'root')
+      : UNMAPPED_ROOM
   switch (env.type) {
     case 'service_status':
-      return d.host === 'mac' ? 'mac-studio' : 'server-room'
+      return d.host === 'mac' ? roomRef('mac', 'root') : roomRef('lightvela', 'infra')
     case 'cron_fired':
-      return 'server-room'
+      // Hermes Cron is an infra desk: five jobs reporting into topic #55.
+      return roomRef('lightvela', 'infra')
     case 'agent_status':
-      return d.agent === 'mac' ? 'mac-studio' : d.agent === 'cloud' ? 'server-room' : 'main-office'
+      return machine(d.agent)
     case 'a2a_task_in':
-      // a task delivered TO an instance lands in that instance's room
-      return d.dest === 'mac' ? 'mac-studio' : d.dest === 'cloud' ? 'server-room' : 'main-office'
+      // a task delivered TO an instance lands at that instance's root
+      return machine(d.dest)
     case 'a2a_task_out':
-      return d.origin === 'mac' ? 'mac-studio' : d.origin === 'cloud' ? 'server-room' : 'main-office'
+      return machine(d.origin)
     default:
-      return env.source === 'mac' ? 'mac-studio'
-        : env.source === 'cloud' ? 'server-room'
-        : 'main-office'
+      return machine(env.source)
   }
 }
 

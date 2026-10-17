@@ -713,15 +713,22 @@ def main() -> int:
                     f"{rel} claims {'/'.join(sorted(claimed))} gates but "
                     f"verify.sh runs {actual}")
 
-    # ── sect theme covers every governed room ─────────────────────────
-    # frontend/src/theme/sect.ts names a hall per room. A room the policy
-    # governs but the theme forgot would render as a blank rung — the kind of
-    # gap that only shows up when someone finally clicks it. The room ids come
-    # from the policy itself rather than a second list.
+    # ── every governed room resolves to a hall name ───────────────────
+    # The theme used to carry a hand-written SECT_HALLS table and this check
+    # read it. That table was withdrawn on 2026-10-17: six of its eight halls
+    # named rooms the owner does not have. Names now come from the ecosystem
+    # model via hallFor(), so the check reads the same two sources hallFor
+    # does, rather than a literal that no longer exists.
+    #
+    # The guarantee is unchanged: a room the policy governs but nothing can
+    # name renders as a bare id on a rung, which is the gap this catches.
     _sect_path = os.path.join(ROOT, "frontend/src/theme/sect.ts")
+    _eco_path = os.path.join(ROOT, "frontend/src/eco/ecosystem.ts")
     sect_src = (open(_sect_path, encoding="utf-8").read()
                 if os.path.exists(_sect_path) else "")
-    if sect_src:
+    eco_src = (open(_eco_path, encoding="utf-8").read()
+               if os.path.exists(_eco_path) else "")
+    if sect_src and eco_src:
         checks += 1
         try:
             ids = subprocess.run(
@@ -732,17 +739,32 @@ def main() -> int:
             governed = [r for r in ids.stdout.strip().split(",") if r]
         except Exception:
             governed = []
-        body = sect_src.split("SECT_HALLS", 1)[-1]
-        named = set(re.findall(r"^\s*'?([a-z][a-z-]*)'?\s*:\s*\{", body, re.M))
+        # Rooms the ecosystem declares, spelled the way the policy spells them.
+        rooms_block = eco_src[eco_src.find("const MAC_ROOMS"):
+                              eco_src.find("export const ROOMS")]
+        nameable = {
+            f"{office}/{rid}"
+            for rid, office in re.findall(
+                r"\{\s*id:\s*'([^']+)',\s*office:\s*'([^']+)'", rooms_block)
+        }
+        # Plus the one governed room that names no place on purpose. Read the
+        # constant rather than hard-coding it, so a rename cannot slip past.
+        m_unmapped = re.search(r"UNMAPPED_ROOM\s*=\s*'([^']+)'", sect_src)
+        if m_unmapped:
+            nameable.add(m_unmapped.group(1))
         if not governed:
             failures.append(
                 "could not read the policy room ids to check the sect theme against")
+        elif not m_unmapped:
+            failures.append(
+                "frontend/src/theme/sect.ts no longer declares UNMAPPED_ROOM; "
+                "the policy default would render as a bare id")
         else:
-            missing = [r for r in governed if r not in named]
+            missing = [r for r in governed if r not in nameable]
             if missing:
                 failures.append(
-                    "frontend/src/theme/sect.ts has no hall for governed "
-                    f"room(s): {', '.join(sorted(missing))}")
+                    "no hall name resolves for governed room(s): "
+                    + ", ".join(sorted(missing)))
 
     RUNNERS = [
         ("backend", r"\| (?:Backend tests|Test backend) \| \*\*(\d+)\*\* \|"),

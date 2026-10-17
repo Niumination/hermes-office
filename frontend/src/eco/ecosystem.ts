@@ -173,6 +173,43 @@ export function roomAt(office: OfficeId, id: string): EcoRoom | undefined {
   return ROOMS.find((r) => r.office === office && r.id === id)
 }
 
+/**
+ * A room reference as the governance layer spells it: `office/room`.
+ *
+ * The policy table is flat and `root` exists in both offices, so a bare room
+ * id is ambiguous and the server namespaces it. This is the one place that
+ * knows the spelling; nothing else should split on a slash.
+ */
+export type RoomRef = string
+
+export function roomRef(office: OfficeId, id: string): RoomRef {
+  return `${office}/${id}`
+}
+
+/**
+ * Resolve `office/room` back to a room, or undefined.
+ *
+ * Returns undefined rather than guessing for anything that is not a room this
+ * ecosystem declares — including `belum-dipetakan`, which the policy governs
+ * on purpose but which names no place. Callers must render that absence, not
+ * paper over it.
+ */
+export function roomByRef(ref: RoomRef): EcoRoom | undefined {
+  const slash = ref.indexOf('/')
+  if (slash < 0) return undefined
+  const office = ref.slice(0, slash)
+  if (office !== 'mac' && office !== 'lightvela') return undefined
+  return roomAt(office, ref.slice(slash + 1))
+}
+
+/** The office half of a reference, when it names one. */
+export function officeOfRef(ref: RoomRef): OfficeId | undefined {
+  const slash = ref.indexOf('/')
+  if (slash < 0) return undefined
+  const office = ref.slice(0, slash)
+  return office === 'mac' || office === 'lightvela' ? office : undefined
+}
+
 // ---------------------------------------------------------------------------
 // Desks — a desk is a repository
 // ---------------------------------------------------------------------------

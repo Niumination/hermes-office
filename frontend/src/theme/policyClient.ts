@@ -36,15 +36,21 @@ export interface PolicySnapshot {
   /**
    * The hall the server drops an unplaced agent into. OPTIONAL on purpose: a
    * required field here breaks every PolicySnapshot fixture in the existing
-   * tests, and this is an enrichment, not a contract. Callers fall back to
-   * 'lobby', which is what the server has always configured.
+   * tests, and this is an enrichment, not a contract.
+   *
+   * It is `belum-dipetakan` now, which is not a room — it is the server's
+   * word for "governed, placed nowhere". It used to be 'lobby'. Callers must
+   * not substitute a room of their own when this is absent: an invented
+   * default is an invented location.
    */
   defaultRoom?: string
 }
 
 interface ServerRoom {
   room: string
-  trust?: string
+  // `trust?: string` was here until 2026-10-17. The server stopped sending a
+  // trust rung because nothing ever enforced one; parsing a field that is
+  // never transmitted and never read would only keep the idea alive.
   budgetHourlyUsd?: number
   occupants?: Array<{ agent?: string }>
   /** The server marks redaction per ROOM, not on the document — see the note

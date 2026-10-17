@@ -31,6 +31,8 @@ import { spriteFor, archetypeFor } from './cast'
 import EcoRail from './EcoRail'
 import {
   OFFICES, roomsOf, roomAt, desksOf, type OfficeId,
+  roomRef,
+  roomByRef,
 } from '../eco/ecosystem'
 import Hall, { type Cultivator } from './Hall'
 import Chronicle from './Chronicle'
@@ -122,7 +124,12 @@ export const SectApp: React.FC = () => {
   // deliberately navigated is worse. So: follow by default, stop following on
   // first click.
   const followRef = useRef(true)
+  // The socket callback is created once with no deps, so reading `office`
+  // from it would read the value at mount forever. Same reason followRef
+  // exists. Kept in sync below.
+  const officeRef = useRef<OfficeId>('lightvela')
   const [tab, setTab] = useState<'chronicle' | 'roster' | 'sabda' | 'posts'>('chronicle')
+  officeRef.current = office
   const [, tick] = useState(0)
   const agentsRef = useRef<Map<string, Tracked>>(new Map())
 
@@ -184,7 +191,14 @@ export const SectApp: React.FC = () => {
     // ecosystem; jumping the camera to it would move the viewer somewhere that
     // does not exist. Staying put is the honest failure — and the mismatch is
     // a real open seam, not a bug in this guard.
-    if (followRef.current && where && roomAt(office, where)) setRoom(where)
+    // Follow within the office on screen only. The two offices are two
+    // machines and the viewer switches between them deliberately; yanking
+    // the screen to the other machine because something happened there would
+    // be the camera making that decision for them.
+    const target = where ? roomByRef(where) : undefined
+    if (followRef.current && target && target.office === officeRef.current) {
+      setRoom(target.id)
+    }
     tick((n) => n + 1)
   }, [])
 
@@ -316,8 +330,12 @@ export const SectApp: React.FC = () => {
     return m
   }, [rosterAgents])
 
+  // `office/room`, because that is how the governance layer names a room and
+  // `root` exists in both offices. Comparing bare ids used to show a Mac agent
+  // standing in LightVela's root, and the other way round.
+  const here = roomRef(office, room)
   const cultivators: Cultivator[] = tracked
-    .filter((t) => t.room === room)
+    .filter((t) => t.room === here)
     .sort((a, b) => b.seen - a.seen)
     .map((t) => {
       const state: Cultivator['state'] =
@@ -346,9 +364,11 @@ export const SectApp: React.FC = () => {
    */
   const ghosts: Cultivator[] = useMemo(() => {
     // Landing room of the current office, not `ladder.defaultRoom`. The
-    // server's default is still a fork id ('lobby'), which now matches no
-    // ecosystem room at all — leaving it here quietly emptied this strip on
-    // every screen, which is the same disappearance the strip exists to stop.
+    // server's default is `belum-dipetakan`, which deliberately names no
+    // place and so matches no room on any screen — keying this strip off it
+    // would quietly empty it everywhere, the same disappearance the strip
+    // exists to stop. It was a fork id ('lobby') until 2026-10-17 and the
+    // effect was identical.
     if (room !== 'root') return []
     const placed = new Set(tracked.map((t) => t.id))
     return rosterAgents
@@ -375,7 +395,7 @@ export const SectApp: React.FC = () => {
    * to end.
    */
   const strays = useMemo(
-    () => tracked.filter((t) => t.room && !roomAt(office, t.room)),
+    () => tracked.filter((t) => t.room && roomByRef(t.room)?.office !== office),
     [tracked, office],
   )
 

@@ -4,42 +4,44 @@ import { sectLadder, canEnter, type PolicyRoomLike } from './sect'
 // A miniature of the real floor-plan policy. Mirroring the shape rather than
 // importing the server keeps this a frontend test, but the "every governed
 // room has a hall" guarantee is checked against the real policy elsewhere.
+// Budgets copied from server/policy.js. Rooms are spelled `office/room`
+// because the policy table is flat and `root` exists in both offices.
 const POLICY: Record<string, PolicyRoomLike> = {
-  lobby: { budgetHourlyUsd: 0.25 },
-  'main-office': { budgetHourlyUsd: 2 },
-  'meeting-room': { budgetHourlyUsd: 1 },
-  'server-room': { budgetHourlyUsd: 5 },
-  'ceo-office': { budgetHourlyUsd: 10 },
-  'mac-studio': { budgetHourlyUsd: 3 },
-  kitchen: { budgetHourlyUsd: 0 },
-  'nap-room': { budgetHourlyUsd: 0 },
+  'belum-dipetakan': { budgetHourlyUsd: 0.25 },
+  'mac/tools': { budgetHourlyUsd: 0 },
+  'mac/vault': { budgetHourlyUsd: 0 },
+  'mac/labs': { budgetHourlyUsd: 0.5 },
+  'mac/apps': { budgetHourlyUsd: 2 },
+  'mac/root': { budgetHourlyUsd: 3 },
+  'lightvela/content': { budgetHourlyUsd: 1.5 },
+  'lightvela/infra': { budgetHourlyUsd: 5 },
 }
 
 describe('sect theme', () => {
   it('orders halls by the policy budget, not by a list in this file', () => {
     const order = sectLadder(POLICY).map((r) => r.room)
     expect(order).toEqual([
-      'kitchen', 'nap-room',      // $0
-      'lobby',                    // $0.25
-      'meeting-room',             // $1
-      'main-office',              // $2
-      'mac-studio',               // $3
-      'server-room',              // $5
-      'ceo-office',               // $10
+      'mac/tools', 'mac/vault',   // $0 — empty on the owner's instruction
+      'belum-dipetakan',          // $0.25
+      'mac/labs',                 // $0.5
+      'lightvela/content',        // $1.5
+      'mac/apps',                 // $2
+      'mac/root',                 // $3
+      'lightvela/infra',          // $5
     ])
   })
 
   it('follows the policy when the policy changes', () => {
     // The whole point of deriving: move the money, the mountain moves.
-    const flipped = { ...POLICY, lobby: { budgetHourlyUsd: 99 } }
+    const flipped = { ...POLICY, 'belum-dipetakan': { budgetHourlyUsd: 99 } }
     const rungs = sectLadder(flipped)
-    expect(rungs[rungs.length - 1].room).toBe('lobby')
+    expect(rungs[rungs.length - 1].room).toBe('belum-dipetakan')
   })
 
   it('gives rooms on the same budget the same tier', () => {
     const byRoom = Object.fromEntries(sectLadder(POLICY).map((r) => [r.room, r.tier]))
-    expect(byRoom.kitchen).toBe(byRoom['nap-room'])
-    expect(byRoom.lobby).toBeGreaterThan(byRoom.kitchen)
+    expect(byRoom['mac/tools']).toBe(byRoom['mac/vault'])
+    expect(byRoom['belum-dipetakan']).toBeGreaterThan(byRoom['mac/tools'])
   })
 
   it('leaves ungoverned rooms off the mountain', () => {
@@ -63,8 +65,14 @@ describe('sect theme', () => {
   })
 
   it('names a governed room from the ecosystem when it knows it', () => {
-    const rung = sectLadder({ infra: { budgetHourlyUsd: 2 } })[0]
+    const rung = sectLadder({ 'lightvela/infra': { budgetHourlyUsd: 2 } })[0]
     expect(rung.hall.nameId).toBe('Infrastruktur & Monitoring')
+    expect(rung.hall.band).toBe('LightVela')
+    // A bare id is no longer a room: `root` exists in both offices, so the
+    // naming layer must refuse to guess which one was meant.
+    const bare = sectLadder({ root: { budgetHourlyUsd: 2 } })[0]
+    expect(bare.hall.nameId).toBe('root')
+    expect(bare.hall.band).toBe('Belum dipetakan')
   })
 
   it('states no price or order of its own', () => {
@@ -77,12 +85,12 @@ describe('sect theme', () => {
 
   it('refuses halls above the viewer tier, like the server already does', () => {
     const ladder = sectLadder(POLICY)
-    const ceo = ladder.find((r) => r.room === 'ceo-office')!
-    const lobby = ladder.find((r) => r.room === 'lobby')!
-    expect(canEnter(lobby, 0)).toBe(false)   // tier 0 sits below $0.25
-    expect(canEnter(lobby, lobby.tier)).toBe(true)
-    expect(canEnter(ceo, lobby.tier)).toBe(false)
-    expect(canEnter(ceo, ceo.tier)).toBe(true)
+    const infra = ladder.find((r) => r.room === 'lightvela/infra')!
+    const intake = ladder.find((r) => r.room === 'belum-dipetakan')!
+    expect(canEnter(intake, 0)).toBe(false)   // tier 0 sits below $0.25
+    expect(canEnter(intake, intake.tier)).toBe(true)
+    expect(canEnter(infra, intake.tier)).toBe(false)
+    expect(canEnter(infra, infra.tier)).toBe(true)
   })
 })
 

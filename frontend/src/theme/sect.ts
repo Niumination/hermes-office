@@ -14,7 +14,7 @@
 // A room with no policy entry (parking, rooftop, gym, manager-office) is not
 // a sect hall. It is not governed, so it has no standing on the mountain.
 
-import { ROOMS, OFFICES } from '../eco/ecosystem'
+import { OFFICES, roomByRef } from '../eco/ecosystem'
 
 export interface SectHall {
   /**
@@ -45,10 +45,31 @@ export interface SectHall {
  * six of them named nowhere. Names now come from the ecosystem model, which
  * describes the rooms the owner actually works in.
  */
+/**
+ * The policy's default room. Not a place — the server's word for "this agent
+ * is governed, but no office describes where it is". Kept in one place so the
+ * spelling cannot drift away from server/policy.js.
+ */
+export const UNMAPPED_ROOM = 'belum-dipetakan'
+
 function hallFor(id: string): SectHall {
-  const room = ROOMS.find((r) => r.id === id)
+  /*
+    The governance layer spells a room `office/room` because `root` exists in
+    both offices and its table is flat. This used to match on the bare id,
+    which found `root` in whichever office happened to be listed first and
+    found nothing at all once the server started namespacing.
+  */
+  const room = roomByRef(id)
   if (room) {
     return { nameId: room.label, nameEn: room.path, band: OFFICES[room.office].label }
+  }
+  /*
+    The one governed room the ecosystem deliberately does not describe. The
+    policy puts an agent here when it cannot say which room it belongs to, so
+    naming it after a place would be the exact lie this file exists to avoid.
+  */
+  if (id === UNMAPPED_ROOM) {
+    return { nameId: 'Belum dipetakan', nameEn: 'unplaced', band: 'Di luar kedua kantor' }
   }
   /*
     A governed room no office describes. It is NOT dropped: the policy is the
