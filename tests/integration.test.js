@@ -1124,3 +1124,79 @@ test("the watchdog's own away event does not place a forgotten agent", async () 
   const everyone = snap.rooms.flatMap((r) => r.occupants.map((o) => o.agent));
   assert.ok(!everyone.includes("[object Object]"), "object-form agents are normalised, not stringified");
 });
+
+// ---------------------------------------------------------------------------
+// Same-origin is not a cross-origin request
+//
+// Regression tests for the bug that served a blank page in production. Vite
+// stamps `crossorigin` on the module script and stylesheet it emits, so a real
+// browser sends an Origin header even when fetching the page's own bundle. The
+// allowlist did not contain the production domain, both assets came back 403,
+// and #root stayed empty. curl sends no Origin and so never reproduced it —
+// which is exactly how every gate stayed green over a dead site.
+//
+// ALLOWED_ORIGINS for this suite is only "http://localhost:5173", so the
+// server's own origin below is deliberately NOT allowlisted. These assertions
+// fail against the old middleware.
+// ---------------------------------------------------------------------------
+
+const SELF_ORIGIN = `http://127.0.0.1:${PORT}`;
+
+test("a browser fetching this host's own bundle is not refused", async () => {
+  const r = await fetch(BASE + "/health", { headers: { Origin: SELF_ORIGIN } });
+  assert.notEqual(r.status, 403, "same-origin request answered 403");
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get("access-control-allow-origin"), SELF_ORIGIN);
+});
+
+test("the HTML shell itself survives an Origin header", async () => {
+  // GET / is what the browser asks for first. If this 403s there is no page at
+  // all, which is the state the live site was actually in.
+  const r = await fetch(BASE + "/", { headers: { Origin: SELF_ORIGIN } });
+  assert.notEqual(r.status, 403, "the shell refused its own origin");
+});
+
+test("an unrelated origin is still refused", async () => {
+  // The fix must not become an allow-all. This is the half that still says no.
+  const r = await fetch(BASE + "/health", { headers: { Origin: "https://jahat.example" } });
+  assert.equal(r.status, 403);
+  assert.equal((await r.json()).error, "Origin tidak diizinkan");
+});
+
+test("a different port on the same hostname is still cross-origin", async () => {
+  // Origin is scheme+host+port. Same host, other port = another origin, and
+  // loosening the check to a hostname comparison would quietly allow it.
+  const r = await fetch(BASE + "/health", { headers: { Origin: `http://127.0.0.1:${PORT + 1}` } });
+  assert.equal(r.status, 403);
+});
+
+test("an explicitly allowlisted origin still works", async () => {
+  const r = await fetch(BASE + "/health", { headers: { Origin: "http://localhost:5173" } });
+  assert.equal(r.status, 200);
+  assert.equal(r.headers.get("access-control-allow-origin"), "http://localhost:5173");
+});
+
+test("a malformed or opaque Origin is refused, not crashed on", async () => {
+  // `Origin: null` is what a sandboxed iframe or a file:// page sends. new URL()
+  // throws on it; an unguarded parse would turn a 403 into a 500.
+  for (const bad of ["null", "not a url", "javascript:alert(1)"]) {
+    const r = await fetch(BASE + "/health", { headers: { Origin: bad } });
+    assert.equal(r.status, 403, `Origin '${bad}' should be refused`);
+  }
+});
+
+test("the socket accepts its own origin so the office can go online", async () => {
+  // wsClients stayed 0 in production for the same reason. An office that serves
+  // a shell but never connects reads as 'every agent offline', which looks like
+  // a flaky socket instead of an origin check.
+  const ws = await wsConnect(TOKENS.owner, SELF_ORIGIN);
+  assert.equal(ws.readyState, WebSocket.OPEN);
+  ws.close();
+});
+
+test("the socket still refuses a stranger's origin", async () => {
+  await assert.rejects(
+    () => wsConnect(TOKENS.owner, "https://jahat.example"),
+    /403|Unexpected server response/,
+  );
+});

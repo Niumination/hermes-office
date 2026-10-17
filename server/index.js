@@ -75,10 +75,64 @@ const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "16kb" }));
 
+/**
+ * Is this request's Origin the server's own origin?
+ *
+ * Why this exists
+ * ---------------
+ * CORS exists to decide whether *another* site may read this one's responses.
+ * A request whose Origin is this very host is not another site, so it never
+ * needed permission — yet the allowlist below treated it like a stranger and
+ * answered 403.
+ *
+ * That was not theoretical. Vite stamps `crossorigin` onto the module script
+ * and the stylesheet it emits:
+ *
+ *     <script type="module" crossorigin src="./assets/index-*.js">
+ *     <link rel="stylesheet" crossorigin href="./assets/index-*.css">
+ *
+ * `crossorigin` makes the browser attach an Origin header even for a
+ * same-origin fetch. So every real browser asked for the bundle with
+ * `Origin: https://<this host>`, the allowlist did not contain the production
+ * domain, and both assets came back 403. The page rendered perfectly empty.
+ *
+ * curl sends no Origin, so curl got 200 — which is why sixteen repo gates and
+ * check-live.sh were all green while the product was a blank screen. The
+ * comment on config.allowedOrigins records the same bug biting once before on
+ * a dev port; it was patched by editing the default list rather than by fixing
+ * the hole, so it came back in production.
+ *
+ * Scheme is deliberately not compared. TLS terminates at the proxy, so the
+ * browser says `https://host` while this process is reached over plain http;
+ * requiring the scheme to match would re-break exactly what we are fixing.
+ * Host is taken from the Host header only — never X-Forwarded-Host, which any
+ * client can set. The session cookie is `HttpOnly; SameSite=Lax`, so it does
+ * not ride along on cross-site requests and nothing here widens authority.
+ */
+function isSameOrigin(req, origin) {
+  const host = String(req.headers?.host || "").trim();
+  if (!host) return false;
+  let u;
+  try {
+    u = new URL(origin);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
+  return u.host === host;
+}
+
+/** An Origin is acceptable when it is absent, allowlisted, or simply us. */
+function originAllowed(req, origin) {
+  if (!origin) return true;
+  if (config.allowedOrigins.has(origin)) return true;
+  return isSameOrigin(req, origin);
+}
+
 // CORS allowlist
 app.use((req, res, next) => {
   const origin = req.headers.origin;
-  if (origin && !config.allowedOrigins.has(origin)) {
+  if (!originAllowed(req, origin)) {
     return res.status(403).json({ error: "Origin tidak diizinkan" });
   }
   if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
@@ -1022,7 +1076,12 @@ const wss = new WebSocketServer({
   verifyClient: (info, done) => {
     const headers = { ...info.req.headers };
     const origin = info.req.headers.origin;
-    if (origin && !config.allowedOrigins.has(origin)) {
+    // Same reasoning as the HTTP middleware above: a browser opening a socket
+    // back to the page's own host always sends Origin, and that is not a
+    // cross-origin request. Refusing it here is why the office could serve a
+    // shell and still never connect — wsClients stayed 0 and every agent read
+    // as offline, which looks like a flaky socket rather than an origin check.
+    if (!originAllowed(info.req, origin)) {
       done(false, 403, "Origin tidak diizinkan");
       return;
     }

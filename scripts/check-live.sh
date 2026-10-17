@@ -28,6 +28,14 @@ set -uo pipefail
 
 URL="${OFFICE_LIVE_URL:-https://dash.abstract.biz.id}"
 URL="${URL%/}"
+
+# Every request below carries this. A browser loading this site sends an Origin
+# header on the page's own assets, because Vite stamps `crossorigin` on the
+# module script and the stylesheet. curl does not, and that one missing header
+# is how this gate reported 8/8 green over a site that rendered a blank page:
+# the origin allowlist answered 403 to the browser and 200 to us. A live gate
+# that does not send what a browser sends is not checking the product.
+OH="Origin: $URL"
 JAR="$(mktemp -t hermes-live-jar.XXXXXX)"
 BODY="$(mktemp -t hermes-live-body.XXXXXX)"
 trap 'rm -f "$JAR" "$BODY"' EXIT
@@ -49,7 +57,7 @@ echo "check-live: $URL"
 # --- 1. the site is up ------------------------------------------------------
 # -f is deliberately NOT used: it hides the response body on 4xx, and the body
 # is where the office explains itself.
-code=$(curl -s -o "$BODY" -w '%{http_code}' -m 20 "$URL/health" 2>/dev/null)
+code=$(curl -s -H "$OH" -o "$BODY" -w '%{http_code}' -m 20 "$URL/health" 2>/dev/null)
 if [ "$code" = "200" ] && grep -q '"status"' "$BODY" 2>/dev/null; then
   up=$(grep -o '"uptimeS":[0-9]*' "$BODY" | cut -d: -f2)
   ok "/health answers 200 (uptime ${up:-?}s)"
@@ -64,7 +72,7 @@ fi
 # the app HTML, and NO session cookie. Both halves matter — a 401 here would
 # lock the owner out of the login form itself, and a cookie here would mean
 # the auto-session came back.
-code=$(curl -s -c "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/" 2>/dev/null)
+code=$(curl -s -H "$OH" -c "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/" 2>/dev/null)
 if [ "$code" != "200" ]; then
   bad "GET / returned '$code' — the login shell must be reachable without a session"
 elif grep -q 'office_session' "$JAR" 2>/dev/null; then
@@ -78,7 +86,7 @@ fi
 # caller they are a floor plan, a staff list and a live location feed, which
 # is why there is no longer a role that may read them without a token.
 for ep in policy roster presence; do
-  code=$(curl -s -b "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
+  code=$(curl -s -H "$OH" -b "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
   case "$code" in
     401) ok "/$ep refuses an anonymous caller" ;;
     000) bad "/$ep unreachable — authorization not verified" ;;
@@ -94,9 +102,17 @@ done
 leaked=""
 unreachable=0
 for ep in ledger dossier replay standup debug/events; do
-  code=$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
+  code=$(curl -s -H "$OH" -b "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
+  # A 403 from the origin allowlist is not proof that authorization works — it
+  # is proof the request never reached the guard. Counting it as a pass is how
+  # this section stayed green while every other section failed for exactly that
+  # reason. Only an auth refusal counts as an auth refusal.
+  if [ "$code" = "403" ] && grep -q 'Origin tidak diizinkan' "$BODY" 2>/dev/null; then
+    code="origin-refused"
+  fi
   case "$code" in
     401 | 403) : ;;
+    origin-refused) unreachable=$((unreachable + 1)) ;;
     # curl reports 000 when the connection never completed. Counting that as a
     # leaked route would raise a security alarm about a host that is merely
     # down — and a gate that cries wolf stops being read.
@@ -117,11 +133,24 @@ fi
 # `git pull` without `npm run build`, which leaves the server new and the
 # browser old. Skipped — not failed — when the tree has not been built, so the
 # gate stays usable on a fresh clone.
-served=$(curl -s -b "$JAR" -m 20 "$URL/" 2>/dev/null |
+served=$(curl -s -H "$OH" -b "$JAR" -m 20 "$URL/" 2>/dev/null |
   grep -o 'assets/index-[A-Za-z0-9_-]*\.js' | head -1 | sed 's|assets/||')
 if [ -z "$served" ]; then
   bad "could not find the JS bundle name in the served HTML"
 else
+  # Reading the name out of the HTML only proves the HTML is right. The bug
+  # this gate missed lived one request later: the <script> tag was perfect and
+  # the file behind it answered 403, so the page stayed empty. Ask for the
+  # asset the way the browser asks for it.
+  acode=$(curl -s -H "$OH" -o /dev/null -w '%{http_code}' -m 20 "$URL/assets/$served" 2>/dev/null)
+  if [ "$acode" = "200" ]; then
+    ok "the browser can actually fetch $served"
+  else
+    bad "the JS bundle answered '$acode' to a browser-shaped request"
+    note "the shell links it, but nothing can load it — the page renders empty"
+    note "most likely the origin allowlist is refusing this host's own origin"
+  fi
+
   local_bundle=$(ls frontend/dist/assets/index-*.js 2>/dev/null | head -1 | xargs -r basename)
 
   # A mismatch means two very different things, and calling both a failure
@@ -157,7 +186,7 @@ fi
 # The product's whole purpose is to reflect real activity. An office that is
 # up, authenticated and empty is a failure the other five checks cannot see.
 # This reports rather than fails: a quiet night is not a defect.
-seen=$(curl -s -b "$JAR" -m 20 "$URL/presence" 2>/dev/null |
+seen=$(curl -s -H "$OH" -b "$JAR" -m 20 "$URL/presence" 2>/dev/null |
   grep -o '"lastSeenTs":[0-9]*' | cut -d: -f2 | sort -rn | head -1)
 if [ "$FAIL" -gt 0 ] && [ -z "$seen" ]; then
   # Saying "reachable, but quiet" about a host that never answered would be the

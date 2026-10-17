@@ -36,7 +36,7 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1249   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1308   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     736   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   392   validasi, clamp, REDAKSI, rate limit, ring buffer
@@ -261,7 +261,7 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **378** | `npm test` |
+| Backend | **386** | `npm test` |
 | Frontend | **250** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
