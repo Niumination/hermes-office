@@ -37,7 +37,7 @@ Tiga pilar yang sudah berdiri:
 
 ```
 index.js      1249   entry: HTTP + WS + static, semua rute, shutdown bersih
-policy.js     602   Fase 3 — denah lantai sebagai kebijakan, persetujuan
+policy.js     736   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   392   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       403   Fase 1 — OTel GenAI → event Hermes
@@ -56,20 +56,22 @@ pricing.js    100   token → USD, pencocokan prefiks-terpanjang
 auth.js        90   Bearer per-sumber, SHA-256
 ```
 
-### Frontend (`frontend/src/`, ~3782 baris non-tes)
+### Frontend (`frontend/src/`, ~9103 baris non-tes)
 
 ```
-styles/sect.css     979   seluruh sistem desain: token, tata letak, gerak
-rooms.ts            540   definisi ruangan: nama, pelat, metadata
-SectApp.tsx         257   orkestrasi: socket, follow-mode, halaman masuk
-sect/Seal.tsx       168   Segel — integritas rantai ledger, hash kepala utuh
-hermes/useOfficeSocket 171 klien WS, reconnect
-sect/Writ.tsx       149   Titah — antrean persetujuan, hanya pemilik memutuskan
+styles/sect.css    2396   seluruh sistem desain: token, tata letak, gerak
+SectApp.tsx         691   orkestrasi: socket, follow-mode, halaman masuk
+rooms.ts            540   SENI panggung: furnitur, waypoint, pelat latar
+eco/ecosystem.ts    457   model kantor→ruang→meja→agen; satu-satunya yang
+                          tahu ejaan referensi `kantor/ruang`
+hermes/useOfficeSocket 270 klien WS, reconnect
+sect/Seal.tsx       241   Segel — integritas rantai ledger, hash kepala utuh
+sect/Hall.tsx       218   aula, awan, Murid berdiri di denah, papan nama
+sect/Writ.tsx       155   Titah — antrean persetujuan, hanya pemilik memutuskan
+sect/Chronicle.tsx  123   Babad — catatan; mentoleransi jenis tak dikenal
 hermes/useBurnState 117   Fase 6 — seed sekali + push WS, NOL polling
-sect/Hall.tsx       112   aula, awan, Murid sebagai aura, tabir Lenyap di Balik Kabut
-sect/Chronicle.tsx  108   Babad — catatan; mentoleransi jenis tak dikenal
-sect/QiRing.tsx      95   cincin Tenaga, tiga keadaan (diredaksi/tanpa pagu/berpagu)
-sect/RealmRail.tsx   80   Tataran — tangga izin sebagai ketinggian
+sect/EcoRail.tsx    115   rail dua kantor: ruang, meja, lencana penghuni
+sect/QiRing.tsx      92   cincin Tenaga, tiga keadaan
 hermes/burnTypes.ts  41   kontrak /burn, terpisah dari komponen render
 ```
 
@@ -259,8 +261,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **370** | `npm test` |
-| Frontend | **189** | `cd frontend && npx vitest run` |
+| Backend | **378** | `npm test` |
+| Frontend | **250** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

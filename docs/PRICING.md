@@ -39,7 +39,7 @@ runners actually report. If this page and the code disagree, CI fails. The
 English and Indonesian versions are held to the same figures, because a
 translation is a second place for a claim to rot.
 
-This repo carries 370 backend tests and 115 machine-verified documentation
+This repo carries 378 backend tests and 119 machine-verified documentation
 claims, precisely because a hash chain done correctly, authorization that
 holds on both REST and WebSocket rather than one of the two places it lives,
 and a deterministic replay usable as evidence are all easy to get *almost*

@@ -128,10 +128,10 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 
 | | |
 |---|---|
-| Test backend | **370** |
-| Test frontend | **189** |
-| Klaim dokumen yang diverifikasi mesin | **115** (`scripts/check-docs.py`) |
-| Bundel | 287,7 kB JS · 41,0 kB CSS |
+| Test backend | **378** |
+| Test frontend | **250** |
+| Klaim dokumen yang diverifikasi mesin | **119** (`scripts/check-docs.py`) |
+| Bundel | 295,3 kB JS · 44,0 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 
 `check-docs.py` memeriksa dokumentasi terhadap repo — jumlah rute, jumlah
@@ -165,7 +165,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | handoff integrity | setiap berkas cocok `MANIFEST.sha256` byte-for-byte; tanpa berkas liar |
 | eslint | nol error lint di `server/` dan `tests/` |
 | frontend build | `tsc && vite build` — error tipe gagal di sini |
-| backend tests | 370 test |
+| backend tests | 378 test |
 | frontend tests | 170 test |
 | clean shutdown | proses keluar bersih dengan WebSocket masih tersambung |
 | ledger under load | rantai hash selamat dari 400 keputusan serentak: rapat, tanpa duplikat, verify ok |

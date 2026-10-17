@@ -15,14 +15,19 @@
 
 ## 1. Prinsip
 
-1. **Tataran = izin.** Ketinggian di layar adalah tingkat kepercayaan. Aula yang
-   lebih tinggi butuh Tataran lebih tinggi. Ini bukan metafora dekoratif: rail
-   diurutkan langsung dari tangga kebijakan server.
+1. **Kantor → ruang → meja → agen.** Rail kiri adalah model ekosistem pemilik,
+   bukan tangga kepercayaan: mesin (Mac / LightVela), kategori folder, repo,
+   lalu topik Telegram. Dua kantor tampil bergantian, tidak berdampingan.
+   _Dicabut:_ "Tataran = izin". Tingkat kepercayaan dicabut di `20248f2`; satu
+   pemilik tidak punya tataran untuk dinaiki.
 2. **Tenaga = burn.** Belanja adalah energi yang mengalir, bukan angka di pojok.
    Lima keadaan server (`normal → warm → hot → critical → tripped`) menjadi
    lima warna qi.
-3. **Lenyap di Balik Kabut = 403.** Aula yang tidak boleh dimasuki tertutup awan. Tabir
-   hanya muncul bila server memang menolak.
+3. **Tidak ada aula yang tertutup bagi pemiliknya.** _Dicabut:_ tabir "Lenyap
+   di Balik Kabut". Ia hanya bisa terangkat lewat perbandingan tataran yang
+   benar secara konstruksi, jadi tak pernah sekali pun muncul, dan teksnya
+   menjanjikan 403 per-aula yang kantor satu-pemilik tak bisa terbitkan.
+   `check-docs.py` kini menolak kembalinya `viewerTier`/`canEnter`/`sect-veil`.
 4. **UI tidak boleh mengarang penolakan, dan tidak boleh menyembunyikan angka
    yang sudah diketahui.** Dua sisi dari satu aturan. Menampilkan "diredaksi"
    atas data yang dikirim server adalah kebohongan; menampilkan `$0` atas pagu
@@ -38,13 +43,13 @@
 ┌────────────────────────────────────────────────────────────────────────┐
 │  bilah: Perguruan · status · Tenaga · Murid · Segel · niu · ID/EN      │
 ├──────────────────┬─────────────────────────────────┬───────────────────┤
-│  rail Tataran    │          aula (hall)            │  Titah (writ)     │
-│                  │                                 │  ──────────────   │
-│  Balai Sesepuh ··│  pelat sinematik + 2 awan +     │  Babad (chronicle)│
-│  Bilik Rajah   · │  grade + vignette               │  / roster Murid   │
-│  Bilik Ramuan    │  Murid sebagai aura qi          │                   │
-│  …               │  tabir bila terkunci            │  auto-scroll      │
-│  Gerbang Gunung  │                                 │  hanya di ekor    │
+│  rail ekosistem  │          aula (hall)            │  Titah (writ)     │
+│  [Mac|LightVela] │                                 │  ──────────────   │
+│  Root Ekosistem ·│  pelat sinematik + 2 awan +     │  Babad (chronicle)│
+│  Apps          9 │  grade + vignette               │  / roster Murid   │
+│  Services      3 │  Murid berdiri di denah         │                   │
+│  …               │  angka = jumlah MEJA,           │  auto-scroll      │
+│  Vault         0 │  bukan jumlah penghuni          │  hanya di ekor    │
 └──────────────────┴─────────────────────────────────┴───────────────────┘
 ```
 
@@ -60,15 +65,15 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 
 ## 3. Bahasa visual
 
-| `sect.css` | 2214 | seluruh sistem desain — token, tata letak, komponen, gerak |
+| `sect.css` | 2396 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
-| 43 token OKLCH | seluruh sistem desain
-| `SectApp` (569 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, halaman masuk |
-| `Hall` (215 baris) | aula, awan, Murid berdiri di denah, papan nama, tabir Lenyap di Balik Kabut |
+| 64 token OKLCH | seluruh sistem desain
+| `SectApp` (691 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, halaman masuk |
+| `Hall` (218 baris) | aula, awan, Murid berdiri di denah, papan nama, "Tidak diketahui" saat belum masuk |
 | `AmanatBoard` (161 baris) | papan amanat mengambang — lajur mendatar, backdrop redup |
 | `stations` (135 baris) | peta stasiun per arketipe: koordinat lantai, skala kedalaman, urutan gambar |
-| `RealmRail` (78 baris) | tangga Tataran, kehadiran, pagu |
-| `Chronicle` (108 baris) | Babad — catatan peristiwa |
+| `EcoRail` (115 baris) | rail dua kantor: ruang, jumlah meja, lencana penghuni |
+| `Chronicle` (123 baris) | Babad — catatan peristiwa |
 | `QiRing` (92 baris) | cincin Tenaga, tiga keadaan |
 | `Seal` (241 baris) | Segel — integritas rantai ledger |
 | `Writ` (155 baris) | Titah — antrean persetujuan |

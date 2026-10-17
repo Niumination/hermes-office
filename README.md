@@ -123,10 +123,10 @@ the normalisation is real work and it is already done here.
 
 | | |
 |---|---|
-| Backend tests | **370** |
-| Frontend tests | **189** |
-| Machine-verified doc claims | **115** (`scripts/check-docs.py`) |
-| Bundle | 287.7 kB JS · 41.0 kB CSS |
+| Backend tests | **378** |
+| Frontend tests | **250** |
+| Machine-verified doc claims | **119** (`scripts/check-docs.py`) |
+| Bundle | 295.3 kB JS · 44.0 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
 
 `check-docs.py` executes the documentation against the repo — route counts,
@@ -163,7 +163,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | handoff integrity | every file matches `MANIFEST.sha256` byte-for-byte; no extras |
 | eslint | no lint errors in `server/` and `tests/` |
 | frontend build | `tsc && vite build` — a type error fails here |
-| backend tests | 370 tests |
+| backend tests | 378 tests |
 | frontend tests | 170 tests |
 | clean shutdown | the process exits with a live WebSocket attached |
 | ledger under load | the hash chain survives 400 concurrent decisions: contiguous, no duplicates, verify ok |
