@@ -118,7 +118,7 @@ describe('Hall — the cast', () => {
   it('falls back to the mark when the image fails, so a half-deploy is not an empty office', () => {
     const { container } = render(
       <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
-        cultivators={[cul({ sprite: '/sprites/donghua/missing.webp' })]} />,
+        cultivators={[cul({ sprite: '/assets/missing-cultivator.webp' })]} />,
     )
     const img = container.querySelector('img.sect-cul__art') as HTMLImageElement
     fireEvent.error(img)
