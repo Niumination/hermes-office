@@ -5,7 +5,10 @@
  * 22 kB isometric stage. The grid here is three columns and one bar; every
  * region owns exactly one idea:
  *
- *   Tataran rail    — permission, as altitude
+ *   Ecosystem rail  — office, then room; not a ladder. The label read
+ *                     'Tataran' until 2026-10-17, three commits after the
+ *                     tiers it named were retracted: the button still
+ *                     promised a rank the office no longer has.
  *   the hall     — presence, as a place
  *   Babad chronicle — history, as a record
  *
@@ -524,9 +527,9 @@ export const SectApp: React.FC = () => {
             className="sect-float__btn"
             aria-pressed={railOpen}
             onClick={() => setRailOpen((v) => !v)}
-            title={railOpen ? 'Sembunyikan Tataran' : 'Tampilkan Tataran'}
+            title={railOpen ? 'Sembunyikan ruang' : 'Tampilkan ruang'}
           >
-            {railOpen ? '◀' : '▶'} Tataran
+            {railOpen ? '◀' : '▶'} Ruang
           </button>
         </div>
 

@@ -68,7 +68,7 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 | `sect.css` | 2396 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
 | 64 token OKLCH | seluruh sistem desain
-| `SectApp` (691 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, halaman masuk |
+| `SectApp` (694 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, halaman masuk |
 | `Hall` (218 baris) | aula, awan, Murid berdiri di denah, papan nama, "Tidak diketahui" saat belum masuk |
 | `AmanatBoard` (161 baris) | papan amanat mengambang — lajur mendatar, backdrop redup |
 | `stations` (135 baris) | peta stasiun per arketipe: koordinat lantai, skala kedalaman, urutan gambar |

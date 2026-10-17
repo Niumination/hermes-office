@@ -866,7 +866,12 @@ def main() -> int:
     # exactly the retraction that gets quietly undone, because "which rooms
     # may this viewer see" is a natural-sounding question to re-ask. Room
     # budgets stay — `capUsd` is the spending brake and a fact about policy.
-    FORBIDDEN_STANDING = ("viewerTier", "canEnter", "sect-veil")
+    # "Tataran" joins the list as a *word*, not a type. The tiers were
+    # retracted in 20248f2 and the veil in edb4669, but the rail's own button
+    # still read "◀ Tataran" afterwards — a label is a promise, and this one
+    # named a rank the office stopped having. It survived three commits of
+    # retraction work because every check looked for identifiers.
+    FORBIDDEN_STANDING = ("viewerTier", "canEnter", "sect-veil", "Tataran")
     for rel in ("frontend/src/theme/sect.ts", "frontend/src/theme/policyClient.ts",
                 "frontend/src/sect/Hall.tsx", "frontend/src/sect/SectApp.tsx"):
         path = os.path.join(ROOT, rel)
