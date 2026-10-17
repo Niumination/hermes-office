@@ -211,6 +211,15 @@ jobs:
       # outran reality — a CI workflow claimed three times, a GitHub poller
       # described hitting an endpoint that cannot return 200. The claims are
       # now executed.
+      #
+      # check-docs runs BOTH test runners and compares the bundle-size claims
+      # against frontend/dist. Without a local build those checks fail on
+      # every leg — red for a reason no code change can fix.
+      - name: Frontend test counts (build dist/ so check-docs can read the bundle)
+        run: |
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+
       - name: ARCHITECTURE.md describes the repo that exists
         run: python3 scripts/check-docs.py
 
