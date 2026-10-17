@@ -79,6 +79,55 @@ describe('usePresence', () => {
     expect(result.current.cloud?.online).toBe(true)
   })
 
+  /*
+    The gap a screenshot caught: the office drew two agents standing in a hall
+    while the roster beside it called them silent and printed a last-seen
+    stamp older than the heartbeat the page was already holding. The watchdog
+    could only ever take a row from online to offline.
+  */
+  it('revives an agent the snapshot called offline when a beat arrives', async () => {
+    const now = Date.now()
+    const fetchImpl = vi.fn(async () =>
+      ok({ agents: { mac: { online: false, lastSeenTs: now - 20 * 60_000 } } }))
+
+    const { result } = renderHook(() =>
+      usePresence({ fetchImpl, heartbeats: { mac: now }, pollMs: 10 * 60_000, tickMs: 500 }))
+
+    await waitFor(() => expect(result.current.mac).toBeDefined())
+    await act(async () => { await vi.advanceTimersByTimeAsync(600) })
+    expect(result.current.mac?.online).toBe(true)
+    expect(result.current.mac?.lastSeenTs).toBe(now)
+  })
+
+  it('reports the newest evidence, not whichever side it looked at first', async () => {
+    // A stale socket beat must not drag a fresher snapshot backwards.
+    const now = Date.now()
+    const fetchImpl = vi.fn(async () =>
+      ok({ agents: { cloud: { online: true, lastSeenTs: now } } }))
+
+    const { result } = renderHook(() =>
+      usePresence({ fetchImpl, heartbeats: { cloud: now - 60_000 }, pollMs: 10 * 60_000, tickMs: 500 }))
+
+    await waitFor(() => expect(result.current.cloud).toBeDefined())
+    await act(async () => { await vi.advanceTimersByTimeAsync(600) })
+    expect(result.current.cloud?.lastSeenTs).toBe(now)
+    expect(result.current.cloud?.online).toBe(true)
+  })
+
+  it('does not revive an agent whose only beat is older than the watchdog', async () => {
+    // Revival is evidence, not optimism: an expired beat is not a sighting.
+    const now = Date.now()
+    const fetchImpl = vi.fn(async () =>
+      ok({ agents: { mac: { online: false, lastSeenTs: now - 30 * 60_000 } } }))
+
+    const { result } = renderHook(() =>
+      usePresence({ fetchImpl, heartbeats: { mac: now - WATCHDOG_MS - 1000 }, pollMs: 10 * 60_000, tickMs: 500 }))
+
+    await waitFor(() => expect(result.current.mac).toBeDefined())
+    await act(async () => { await vi.advanceTimersByTimeAsync(600) })
+    expect(result.current.mac?.online).toBe(false)
+  })
+
   it('does not invent agents the server did not name', async () => {
     const fetchImpl = vi.fn(async () => ok({}))
     const { result } = renderHook(() => usePresence({ fetchImpl }))

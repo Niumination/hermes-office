@@ -117,10 +117,31 @@ export function usePresence(opts: UsePresenceOptions = {}): PresenceMap {
         let changed = false
         const next: PresenceMap = {}
         for (const [agent, row] of Object.entries(prev)) {
-          const last = beatsRef.current[agent] ?? row.lastSeenTs
+          // The newest evidence wins, whichever side it came from. This used
+          // to read `beat ?? row.lastSeenTs`, which silently preferred a
+          // socket beat even when the snapshot was newer, and — worse — the
+          // rule below only ever ran in one direction.
+          const beat = beatsRef.current[agent]
+          const newest = Math.max(beat ?? 0, row.lastSeenTs ?? 0)
+          const last = newest > 0 ? newest : undefined
           const stale = typeof last === 'number' && now - last > WATCHDOG_MS
-          if (row.online && stale) {
-            next[agent] = { online: false, lastSeenTs: last }
+
+          /*
+            Symmetric watchdog. The old rule could only take a row from online
+            to offline; nothing could put it back until the 30s poll came
+            round. So a viewer could watch an agent act — the event placed it
+            in a hall, the beat landed in `beatsRef` — while the roster beside
+            that hall said "sunyi, terakhir aktif" and printed a timestamp
+            older than the one it was holding. The office does not get to
+            draw an agent working and call it silent on the same screen.
+
+            This invents no life. An agent is revived only by a heartbeat we
+            actually received, and only while that beat is inside the same
+            90s window the server applies.
+          */
+          const online = !stale && (row.online || typeof beat === 'number')
+          if (online !== row.online || last !== row.lastSeenTs) {
+            next[agent] = { online, lastSeenTs: last }
             changed = true
           } else {
             next[agent] = row
