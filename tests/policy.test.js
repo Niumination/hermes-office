@@ -83,7 +83,7 @@ test("the deny list beats the allow list", () => {
   assert.equal(p.decide({ agent: "x", tool: "bash" }).allow, false);
 });
 
-// --- rooms as trust zones --------------------------------------------------
+// --- rooms as scopes -------------------------------------------------------
 
 test("moving an agent changes what it may do", () => {
   const { p } = mk();
@@ -297,7 +297,6 @@ test("the snapshot is a complete, readable description of the floor plan", () =>
 
   assert.equal(s.defaultRoom, "lobby");
   const lobby = s.rooms.find((r) => r.room === "lobby");
-  assert.equal(lobby.trust, "untrusted");
   assert.equal(lobby.maxModelTier, "cheap");
 
   const sr = s.rooms.find((r) => r.room === "server-room");
@@ -307,6 +306,51 @@ test("the snapshot is a complete, readable description of the floor plan", () =>
   const office = s.rooms.find((r) => r.room === "main-office");
   assert.deepEqual(office.occupants.map((o) => o.agent), ["x"]);
   assert.equal(office.budgetHourlyUsd, 2);
+});
+
+// --- the rung that ranked without refusing ---------------------------------
+//
+// Rooms used to carry trust: untrusted | standard | privileged | idle. It was
+// written in eight places, copied into three outputs and one event, and read
+// by nothing. These tests fail if it comes back, and they are written so they
+// cannot pass while it exists: they name the field, not a derived value.
+
+test("the floor plan no longer ranks rooms by a trust rung", () => {
+  const { p } = mk();
+  const s = p.snapshot();
+
+  for (const r of s.rooms) {
+    assert.ok(
+      !("trust" in r),
+      `room ${r.room} still publishes a trust rung: ${JSON.stringify(r.trust)}`
+    );
+  }
+});
+
+test("a refusal cites the mechanism that refused, not a rank", () => {
+  const { p } = mk();
+  p.assign("x", "lobby", "zaryu");
+
+  // lobby denies bash by scope, not by being "untrusted".
+  const d = p.decide({ agent: "x", tool: "bash" });
+  assert.equal(d.allow, false);
+  assert.ok(!("trust" in d), "the decision still carries a trust rung");
+  assert.match(d.reason, /bash/, "the reason should name the tool it refused");
+});
+
+test("moving an agent records where it went, not how trusted it became", () => {
+  const seen = [];
+  const { p } = mk({ onEvent: (e) => seen.push(e) });
+  // main-office, not server-room: the latter has entryApproval, so the move
+  // is held for sign-off and never emits agent_moved.
+  p.assign("x", "main-office", "zaryu");
+
+  const moved = seen.filter((e) => e.type === "agent_moved");
+  assert.ok(moved.length >= 1, "the move should have been recorded");
+  for (const e of moved) {
+    assert.ok(!("trust" in e), "agent_moved still carries a trust rung");
+    assert.equal(e.room, "main-office");
+  }
 });
 
 // --- floor visibility vs floor governance ----------------------------------

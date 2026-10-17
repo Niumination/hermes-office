@@ -331,7 +331,7 @@ app.get("/burn", requireAny, (_req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Floor-plan policy — rooms are trust zones, doors are approval gates.
+// Floor-plan policy — rooms are scopes, doors are approval gates.
 // ---------------------------------------------------------------------------
 let policyDoc;
 if (config.policyFile) {
@@ -357,7 +357,7 @@ const floor = new FloorPlanPolicy(policyDoc, {
     if (ev.type === "agent_moved") {
       recordGovernance(
         "agent_moved",
-        { agent: ev.agent, fromRoom: ev.fromRoom, room: ev.room, grantedBy: ev.grantedBy, trust: ev.trust },
+        { agent: ev.agent, fromRoom: ev.fromRoom, room: ev.room, grantedBy: ev.grantedBy },
         { subject: ev.agent, actor: ev.grantedBy }
       );
     } else if (ev.type === "approval_requested") {
@@ -720,7 +720,7 @@ app.get("/dossier", requireOwner, ledgerRequired, (req, res) => {
  * The floor plan as data — the audit artifact, not a YAML file.
  *
  * Owner-only. This used to serve a cut-down building view — room names,
- * trust levels, who is where, but never the tool allow/deny lists, approval
+ * who is where, but never the tool allow/deny lists, approval
  * gates or budgets, because that is a map of exactly where the privilege
  * boundaries are. With no guest principal left, there is nobody to serve the
  * cut-down version to, and the full snapshot goes only to the owner.

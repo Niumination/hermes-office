@@ -69,7 +69,6 @@ const FOLDABLE = Object.freeze([
 export function buildReplay(records, { from = -Infinity, to = Infinity, maxFrames = 5000 } = {}) {
   const state = {
     rooms: new Map(),        // agent -> room
-    trust: new Map(),        // agent -> trust at last move
     pending: new Map(),      // approvalId -> {agent, tool, kind, room, expiresAt}
     burn: "normal",
     spentUsd: 0,
@@ -148,7 +147,8 @@ function apply(state, type, p, seq) {
     case "agent_moved":
       if (p.agent) {
         state.rooms.set(p.agent, p.room ?? null);
-        if (p.trust != null) state.trust.set(p.agent, p.trust);
+        // Records written before 2026-10-17 also carry p.trust. It is ignored:
+        // nothing ever read the map it used to fill. Old frames stay valid.
       }
       break;
 

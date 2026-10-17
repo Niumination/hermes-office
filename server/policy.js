@@ -7,7 +7,22 @@
  * nobody reads. Hermes Office already draws a building. So: make the drawing
  * authoritative.
  *
- *   room          = trust zone      (which tools and models are reachable)
+ * RETRACTED 2026-10-17 — the `trust` field.
+ * Every room used to carry one of four rungs — untrusted, standard,
+ * privileged, idle. It is gone. It was never read: grep found it written in eight room
+ * literals, copied into three output objects, attached to the agent_moved
+ * event and accumulated into a Map in replay.js that nothing ever consumed.
+ * No branch anywhere compared it. It denied nothing.
+ * What actually refuses an action is below, and is unchanged: a missing room,
+ * budgetHourlyUsd === 0, the tools deny list, the allow list, maxModelTier,
+ * and the approval gates. Those are mechanisms. `trust` was a four-rung
+ * ladder printed beside them, and a label that ranks without enforcing reads
+ * as proof of an enforcement that does not exist.
+ * Historical agent_moved records still carry `trust` in their payload. Replay
+ * ignores unknown payload keys, so the chain stays valid and verifiable; old
+ * events are not rewritten.
+ *
+ *   room          = scope           (which tools and models are reachable)
  *   room budget   = spend envelope  (a small room cannot burn much)
  *   door          = policy gate     (some transitions need a human)
  *   moving an agent into a room = granting it that room's scope
@@ -79,10 +94,10 @@ const anyMatch = (name, patterns) =>
 export const DEFAULT_POLICY = {
   defaultRoom: "lobby",
   rooms: {
-    // Untrusted intake. Where an unrecognised agent lands.
+    // Intake. Where an unrecognised agent lands: read-only tools, the
+    // smallest allowance in the building.
     lobby: {
       label: "Lobby",
-      trust: "untrusted",
       tools: { allow: ["web_search", "read_file", "fetch", "llm:*"], deny: [] },
       maxModelTier: "cheap",
       budgetHourlyUsd: 0.25,
@@ -91,7 +106,6 @@ export const DEFAULT_POLICY = {
     // Ordinary work. Most agents live here.
     "main-office": {
       label: "Main Office",
-      trust: "standard",
       tools: { allow: ["*"], deny: ["bash", "shell", "deploy", "kubectl", "terraform", "psql"] },
       maxModelTier: "premium",
       budgetHourlyUsd: 2.0,
@@ -99,7 +113,6 @@ export const DEFAULT_POLICY = {
     },
     "meeting-room": {
       label: "Meeting Room",
-      trust: "standard",
       tools: { allow: ["*"], deny: ["bash", "shell", "deploy", "kubectl", "terraform", "psql"] },
       maxModelTier: "premium",
       budgetHourlyUsd: 1.0,
@@ -108,7 +121,6 @@ export const DEFAULT_POLICY = {
     // Privileged. Production tooling, and a human stands at the door.
     "server-room": {
       label: "Server Room",
-      trust: "privileged",
       tools: { allow: ["*"] },
       maxModelTier: "premium",
       budgetHourlyUsd: 5.0,
@@ -118,7 +130,6 @@ export const DEFAULT_POLICY = {
     },
     "mac-studio": {
       label: "Mac Studio",
-      trust: "privileged",
       tools: { allow: ["*"], deny: ["terraform"] },
       maxModelTier: "premium",
       budgetHourlyUsd: 3.0,
@@ -128,7 +139,6 @@ export const DEFAULT_POLICY = {
     // Executive. Expensive thinking, no hands on production.
     "ceo-office": {
       label: "CEO Office",
-      trust: "standard",
       tools: { allow: ["*"], deny: ["bash", "shell", "deploy", "kubectl", "terraform", "psql"] },
       maxModelTier: "premium",
       budgetHourlyUsd: 10.0,
@@ -136,8 +146,8 @@ export const DEFAULT_POLICY = {
       entryApproval: true,
     },
     // Break rooms: an agent parked here is explicitly idle.
-    kitchen: { label: "Kitchen", trust: "idle", tools: { allow: [] }, maxModelTier: "cheap", budgetHourlyUsd: 0, approval: [] },
-    "nap-room": { label: "Nap Room", trust: "idle", tools: { allow: [] }, maxModelTier: "cheap", budgetHourlyUsd: 0, approval: [] },
+    kitchen: { label: "Kitchen", tools: { allow: [] }, maxModelTier: "cheap", budgetHourlyUsd: 0, approval: [] },
+    "nap-room": { label: "Nap Room", tools: { allow: [] }, maxModelTier: "cheap", budgetHourlyUsd: 0, approval: [] },
   },
 };
 
@@ -234,7 +244,6 @@ export class FloorPlanPolicy {
       fromRoom: from,
       room: roomId,
       grantedBy,
-      trust: this.room(roomId)?.trust,
       ts: this.now(),
     });
   }
@@ -388,7 +397,6 @@ export class FloorPlanPolicy {
       agent,
       room: roomId,
       roomLabel: room?.label ?? roomId,
-      trust: room?.trust ?? "untrusted",
       // Which rule decided this. Steps 1–4 are the room's own doing; step 5
       // delegates to the burn tracker, which overrides it with its own scope.
       // Without a default, a room-policy refusal reached the audit dossier
@@ -561,7 +569,6 @@ export class FloorPlanPolicy {
       return {
         room: id,
         label: r.label,
-        trust: r.trust,
         maxModelTier: r.maxModelTier,
         toolsAllow: r.tools?.allow ?? [],
         toolsDeny: r.tools?.deny ?? [],
