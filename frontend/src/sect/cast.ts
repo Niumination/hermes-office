@@ -42,43 +42,80 @@ export const ARCHETYPES: readonly Archetype[] = [
 ] as const
 
 /**
- * Named agents this office actually runs. Keyed by id because identity beats
+ * Agents this office can actually name, keyed by id because identity beats
  * role: `boss` reports role "reviewer", and drawing the person who runs the
  * place as a junior scholar would be a worse answer than the role lookup
  * gives. The hall that used to justify this — Balai Sesepuh — was a fork
  * invention and is gone; the identity argument is what survives it.
+ *
+ * SEVEN NAMES REMOVED
+ * -------------------
+ * `cron-runner`, `debugger`, `code-reviewer`, `frontend-developer`,
+ * `fullstack-developer`, `test-engineer` and `security-auditor` used to sit
+ * in this table. None of them appears anywhere in server/ or tests/ — not
+ * once. They are MIRAI's generic profile names, and the owner's own
+ * topics.json carries the warning in advance: "Nilai bukan
+ * research/writer/developer generik MIRAI". A lookup table full of agents
+ * that cannot arrive is not harmless: it reads like evidence that this fleet
+ * has a frontend developer and a security auditor, and it does not.
+ *
+ * What the server can really send is small and knowable. /roster returns
+ * PERMANENT_CAST — cloud, mac, boss — plus whatever has sent a heartbeat.
  */
 const BY_ID: Record<string, Archetype> = {
+  // The permanent cast, verbatim from server/index.js.
   boss: 'elder',        // Ketua — the owner of the office
   cloud: 'cultivator',  // Awan — the generalist that does the work
   mac: 'alchemist',     // Alat — the Mac workstation
-  octo: 'forge',
+
+  // Sources that can also arrive as heartbeat names.
   github: 'forge',
-  'cron-runner': 'physician',
-  debugger: 'physician',
-  'code-reviewer': 'scholar',
-  'frontend-developer': 'weaver',
-  'fullstack-developer': 'cultivator',
-  'test-engineer': 'alchemist',
-  'security-auditor': 'guardian',
+  octo: 'forge',
+  system: 'physician',
+
+  /*
+    The Telegram topics, which are what an "agent" means in this ecosystem:
+    kantor → ruang → meja → agen = mesin → kategori → repo → topik telegram.
+    None of these reaches the floor yet — the server still speaks the fork's
+    vocabulary — but when one does it must arrive as itself rather than as a
+    hash. The archetype follows what the topic is for, nothing more.
+  */
+  'mac/utama': 'elder',
+  'mac/orkestrator': 'elder',
+  'mac/research': 'scholar',
+  'mac/builder': 'forge',
+  'mac/qa': 'alchemist',
+  'mac/kreator': 'weaver',
+  'mac/serbaguna': 'cultivator',
+  'mac/cron': 'physician',
+  'mac/edu': 'scholar',
+  'mac/asn': 'guardian',
+
+  'lightvela/utama': 'elder',
+  'lightvela/infra': 'physician',
+  'lightvela/general': 'cultivator',
+  'lightvela/studio': 'weaver',
+  'lightvela/contentvela': 'weaver',
 }
 
 /**
- * Role → archetype. These are the pairings build-cast-sprites.py already
- * records as the reason each archetype was generated; duplicating them by
- * hand here would let the two drift, so the names match that script exactly.
+ * Role → archetype, for an agent this file cannot name.
+ *
+ * Only two roles can ever arrive. server/index.js hands /roster the permanent
+ * cast with roles "generalist" and "reviewer", and labels every heartbeat it
+ * discovers "generalist". There is no third path.
+ *
+ * SEVEN ROLES REMOVED: fullstack, default, frontend, devops, security, tester,
+ * debugger, manager. Every one was unreachable — a branch that had never run
+ * and never could. They came from the same MIRAI profile vocabulary as the
+ * deleted ids, and they made this table look like it was describing a staffed
+ * organisation instead of three agents. If the server starts reporting a new
+ * role, the fallback below already handles it and this table can grow on
+ * evidence rather than ahead of it.
  */
 const BY_ROLE: Record<string, Archetype> = {
-  fullstack: 'cultivator',
   generalist: 'cultivator',
-  default: 'cultivator',
-  frontend: 'weaver',
-  devops: 'forge',
-  security: 'guardian',
   reviewer: 'scholar',
-  tester: 'alchemist',
-  debugger: 'physician',
-  manager: 'elder',
 }
 
 /** Stable, well-spread hash. Only ever used to pick a side to face. */
