@@ -103,11 +103,39 @@ ssh <host> 'python3 ~/.hermes/denyut.py --once'
 
 Sebagai layanan yang bertahan melewati reboot:
 
+Host produksi (unit *system*, home `/root`):
+
 ```bash
 sudo cp bridges/hermes-emit/hermes-denyut.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now hermes-denyut
 journalctl -u hermes-denyut -f
 ```
+
+Host dengan user-service systemd (mis. LightVela, user `agentuser`, home
+`/home/agentuser`): unit aslinya memakai `User=root` + `WantedBy=multi-user.target`,
+yang tidak berlaku di user-manager. Sesuaikan, lalu pasang:
+
+```bash
+sed -e 's/^User=root/Environment=HOME=\/home\/agentuser/' \
+    -e 's|/root/\.hermes|/home/agentuser/.hermes|g' \
+    -e 's/^WantedBy=multi-user.target/WantedBy=default.target/' \
+    bridges/hermes-emit/hermes-denyut.service \
+  > ~/.config/systemd/user/hermes-denyut.service
+systemctl --user daemon-reload && systemctl --user enable --now hermes-denyut
+journalctl --user -u hermes-denyut -f
+```
+
+Kedua unit memakai `EnvironmentFile` yang menunjuk `~/.hermes/.env` — nilai
+`OFFICE_URL`, `OFFICE_TOKEN`, `OFFICE_SOURCE` dibaca dari sana, bukan
+dipaste ke unit.
+
+**PENTING — jangan pakai sandbox berat di user unit.** Unit ini mengunci
+`ProtectSystem=strict`, `PrivateTmp`, `SystemCallFilter` yang hanya berlaku
+di unit *system*. Kalau dipasang di user-manager, systemd tidak bisa
+menetapkan `NoNewPrivileges` + `SystemCallFilter` di user service,
+dan unit akan mati dengan `status=216/GROUP`. Kurangi ke:
+`ProtectSystem=strict` saja (untuk user) dan hapus `NoNewPrivileges` +
+`PrivateTmp` + `SystemCallFilter` + `SystemCallArchitectures`.
 
 **Kenapa denyut perlu ada sama sekali.** Kantor menandai agen luring setelah
 90 detik tanpa kabar, dan itu memang benar — presensi yang tidak pernah luruh

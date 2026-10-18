@@ -63,6 +63,12 @@ Gerbang yang menjaga ini: `scripts/check-live.sh` §2–4 menegaskan terhadap
 situs yang sedang berjalan bahwa `GET /` tidak mencetak cookie dan bahwa
 `/policy`, `/roster`, `/presence` menjawab 401 tanpa sesi.
 
+§6 (aktivitas) membaca `/presence` untuk membuktikan ada agen yang benar-benar
+mengirim. Karena `/presence` owner-only, gerbang memakai
+`OFFICE_LIVE_TOKEN` bila disupalai — tanpa token, ia melaporkan
+"presence not checked" secara jujur, bukan hijau palsu. Untuk host produksi
+LightVela, token itu adalah `OFFICE_OWNER_TOKEN` dari `~/.hermes/.env`.
+
 ## 4. Input Hardening
 
 - Schema validation ketat: unknown type → 400; field tambahan dihapus

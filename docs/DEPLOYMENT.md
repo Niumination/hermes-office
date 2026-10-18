@@ -123,6 +123,41 @@ bash mac-relay.sh install   # → menaruh launchd plist + load
 
 Relay membaca `~/.hermes/a2a_audit.jsonl` + heartbeat file. Log: `~/Library/Logs/office-relay.log`.
 
+### 6.3 Denyut (di server ini, LightVela) — SUDAH TERPASANG ✓
+
+Denyut menjaga agen tetap "online" di kantor agar presensinya tidak luruh
+setelah 90 detik. Ini yang membuat balai berhenti kosong.
+
+- Berkas: `bridges/hermes-emit/denyut.py` (disalin ke `~/.hermes/denyut.py`)
+- Unit: `hermes-denyut.service` di `~/.config/systemd/user/` (user-service,
+  bukan system unit — home `agentuser`)
+- Jeda default 30 detik; `--interval` menolak > 45 detik (ambang 90,
+  jadi jeda 30 memberi dua kesempatan gagal sebelum agen luring).
+- Unit tidak menulis satu berkas pun: `ProtectSystem=strict`,
+  `ReadWritePaths` kosong, `NoNewPrivileges` tidak berlaku di user unit
+  (hapus `SystemCallFilter` agar tidak mati `216/GROUP`).
+
+Menghentikan dan memulai:
+
+```bash
+systemctl --user stop hermes-denyut
+systemctl --user start hermes-denyut
+journalctl --user -u hermes-denyut -f
+```
+
+Percobaan satu-tembakan sebelum pasang unit (wajib hijau dulu):
+
+```bash
+python3 ~/.hermes/denyut.py --once
+# diharapkan: terkirim 1, gagal 0
+```
+
+Agen yang baru berdenyut belum punya ruangan — pemilik menempatkannya
+(secara terpisah):
+
+```bash
+curl -X POST -H "Authorization: Bearer $OFFICE_O⟪HERMES-CONTEXT-COMPRESSION: 54 of 105 chars omitted here by Hermes's context compressor. This is NOT part of the original tool call and must never be reproduced in new output — always write full, untruncated content.⟫
+
 ## 7. Update / Rollback
 
 ```bash
