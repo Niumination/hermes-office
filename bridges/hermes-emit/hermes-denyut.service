@@ -1,0 +1,58 @@
+# hermes-denyut.service — denyut hidup Hermes Office
+#
+# Pasang:
+#   sudo cp hermes-denyut.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now hermes-denyut
+#
+# Periksa:
+#   systemctl status hermes-denyut
+#   journalctl -u hermes-denyut -f
+#
+# Sesuaikan User= dan jalur bila ~/.hermes bukan milik root.
+
+[Unit]
+Description=Denyut hidup Hermes Office
+Documentation=https://github.com/Niumination/hermes-office/tree/dev/bridges/hermes-emit
+# Kantor dan denyut boleh hidup di mesin yang sama atau tidak. Kalau sama,
+# jangan pakai Requires= — denyut yang mati tidak boleh ikut menjatuhkan
+# kantor, dan kantor yang restart tidak perlu menjatuhkan denyut.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/.hermes
+EnvironmentFile=-/root/.hermes/.env
+ExecStart=/usr/bin/python3 /root/.hermes/denyut.py --agent cloud --source cloud --interval 30
+
+# Jaringan putus bukan alasan menyerah: denyut menghitung kegagalan tanpa
+# melemparnya, jadi proses ini biasanya tidak mati sendiri. Restart di sini
+# untuk hal yang lebih buruk — OOM, python dibunuh, mesin setengah bangun.
+Restart=always
+RestartSec=10
+
+# Proses ini hanya mengirim HTTP POST. Tidak perlu apa pun yang lain.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Denyut menulis satu baris saat mulai dan satu saat berhenti. Kalau ia mulai
+# berisik, itu pertanda — jangan dibungkam di sini.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

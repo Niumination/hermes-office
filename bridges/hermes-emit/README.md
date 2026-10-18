@@ -91,6 +91,55 @@ Keluaran yang benar berakhir dengan `"sent": 1`.
 
 ---
 
+## Langkah nol: denyut hidup
+
+Sebelum menyentuh kode gateway, nyalakan ini. Satu perintah, dan kantor
+berhenti berkata "belum pernah ada agen yang terlihat".
+
+```bash
+scp bridges/hermes-emit/{hermes_emit.py,denyut.py} <host>:~/.hermes/
+ssh <host> 'python3 ~/.hermes/denyut.py --once'
+```
+
+Sebagai layanan yang bertahan melewati reboot:
+
+```bash
+sudo cp bridges/hermes-emit/hermes-denyut.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now hermes-denyut
+journalctl -u hermes-denyut -f
+```
+
+**Kenapa denyut perlu ada sama sekali.** Kantor menandai agen luring setelah
+90 detik tanpa kabar, dan itu memang benar — presensi yang tidak pernah luruh
+akan berbohong tentang siapa yang hadir. Diuji: dua agen dinyalakan, satu
+diberi denyut dan satu tidak; setelah 100 detik yang berdenyut tetap hadir,
+yang diam jadi luring. Jadi agen yang menganggur memang menghilang dari balai.
+Tepat, tapi tidak berguna sebagai tanda "mesin ini menyala". Denyut mengisi
+celah itu.
+
+`--interval` ditolak kalau lebih dari 45 detik: dengan ambang 90 detik, jeda
+30 memberi dua kesempatan gagal sebelum agen terlihat luring.
+
+**Apa yang denyut TIDAK lakukan.** Ia hanya membuktikan mesinnya hidup. Agen
+akan berdiri diam di balai — tidak ada alat yang dipakai, tidak ada amanat
+berjalan, tidak ada peristiwa di Babad. Untuk itu gateway harus memanggil
+`hermes_emit` sendiri; bagian berikut menjelaskan caranya.
+
+Agen yang baru berdenyut belum punya ruangan dan akan terhitung "di ruangan
+tak dikenal". Pemilik menempatkannya:
+
+```bash
+curl -X POST -H "Authorization: Bearer $OFFICE_OWNER_TOKEN" \
+     -H "Content-Type: application/json" -d '{"room":"lightvela/root"}' \
+     https://dash.abstract.biz.id/agents/cloud/room
+```
+
+Penempatan sengaja jadi tindakan pemilik, bukan sesuatu yang agen klaim
+sendiri — kalau agen boleh memilih ruangannya, denah lantai berhenti jadi
+pernyataan tata kelola.
+
+---
+
 ## Integrasi per gateway
 
 ### 1. Telegram
