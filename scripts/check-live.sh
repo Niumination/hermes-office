@@ -186,8 +186,18 @@ fi
 # The product's whole purpose is to reflect real activity. An office that is
 # up, authenticated and empty is a failure the other five checks cannot see.
 # This reports rather than fails: a quiet night is not a defect.
-seen=$(curl -s -H "$OH" -b "$JAR" -m 20 "$URL/presence" 2>/dev/null |
-  grep -o '"lastSeenTs":[0-9]*' | cut -d: -f2 | sort -rn | head -1)
+# /presence is owner-only (guest sessions cut at 9c894ba), so the anonymous
+# jar from section 2 gets a 401 and this section would read "empty" forever.
+# Read it with a token when one is supplied; without one, fall back to the
+# anonymous answer — the honest "can't check".
+LIVE_TOKEN="${OFFICE_LIVE_TOKEN:-}"
+if [ -n "$LIVE_TOKEN" ]; then
+  seen=$(curl -s -H "$OH" -H "Authorization: Bearer $LIVE_TOKEN" -m 20 "$URL/presence" 2>/dev/null |
+    grep -o '"lastSeenTs":[0-9]*' | cut -d: -f2 | sort -rn | head -1)
+else
+  seen=$(curl -s -H "$OH" -b "$JAR" -m 20 "$URL/presence" 2>/dev/null |
+    grep -o '"lastSeenTs":[0-9]*' | cut -d: -f2 | sort -rn | head -1)
+fi
 if [ "$FAIL" -gt 0 ] && [ -z "$seen" ]; then
   # Saying "reachable, but quiet" about a host that never answered would be the
   # gate inventing a reassurance, which is the exact failure this file exists
@@ -203,8 +213,13 @@ elif [ -n "$seen" ]; then
     note "no agent has reported in over an hour — check the bridges are running"
   fi
 else
-  ok "reachable, but no agent has ever been seen"
-  note "nothing is emitting — install bridges/hermes-emit or bridges/mac-relay"
+  if [ -n "$LIVE_TOKEN" ]; then
+    ok "reachable, but no agent has ever been seen"
+    note "nothing is emitting — install bridges/hermes-emit or bridges/mac-relay"
+  else
+    ok "reachable; presence not checked (no OFFICE_LIVE_TOKEN)"
+    note "set OFFICE_LIVE_TOKEN=<owner|cloud|mac token> to read /presence in this gate"
+  fi
 fi
 
 echo
