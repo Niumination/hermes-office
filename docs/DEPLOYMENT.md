@@ -133,9 +133,18 @@ setelah 90 detik. Ini yang membuat balai berhenti kosong.
   bukan system unit — home `agentuser`)
 - Jeda default 30 detik; `--interval` menolak > 45 detik (ambang 90,
   jadi jeda 30 memberi dua kesempatan gagal sebelum agen luring).
-- Unit tidak menulis satu berkas pun: `ProtectSystem=strict`,
-  `ReadWritePaths` kosong, `NoNewPrivileges` tidak berlaku di user unit
-  (hapus `SystemCallFilter` agar tidak mati `216/GROUP`).
+- Unit tidak menulis satu berkas pun, jadi ia dijalankan dengan seccomp
+  penuh: `NoNewPrivileges`, `PrivateTmp`, `MemoryDenyWriteExecute`,
+  `LockPersonality`, `RestrictAddressFamilies=AF_INET AF_INET6`,
+  `SystemCallFilter=@system-service`, `SystemCallErrorNumber=EPERM`.
+  Ketujuhnya berlaku di user unit — diuji dengan `denyut.py --once` di bawah
+  semuanya sekaligus, denyutnya sampai.
+- Yang **dibuang** di user unit adalah sandbox berbasis mount namespace
+  (`ProtectSystem=`, `ProtectHome=`, `ProtectKernel*`,
+  `ProtectControlGroups=`) — itu memang hanya untuk unit system.
+- `216/GROUP` yang sempat muncul berasal dari `User=`, bukan dari sandbox.
+  `216` = `EXIT_GROUP` (kredensial grup); kegagalan seccomp adalah
+  `228/EXIT_SECCOMP`. Unit user tidak boleh memuat `User=` sama sekali.
 
 Menghentikan dan memulai:
 

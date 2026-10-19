@@ -64,10 +64,16 @@ situs yang sedang berjalan bahwa `GET /` tidak mencetak cookie dan bahwa
 `/policy`, `/roster`, `/presence` menjawab 401 tanpa sesi.
 
 §6 (aktivitas) membaca `/presence` untuk membuktikan ada agen yang benar-benar
-mengirim. Karena `/presence` owner-only, gerbang memakai
-`OFFICE_LIVE_TOKEN` bila disupalai — tanpa token, ia melaporkan
-"presence not checked" secara jujur, bukan hijau palsu. Untuk host produksi
-LightVela, token itu adalah `OFFICE_OWNER_TOKEN` dari `~/.hermes/.env`.
+mengirim. `/presence` dipasang `requireAny`: ia menolak pemanggil anonim
+dengan 401, tetapi menerima **ketiga** token — owner, cloud, maupun mac.
+Bukan owner-only; catatan sebelumnya di baris ini keliru menyebut begitu,
+padahal petunjuk di gerbangnya sendiri sudah benar. Diuji terhadap server:
+owner 200, cloud 200, mac 200, token asal 401, tanpa token 401.
+
+Gerbang memakai `OFFICE_LIVE_TOKEN` bila disuplai — tanpa token, ia melaporkan
+"presence not checked" secara jujur, bukan hijau palsu. Token mana pun dari
+ketiganya cukup; pakai yang paling sempit yang Anda punya, bukan token owner,
+karena gerbang ini hanya perlu membaca.
 
 ## 4. Input Hardening
 

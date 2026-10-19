@@ -142,13 +142,45 @@ Kedua unit memakai `EnvironmentFile` yang menunjuk `~/.hermes/.env` — nilai
 dipaste ke unit. Ini menjaga agar `systemctl --user cat hermes-denyut.service`
 tidak pernah membeberkan token.
 
-**PENTING — jangan pakai sandbox berat di user unit.** Unit ini mengunci
-`ProtectSystem=strict`, `PrivateTmp`, `SystemCallFilter` yang hanya berlaku
-di unit *system*. Kalau dipasang di user-manager, systemd tidak bisa
-menetapkan `NoNewPrivileges` + `SystemCallFilter` di user service,
-dan unit akan mati dengan `status=216/GROUP`. Kurangi ke:
-`ProtectSystem=strict` saja (untuk user) dan hapus `NoNewPrivileges` +
-`PrivateTmp` + `SystemCallFilter` + `SystemCallArchitectures`.
+**Sandbox di user unit — apa yang berlaku dan apa yang tidak.** Unit ini
+pernah mati dengan `status=216/GROUP` dan penyebabnya sempat dicatat sebagai
+"sandbox terlalu berat". Itu keliru, dan nasihatnya menular ke dua dokumen
+lain sebelum diperbaiki.
+
+`216` adalah `EXIT_GROUP` — *"Failed to determine or change group
+credentials"*, lihat `systemd.exec(5)` bagian PROCESS EXIT CODES. Ia hanya
+tentang `User=`/`Group=`/`SupplementaryGroups=`. Kegagalan seccomp punya kode
+sendiri: **`228/EXIT_SECCOMP`**. Jadi `216` tidak pernah bisa berasal dari
+`SystemCallFilter`.
+
+Penyebab sebenarnya adalah `User=`. `systemd.exec(5)` menaruhnya di bawah
+judul USER/GROUP IDENTITY: *"These options are only available for system
+services and are not supported for services running in per-user instances of
+the service manager."* Manajer user tidak punya `CAP_SETGID`, jadi
+`initgroups()` gagal. Obatnya: **buang baris `User=`** — unit user sudah
+berjalan sebagai Anda.
+
+Yang benar-benar tidak berlaku di user unit adalah sandbox berbasis mount
+namespace: `ProtectSystem=`, `ProtectHome=`, `ProtectKernelTunables=`,
+`ProtectKernelModules=`, `ProtectControlGroups=`. Buang itu.
+
+Yang **tetap bekerja** di user unit karena berbasis seccomp, dan sebaiknya
+dipertahankan:
+
+```
+NoNewPrivileges=true
+PrivateTmp=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+```
+
+Diuji, bukan diasumsikan: `denyut.py --once` dijalankan di bawah ketujuh
+directive itu sekaligus dan denyutnya sampai — `lastSeenTs` di `/presence`
+bergerak. `systemd.exec(5)` sendiri merekomendasikan dua baris terakhir
+sebagai dasar aman untuk layanan berumur panjang.
 
 **Kenapa denyut perlu ada sama sekali.** Kantor menandai agen luring setelah
 90 detik tanpa kabar, dan itu memang benar — presensi yang tidak pernah luruh

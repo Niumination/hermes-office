@@ -15,7 +15,43 @@ Restart=always
 RestartSec=10
 # Token, URL, dan source dibaca dari EnvironmentFile — tidak dipaste ke unit.
 # File ini milik agentuser dengan mode 0600; denyut tidak menulis apa pun.
+#
+# JANGAN tambahkan Environment=OFFICE_TOKEN=... di sini. hermes_emit.py
+# membaca env OFFICE_TOKEN LEBIH DULU, baru OFFICE_CLOUD_TOKEN dari dotenv.
+# Satu baris Environment= yang basi akan menang atas .env yang benar, dan
+# kantor membalas 401 tanpa suara: unit tetap hijau, presensi membeku
+# online:false. Itu sudah pernah terjadi. Satu sumber kebenaran saja.
 EnvironmentFile=/home/agentuser/.hermes/.env
+
+# --- Pengerasan ---
+# Unit ini berjalan di manajer *user* (systemctl --user), jadi aturannya beda
+# dari unit system. Dua hal yang harus dipisah:
+#
+# 1. JANGAN pasang User=/Group=. systemd.exec(5), USER/GROUP IDENTITY:
+#    "only available for system services and are not supported for services
+#    running in per-user instances of the service manager." Manajer user
+#    tidak punya CAP_SETGID, initgroups() gagal, unit mati 216/GROUP.
+#    216 = EXIT_GROUP. Itu SATU-SATUNYA arti 216; kalau seccomp yang gagal,
+#    kodenya 228/EXIT_SECCOMP. Jangan salah tuduh.
+#
+# 2. Sandbox berbasis mount namespace tidak tersedia di user unit, jadi
+#    ProtectSystem=, ProtectHome=, ProtectKernel*, ProtectControlGroups=
+#    sengaja TIDAK ada di sini.
+#
+# Yang di bawah ini berbasis seccomp/prctl dan bekerja penuh di user unit.
+# Diuji, bukan diasumsikan: denyut.py --once dijalankan di bawah ketujuhnya
+# sekaligus dan denyutnya sampai (lastSeenTs di /presence bergerak).
+NoNewPrivileges=true
+PrivateTmp=true
+MemoryDenyWriteExecute=true
+LockPersonality=true
+# Denyut hanya bicara HTTP ke kantor. Tidak ada unix socket, tidak ada
+# netlink, tidak ada AF_PACKET — tutup semuanya.
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallFilter=@system-service
+# EPERM, bukan SIGSYS: panggilan terlarang gagal sebagai error biasa dan
+# denyut melaporkannya, alih-alih mati dan memicu Restart=always berulang.
+SystemCallErrorNumber=EPERM
 
 StandardOutput=journal
 StandardError=journal
