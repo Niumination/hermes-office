@@ -112,22 +112,35 @@ journalctl -u hermes-denyut -f
 ```
 
 Host dengan user-service systemd (mis. LightVela, user `agentuser`, home
-`/home/agentuser`): unit aslinya memakai `User=root` + `WantedBy=multi-user.target`,
-yang tidak berlaku di user-manager. Sesuaikan, lalu pasang:
+`/home/agentuser`): unit aslinya sudah disesuaikan — `WantedBy=default.target`,
+jalur `WorkingDirectory`/`ExecStart` menunjuk `/home/agentuser`, dan nilai
+server dibaca dari `EnvironmentFile=/home/agentuser/.hermes/.env` (bukan
+dipaste ke unit). Pasang langsung, tanpa `sed`:
 
 ```bash
-sed -e 's/^User=root/Environment=HOME=\/home\/agentuser/' \
-    -e 's|/root/\.hermes|/home/agentuser/.hermes|g' \
-    -e 's/^WantedBy=multi-user.target/WantedBy=default.target/' \
-    bridges/hermes-emit/hermes-denyut.service \
-  > ~/.config/systemd/user/hermes-denyut.service
+cp bridges/hermes-emit/hermes-denyut.service ~/.config/systemd/user/
 systemctl --user daemon-reload && systemctl --user enable --now hermes-denyut
 journalctl --user -u hermes-denyut -f
 ```
 
+**Syarat `~/.hermes/.env` sudah berisi `OFFICE_CLOUD_TOKEN` yang bernilai
+*live* (nilai yang dipakai server `hermes-office.service` saat ini, dari
+`.env.office`).** Jika token di `~/.hermes/.env` sudah kadaluarsa, denyut
+jalan, server tetap menjawab `Unauthorized`, dan `presence` membeku
+`online: false` — gejala yang terlihat seperti "denyut mati" padahal
+sebenarnya token-nya yang salah. Muat ulang dengan:
+
+```bash
+NEW=$(grep '^OFFICE_CLOUD_TOKEN=' /path/ke/repo/hermes-office/.env.office \
+      | cut -d= -f2 | tr -d '"\'')
+sed -i "s|^OFFICE_CLOUD_TOKEN=.*|OFFICE_CLOUD_TOKEN=$NEW|" ~/.hermes/.env
+systemctl --user restart hermes-denyut
+```
+
 Kedua unit memakai `EnvironmentFile` yang menunjuk `~/.hermes/.env` — nilai
-`OFFICE_URL`, `OFFICE_TOKEN`, `OFFICE_SOURCE` dibaca dari sana, bukan
-dipaste ke unit.
+`OFFICE_URL`, `OFFICE_CLOUD_TOKEN`, `OFFICE_SOURCE` dibaca dari sana, bukan
+dipaste ke unit. Ini menjaga agar `systemctl --user cat hermes-denyut.service`
+tidak pernah membeberkan token.
 
 **PENTING — jangan pakai sandbox berat di user unit.** Unit ini mengunci
 `ProtectSystem=strict`, `PrivateTmp`, `SystemCallFilter` yang hanya berlaku
