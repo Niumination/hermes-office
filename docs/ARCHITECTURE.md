@@ -53,7 +53,7 @@ config.js     150   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
 chat-db.js    101   SQLite (WAL) untuk riwayat chat
 pricing.js    100   token → USD, pencocokan prefiks-terpanjang
-auth.js       115   Bearer per-sumber, SHA-256
+auth.js       122   Bearer per-sumber, SHA-256
 ```
 
 ### Frontend (`frontend/src/`, ~9103 baris non-tes)

@@ -17,17 +17,24 @@ import { config } from "./config.js";
  * request appears to come from Cloudflare's edge IP and the owner-origin
  * auto session in index.js can never match the tailnet allowlist.
  */
+// Defaults are loopback only: the office is strictly private, so no
+// third-party edge range ships in code. Set OFFICE_TRUSTED_PROXIES in
+// .env.office to add Cloudflare edge ranges when the site is fronted by a
+// Cloudflare tunnel and real client IPs must be resolved from
+// X-Forwarded-For (the tunnel forwards the original client IP).
 const CF_AND_PRIVATE_RANGES = (
   process.env.OFFICE_TRUSTED_PROXIES ||
-  "198.41.0.0/16,198.44.0.0/14,162.158.0.0/15,172.64.0.0/13,131.0.72.0/22,103.21.244.0/22,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10"
+  "127.0.0.1,::1"
 ).split(",").map((s) => s.trim());
 
 function ipInCidr(ip, cidr) {
-  const [net, bits] = cidr.split("/");
-  if (!net || bits === undefined) return false;
-  const b = parseInt(bits, 10);
-  const toN = (s) => s.split(".").reduce((a, o) => ((a << 8) + parseInt(o)) >>> 0, 0);
-  return (toN(ip) & ((0xffffffff << (32 - b)) >>> 0)) === (toN(net) & ((0xffffffff << (32 - b)) >>> 0));
+  if (cidr.includes("/")) {
+    const [net, bits] = cidr.split("/");
+    const b = parseInt(bits, 10);
+    const toN = (s) => s.split(".").reduce((a, o) => ((a << 8) + parseInt(o)) >>> 0, 0);
+    return (toN(ip) & ((0xffffffff << (32 - b)) >>> 0)) === (toN(net) & ((0xffffffff << (32 - b)) >>> 0));
+  }
+  return ip === cidr; // bare IP = exact match
 }
 
 export function isTrustedProxyIp(ip) {
