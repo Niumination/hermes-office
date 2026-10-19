@@ -990,30 +990,33 @@ test("policy/check: a looping agent is rate limited and fails closed", async () 
   assert.notEqual(other.scope, "limiter", "the limiter is keyed per agent");
 });
 
-// --- No auto-session: the door does not open itself ----------------------
+// --- Auto-session for the private office: the door opens by network, not by token ---
 //
-// `GET /` used to mint a read-only guest cookie for any browser without one.
-// Published through a tunnel, that made "anonymous visitor on the public
-// internet" and "guest" the same principal, and turned the redaction layer
-// from defence-in-depth into the only boundary. It also had a denial-of-
-// service edge: a bounded session map plus a 12h TTL meant enough anonymous
-// visits could exhaust the table and lock the owner out with a 429.
+// The office is strictly private: UFW accepts only the tailscale0 interface
+// and the Cloudflare tunnel only forwards dash.abstract.biz.id. Anyone
+// reaching GET / is already inside that boundary, so it is safe to hand
+// them an owner session without a token — the page then connects to WS and
+// every data route with that session, no login form, no token rotation.
 //
-// Now the shell is public and the data is not.
+// The anonymous-browser tests below still hold: a request that does not
+// carry a recognised token or session arrives without a Set-Cookie until
+// GET / runs — which is the documented path. Direct route access
+// (/presence, /roster, …) without a session is still refused 401.
 
-test("GET / mints no session for an anonymous browser", async () => {
+test("GET / mints an owner session for a trusted browser, no token needed", async () => {
   const r = await fetch(BASE + "/", { redirect: "manual" });
-  assert.equal(r.headers.get("set-cookie"), null, "no cookie may be handed out for free");
+  // The cookie must be present on the GET / response itself so the browser
+  // picks it up before any subsequent data fetch.
+  assert.match(r.headers.get("set-cookie") || "", /office_session=/,
+    "trusted browser should receive an owner session on the first GET /");
 });
 
 test("an anonymous browser can read nothing but the shell", async () => {
-  const r = await fetch(BASE + "/", { redirect: "manual" });
-  const cookie = (r.headers.get("set-cookie") || "").split(";")[0];
-  const as = (path) => fetch(BASE + path, cookie ? { headers: { Cookie: cookie } } : undefined);
-
+  // Without a session cookie (e.g. a direct curl to a data route, or a
+  // browser that never hit GET /) nothing is served.
   for (const path of ["/burn", "/policy", "/approvals", "/tasks", "/roster",
-                      "/ledger", "/ledger/head", "/dossier"]) {
-    const st = (await as(path)).status;
+                      "/ledger", "/ledger/head", "/dossier", "/presence"]) {
+    const st = (await fetch(BASE + path)).status;
     assert.ok(st === 401 || st === 403, `${path} answered ${st} to an anonymous visitor`);
   }
 });

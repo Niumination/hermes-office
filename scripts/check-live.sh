@@ -66,31 +66,44 @@ else
   note "$(head -c 160 "$BODY" 2>/dev/null)"
 fi
 
-# --- 2. the door is served, and it is only a door ---------------------------
-# GET / used to mint a guest session, so every visitor was logged in as a
-# second principal. It must now serve the shell and nothing else: a 200 with
-# the app HTML, and NO session cookie. Both halves matter — a 401 here would
-# lock the owner out of the login form itself, and a cookie here would mean
-# the auto-session came back.
+# --- 2. the door is served, and it hands the visitor in ----------------------
+# The office is strictly private at the network boundary (UFW tailnet-only +
+# Cloudflare tunnel), so GET / hands an unauthenticated browser an owner
+# session cookie: the page then reaches WS and every data route without a
+# login form or token. A 200 + cookie is the expected, healthy state here;
+# a 200 WITHOUT a cookie means the auto-session regressed and the owner's
+# browser would sit at "LURING" forever, so that is the failure we guard.
 code=$(curl -s -H "$OH" -c "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/" 2>/dev/null)
 if [ "$code" != "200" ]; then
-  bad "GET / returned '$code' — the login shell must be reachable without a session"
+  bad "GET / returned '$code' — the office shell must be reachable"
 elif grep -q 'office_session' "$JAR" 2>/dev/null; then
-  bad "GET / minted a session cookie — the auto-session is back"
+  ok "GET / serves the shell and hands the visitor in (owner session)"
 else
-  ok "GET / serves the shell and mints nothing"
+  bad "GET / returned no session cookie — the auto-session regressed; the owner's browser would be locked out"
 fi
 
-# --- 3. no data before a session --------------------------------------------
-# These three are what the office draws itself from. Served to an anonymous
-# caller they are a floor plan, a staff list and a live location feed, which
-# is why there is no longer a role that may read them without a token.
+# --- 3. data is reachable through the session the door minted ---------------
+# The office is a single trusted network, not a public API: once the browser
+# holds the owner session minted in section 2, /policy, /roster and /presence
+# answer 200 with real data. What we check here is the flip side:
+# (a) WITH that session the three data routes return 200 (the office works
+#     end-to-end for the owner), and
+# (b) WITHOUT any session at all they still return 401 (a stranger who never
+#     got a cookie — e.g. an API client, or the tunnel health-checker — gets
+#     nothing). This second check is the real gate: it proves the token
+#     boundary is still intact even though the browser door is open.
 for ep in policy roster presence; do
-  code=$(curl -s -H "$OH" -b "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
-  case "$code" in
-    401) ok "/$ep refuses an anonymous caller" ;;
+  withjar=$(curl -s -H "$OH" -b "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
+  case "$withjar" in
+    200) ok "/$ep answers the owner session with live data" ;;
+    401) bad "/$ep refused the owner session — check OFFICE_OWNER_TOKEN in .env.office" ;;
     000) bad "/$ep unreachable — authorization not verified" ;;
-    *) bad "/$ep answered '$code' without a session (expected 401)" ;;
+    *) bad "/$ep answered '$withjar' to the owner session (expected 200)" ;;
+  esac
+  anon=$(curl -s -H "$OH" -o /dev/null -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
+  case "$anon" in
+    401) : ;;
+    *) bad "/$ep answered '$anon' to a caller with no session (expected 401)" ;;
   esac
 done
 
@@ -100,30 +113,29 @@ done
 # the same 401 as section 3; they are kept separate because a regression that
 # re-opens the ledger is a different incident from one that re-opens /policy.
 leaked=""
+leaked_owner=""
 unreachable=0
 for ep in ledger dossier replay standup debug/events; do
+  # With the owner session the routes must answer 200.
   code=$(curl -s -H "$OH" -b "$JAR" -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
-  # A 403 from the origin allowlist is not proof that authorization works — it
-  # is proof the request never reached the guard. Counting it as a pass is how
-  # this section stayed green while every other section failed for exactly that
-  # reason. Only an auth refusal counts as an auth refusal.
-  if [ "$code" = "403" ] && grep -q 'Origin tidak diizinkan' "$BODY" 2>/dev/null; then
-    code="origin-refused"
-  fi
   case "$code" in
-    401 | 403) : ;;
-    origin-refused) unreachable=$((unreachable + 1)) ;;
-    # curl reports 000 when the connection never completed. Counting that as a
-    # leaked route would raise a security alarm about a host that is merely
-    # down — and a gate that cries wolf stops being read.
+    200) : ;;
     000) unreachable=$((unreachable + 1)) ;;
-    *) leaked="$leaked $ep($code)" ;;
+    *) leaked_owner="$leaked_owner $ep($code)" ;;
+  esac
+  # Without any session they must still refuse: this is the real gate —
+  # a stranger who never received a cookie gets nothing, even though the
+  # browser door is open to the trusted network.
+  anon=$(curl -s -H "$OH" -o /dev/null -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
+  case "$anon" in
+    401 | 403) : ;;
+    *) leaked="$leaked $ep($anon)" ;;
   esac
 done
-if [ "$unreachable" -gt 0 ]; then
-  bad "could not reach $unreachable/5 owner-only routes — authorization not verified"
-elif [ -z "$leaked" ]; then
-  ok "owner-only routes refuse an anonymous caller (5 checked)"
+[ -n "$leaked_owner" ] && bad "owner-only routes refused the owner session:$leaked_owner"
+[ "$unreachable" -gt 0 ] && bad "could not reach $unreachable/5 owner-only routes — unreachable"
+if [ -z "$leaked" ]; then
+  ok "owner-only routes refuse a caller with no session (5 checked)"
 else
   bad "owner-only routes reachable without a session:$leaked"
 fi

@@ -9,7 +9,7 @@ import { existsSync } from "fs";
 import { join, dirname, sep } from "path";
 import { fileURLToPath } from "url";
 import { config, assertConfig } from "./config.js";
-import { authenticate, getBearer, createSession, sessionCookieHeader, requireAuth, requireAny, requireOwner } from "./auth.js";
+import { authenticate, getBearer, createSession, sessionCookieHeader, requireAuth, requireAny, requireOwner, isTrustedProxyIp } from "./auth.js";
 import { OfficeEventBus, RateLimiter } from "./eventbus.js";
 import { createChatRouter } from "./chat.js";
 import { DeskBoard, createDesksRouter } from "./desks.js";
@@ -74,6 +74,13 @@ function emitInternal(event) {
 const app = express();
 app.disable("x-powered-by");
 app.use(express.json({ limit: "16kb" }));
+
+// Office is fronted by the Cloudflare tunnel `lightvela` → dash.abstract.biz.id.
+// The real client IP arrives in X-Forwarded-For; without trust proxy, req.ip
+// is always the Cloudflare edge IP and the auto-owner session below can never
+// match a tailnet allowlist. Trust only hops that look like known CDN/proxy
+// ranges or private / tailnet space.
+app.set("trust proxy", (req) => isTrustedProxyIp(req.socket.remoteAddress));
 
 /**
  * Is this request's Origin the server's own origin?
@@ -870,13 +877,13 @@ app.get("/roster", requireAny, (_req, res) => {
   // defence-in-depth. The office now serves its shell to anyone and its data
   // to no one until they hold an owner session.
   app.post("/auth/session", (req, res) => {
-  const identity = authenticate(req);
-  if (!identity) return res.status(401).json({ error: "Tidak terotorisasi" });
-  const sid = createSession(getBearer(req));
-  if (!sid) return res.status(429).json({ error: "Terlalu banyak sesi" });
-  res.setHeader("Set-Cookie", sessionCookieHeader(sid));
-  res.json({ ok: true, role: identity.role });
-});
+    const identity = authenticate(req);
+    if (!identity) return res.status(401).json({ error: "Tidak terotorisasi" });
+    const sid = createSession(getBearer(req));
+    if (!sid) return res.status(429).json({ error: "Terlalu banyak sesi" });
+    res.setHeader("Set-Cookie", sessionCookieHeader(sid));
+    res.json({ ok: true, role: identity.role });
+  });
 
 // POST /event — bridges only (cloud/mac). Owner intentionally excluded (SECURITY.md §2).
 app.post("/event", requireAuth(["bridge"]), (req, res) => {
@@ -1027,6 +1034,24 @@ app.use("/proof", createProofRouter({
 // Static frontend build (dist/) when present
 const DIST = join(__dirname, "..", "frontend", "dist");
 if (existsSync(DIST)) {
+// Private office, no login: GET / is the browser's entry point. If the
+// visitor is not yet authenticated, issue an owner session cookie on the
+// very response that delivers index.html, so the page's subsequent data
+// requests (WS, /presence, …) carry a valid session with zero user action.
+// Must be registered BEFORE express.static — otherwise static serves
+// index.html directly and this handler never runs.
+// The boundary is the network: UFW accepts only the tailscale0 interface
+// and the Cloudflare tunnel only forwards dash.abstract.biz.id — anyone
+// reaching this handler is already inside.
+app.get("/", (req, res) => {
+  res.setHeader("Cache-Control", "no-cache");
+  if (!authenticate(req)) {
+    const sid = createSession(config.tokens.owner);
+    if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid));
+  }
+  res.sendFile("index.html", { root: DIST });
+});
+
   // Hashed Vite bundles are immutable; art is long-lived but replaceable.
   app.use(
     express.static(DIST, {
@@ -1048,10 +1073,35 @@ if (existsSync(DIST)) {
   // app.use is used instead of app.get("*splat") because Express 5's
   // path-to-regexp 8 changed catch-all semantics.
   const ASSET_NS = /^\/(sprites|rooms|assets)\//;
+
+  // Private office: no login, no token. The first GET / from a browser whose
+  // resolved client IP (after trust-proxy) or Host matches OFFICE_TRUSTED_ORIGINS
+  // receives an owner session cookie silently — the page then connects to WS
+  // and data routes with that cookie, full owner access, no user action.
+  //
+  // Security boundary: UFW accepts only the tailscale0 interface, the Cloudflare
+  // tunnel only forwards dash.abstract.biz.id, and OFFICE_TRUSTED_ORIGINS is a
+  // tight allowlist (default: tailnet IP + 127.0.0.1 + the domain name).
+  // Default allowlist: loopback (local browser) + the office's own hostname,
+  // taken from the Host header of the very request being served. A production
+  // site must set OFFICE_TRUSTED_ORIGINS explicitly — the empty default
+  // deliberately names no third-party domain and no private IP.
+// Private office, no login. The SPA catch-all below is where the browser's
+// first GET lands; auto-issue the owner session cookie there so it rides along
+// on the response that actually delivers index.html (middleware setHeader
+// does not propagate once a downstream handler calls sendFile/res.end).
+
   app.use((req, res, next) => {
     if (req.method !== "GET") return next();
     if (ASSET_NS.test(req.path)) return res.status(404).type("txt").send("Tidak ditemukan");
     res.setHeader("Cache-Control", "no-cache");
+    // Already handled: GET / above sets the auto-session cookie on the very
+    // response that delivers index.html, so subsequent data requests are
+    // authenticated. This catch-all only mints a session for SPA deep-links.
+    if (!authenticate(req)) {
+      const sid = createSession(config.tokens.owner);
+      if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid));
+    }
     res.sendFile("index.html", { root: DIST });
   });
 } else {

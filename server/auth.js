@@ -7,8 +7,33 @@
  * view described a deployment that never existed, and every route that
  * accepted it widened the blast radius for no one's benefit.
  */
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { config } from "./config.js";
+
+/**
+ * Cloudflare edge ranges (cf-ips /v4, 2026-10-18 snapshot) + private / tailnet
+ * ranges, so that when the office is fronted by Cloudflare, req.ip reflects
+ * the real client IP from X-Forwarded-For. Without this, every browser
+ * request appears to come from Cloudflare's edge IP and the owner-origin
+ * auto session in index.js can never match the tailnet allowlist.
+ */
+const CF_AND_PRIVATE_RANGES = (
+  process.env.OFFICE_TRUSTED_PROXIES ||
+  "198.41.0.0/16,198.44.0.0/14,162.158.0.0/15,172.64.0.0/13,131.0.72.0/22,103.21.244.0/22,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,100.64.0.0/10"
+).split(",").map((s) => s.trim());
+
+function ipInCidr(ip, cidr) {
+  const [net, bits] = cidr.split("/");
+  if (!net || bits === undefined) return false;
+  const b = parseInt(bits, 10);
+  const toN = (s) => s.split(".").reduce((a, o) => ((a << 8) + parseInt(o)) >>> 0, 0);
+  return (toN(ip) & ((0xffffffff << (32 - b)) >>> 0)) === (toN(net) & ((0xffffffff << (32 - b)) >>> 0));
+}
+
+export function isTrustedProxyIp(ip) {
+  if (!ip) return false;
+  return CF_AND_PRIVATE_RANGES.some((c) => ipInCidr(ip, c));
+}
 
 function hashToken(t) {
   return createHash("sha256").update(t).digest("hex");
@@ -62,7 +87,7 @@ export function createSession(token, now = Date.now()) {
     if (now - issued > SESSION_TTL_MS) sessionTokens.delete(sid);
   }
   if (sessionTokens.size > 1000) return null;
-  const sid = crypto.randomUUID() + "." + now;
+  const sid = randomUUID() + "." + now;
   sessionTokens.set(sid, token);
   return sid;
 }
