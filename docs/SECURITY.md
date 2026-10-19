@@ -98,6 +98,53 @@ karena gerbang ini hanya perlu membaca.
 - Log tidak memuat body request penuh (hanya meta: type, source, size)
 - GitHub token office-server: pakai token cloud yang sudah ada via env, scope read-only public+privat metadata (tidak write)
 
+### Nilai token tidak boleh masuk git — termasuk pesan commit
+
+Pohon berkas sudah dijaga `.gitignore`, tapi **pesan commit tidak dijaga apa
+pun**. Pernah terjadi: potongan nilai `OFFICE_TOKEN` dan `OFFICE_CLOUD_TOKEN`
+ditempel ke badan pesan commit saat menjelaskan perubahan konfigurasi, dan
+potongan itu langsung permanen di riwayat publik.
+
+Kalau perlu menjelaskan konfigurasi di pesan commit, sebut **nama variabelnya
+saja** — "`OFFICE_CLOUD_TOKEN` kini dibaca dari `EnvironmentFile`" — tanpa
+nilai, tanpa awalan, tanpa potongan.
+
+Hal yang sama berlaku untuk unit systemd: jangan pakai `Environment=` untuk
+kredensial, karena `systemctl --user cat` akan membeberkannya. Pakai
+`EnvironmentFile=` yang berisi berkas mode 0600.
+
+### Rotasi token
+
+Ketiga token sumber (`OWNER`, `CLOUD`, `MAC`) adalah 32 karakter heksadesimal
+dan bisa diputar kapan saja tanpa migrasi data — tidak ada yang menyimpan
+turunannya.
+
+```bash
+openssl rand -hex 16                      # satu token baru
+# perbarui nilainya di .env.office milik server kantor
+# perbarui OFFICE_TOKEN di ~/.hermes/.env milik denyut (pakai nilai CLOUD)
+systemctl --user restart hermes-office.service hermes-denyut.service
+```
+
+Verifikasi sesudahnya, dan **jangan berhenti di `is-active`** — unit yang
+mengirim 401 terus-menerus tetap tampak aktif:
+
+```bash
+source ~/.hermes/.env
+curl -s -H "Authorization: Bearer $OFFICE_CLOUD_TOKEN" \
+  "$OFFICE_URL/presence" | python3 -m json.tool | grep -A2 cloud
+```
+
+Rotasi memutus setiap klien yang masih memegang nilai lama — relay Mac dan
+hook cloud ikut ditolak 401 sampai nilainya diperbarui di sisi mereka. Itu
+perilaku yang benar, bukan kerusakan, tapi perbarui semuanya dalam satu
+sesi supaya tidak ada agen yang membeku luring tanpa ketahuan.
+
+Pemeriksaan tanpa kredensial, berguna saat Anda tidak memegang token: `GET
+/health` terbuka dan memuat `eventsBuffered`. Angka yang **naik** di dua
+sampel berjarak satu menit membuktikan ada pengirim aktif dengan kredensial
+yang sah, tanpa perlu membuka `/presence`.
+
 ## 7. Transport
 
 - Wajib HTTPS/WSS di produksi (proxy platform)

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Rotasi kredensial produksi — 19 Oktober 2026
+
+Pesan commit `b4250ab` memuat potongan nilai `OFFICE_TOKEN` dan
+`OFFICE_CLOUD_TOKEN` di badan pesannya. Pohon berkas bersih; kebocoran hanya
+di riwayat pesan commit, dan karena repo ini publik, potongan itu permanen.
+
+`OFFICE_OWNER_TOKEN`, `OFFICE_CLOUD_TOKEN`, dan `OFFICE_MAC_TOKEN` diputar.
+Riwayat **tidak** ditulis ulang: force-push merusak setiap klon sementara
+potongan lama tetap tertinggal di cache GitHub, sedangkan rotasi benar-benar
+mematikan nilainya. Diverifikasi — ketiga token lama kini dijawab 401,
+sementara `eventsBuffered` di `/health` terus naik, jadi rantai denyut tetap
+mengalir dengan kredensial baru.
+
+Aturan pencegahnya ditulis di `docs/SECURITY.md` §6, beserta runbook rotasi.
+
 ### Antarmuka perguruan menggantikan kantor isometrik (PR `arena/sect-ui-id`)
 
 - **Frontend diganti, bukan ditumpuk.** 37 berkas `.ts/.tsx/.css` dihapus setelah
