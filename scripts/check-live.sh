@@ -122,7 +122,7 @@ for ep in ledger dossier replay standup debug/events; do
   # broken deploy would look identical to a well-locked one. Only runs when a
   # token was supplied — never by consuming a cookie the server volunteered,
   # which is how this section stopped being a test.
-  if [ -n "$OFFICE_LIVE_TOKEN" ]; then
+  if [ -n "${OFFICE_LIVE_TOKEN:-}" ]; then
     code=$(curl -s -H "$OH" -H "Authorization: Bearer $OFFICE_LIVE_TOKEN" \
       -o "$BODY" -w '%{http_code}' -m 20 "$URL/$ep" 2>/dev/null)
     case "$code" in

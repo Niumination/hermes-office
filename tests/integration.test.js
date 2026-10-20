@@ -93,6 +93,8 @@ before(async () => {
       OFFICE_CLOUD_TOKEN: TOKENS.cloud,
       OFFICE_MAC_TOKEN: TOKENS.mac,
       OFFICE_OWNER_TOKEN: TOKENS.owner,
+      OFFICE_AUTO_SESSION_CIDRS: "",
+      OFFICE_TRUSTED_PROXIES: "",
       ALLOWED_ORIGINS: "http://localhost:5173",
     },
     stdio: ["ignore", "pipe", "pipe"],
@@ -320,6 +322,8 @@ test("watchdog: a non-agent_status event counts as a heartbeat", async () => {
       OFFICE_CLOUD_TOKEN: TOKENS.cloud,
       OFFICE_MAC_TOKEN: TOKENS.mac,
       OFFICE_OWNER_TOKEN: TOKENS.owner,
+      OFFICE_AUTO_SESSION_CIDRS: "",
+      OFFICE_TRUSTED_PROXIES: "",
       OFFICE_DB: ":memory:",
       OFFICE_WATCHDOG_CUTOFF_MS: "600",
       OFFICE_WATCHDOG_SWEEP_MS: "150",
@@ -546,6 +550,8 @@ test("burn: end-to-end — OTLP spend trips the breaker and denies the next call
       OFFICE_CLOUD_TOKEN: TOKENS.cloud,
       OFFICE_MAC_TOKEN: TOKENS.mac,
       OFFICE_OWNER_TOKEN: TOKENS.owner,
+      OFFICE_AUTO_SESSION_CIDRS: "",
+      OFFICE_TRUSTED_PROXIES: "",
       OFFICE_DB: ":memory:",
       OFFICE_BUDGET_AGENT_HOURLY_USD: "0.06",
       OFFICE_BUDGET_HOURLY_USD: "1",
@@ -1033,12 +1039,21 @@ test("auto-session refuses anything that arrived through a proxy", async () => {
 });
 
 test("the gate itself: mayAutoSession refuses by default and by proxy", async () => {
+  // auth.js captures process.env at import time and .env.office (production)
+  // sets OFFICE_AUTO_SESSION_CIDRS — force it empty so this test exercises
+  // the shipped default, not the local deploy's allowlist. This assignment
+  // is synchronous (no await between read and write), so no rule is violated.
+  const saved = process.env.OFFICE_AUTO_SESSION_CIDRS;
+  const original = saved;
+  process.env.OFFICE_AUTO_SESSION_CIDRS = ""; // eslint-disable-next-line require-atomic-updates
   const { mayAutoSession } = await import("../server/auth.js");
   const local = { socket: { remoteAddress: "127.0.0.1" }, headers: {} };
   assert.equal(mayAutoSession(local), false, "empty allowlist means nobody");
   assert.equal(mayAutoSession({ ...local, headers: { "x-forwarded-for": "1.2.3.4" } }), false);
   assert.equal(mayAutoSession({ socket: {}, headers: {} }), false, "no address means no");
   assert.equal(mayAutoSession({}), false, "a malformed request means no");
+  if (original === undefined) delete process.env.OFFICE_AUTO_SESSION_CIDRS;
+  else process.env.OFFICE_AUTO_SESSION_CIDRS = original;
 });
 
 test("a full session table evicts the oldest, it never locks the owner out", async () => {
