@@ -30,7 +30,7 @@ function hall(id: string): SectHall {
 }
 
 const cul = (over = {}) => ({
-  id: 'a1', name: 'Niu', glyph: 'NU', state: 'working' as const, qi: 'normal' as const, ...over,
+  id: 'a1', name: 'Niu', glyph: 'NU', state: 'working' as const, ...over,
 })
 
 describe('Hall', () => {
@@ -70,24 +70,6 @@ describe('Hall', () => {
     expect(screen.getByText('lobby')).toBeTruthy()
   })
 
-  it('carries the qi state onto the cultivator so burn is visible as aura', () => {
-    const { container } = render(
-      <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
-            cultivators={[cul({ qi: 'critical', state: 'away' })]} />,
-    )
-    const fig = container.querySelector('.sect-cul')!
-    expect(fig.className).toContain('sect-cul--away')
-    expect(fig.getAttribute('style')).toContain('--sect-qi-3')
-  })
-})
-
-/**
- * The cast came back on 2026-10-15. These tests exist because it left
- * silently once already: the Sect migration dropped the sprite reader, every
- * gate stayed green, and the characters were gone for three days before
- * anyone said so out loud. Each test below is one way that could happen again.
- */
-describe('Hall — the cast', () => {
   it('draws the character art when a sprite is given', () => {
     const { container } = render(
       <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
@@ -98,7 +80,7 @@ describe('Hall — the cast', () => {
     expect(img?.getAttribute('src')).toBe('/sprites/donghua/elder-front-left.webp')
   })
 
-  it('marks a drawn disciple so the CSS can give the qi ring a floor, not a halo', () => {
+  it('marks a drawn disciple so the CSS can give the sprite a floor, not a halo', () => {
     const { container } = render(
       <Hall room="lobby" hall={hall('lobby')} plate="/p.webp" occupancyKnown
         cultivators={[cul({ sprite: '/sprites/donghua/elder-front-left.webp' })]} />,
@@ -137,7 +119,7 @@ describe('Hall — the cast', () => {
 
 describe('Hall — ghosts', () => {
   const ghost = (id: string) => ({
-    id, name: id, glyph: 'XX', state: 'ghost' as const, qi: 'normal' as const,
+    id, name: id, glyph: 'XX', state: 'ghost' as const,
     sprite: `/sprites/donghua/cultivator-front-left.webp`,
   })
 

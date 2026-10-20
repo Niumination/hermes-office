@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-10-17T18:28:53Z",
-  "commit": "cee66146d7cb46f6a70df788a015af04e2d34200",
+  "generatedAt": "2026-10-20T10:51:12Z",
+  "commit": "5b6a16cdf247c2d066081035897da28d90355ce3",
   "branch": "dev",
-  "dirty": false,
+  "dirty": true,
   "gates": [
     {
       "gate": "handoff integrity",
@@ -80,7 +80,7 @@
   "gatesGreen": 18,
   "gatesTotal": 18,
   "bundle": {
-    "file": "index-Cgpw6Zmr.js",
-    "sha256": "052952b53433b56140945effcff99d91026b483515d1325de813c13460d4835f"
+    "file": "index-BynRgr08.js",
+    "sha256": "72daf9f15e0b61748506cfa6208c2a46c814f52cea95506a842e470ad6d090f2"
   }
 }

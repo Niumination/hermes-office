@@ -14,35 +14,41 @@ import { ladderFromPolicy } from './policyClient'
 
 const OWNER_POLICY = {
   rooms: [
-    { room: 'lobby', budgetHourlyUsd: 0.25 },
-    { room: 'main-office', budgetHourlyUsd: 2 },
-    { room: 'meeting-room', budgetHourlyUsd: 1 },
-    { room: 'server-room', budgetHourlyUsd: 5 },
-    { room: 'mac-studio', budgetHourlyUsd: 3 },
-    { room: 'ceo-office', budgetHourlyUsd: 10 },
-    { room: 'kitchen', budgetHourlyUsd: 0 },
-    { room: 'nap-room', budgetHourlyUsd: 0 },
+    { room: 'lobby' },
+    { room: 'main-office' },
+    { room: 'meeting-room' },
+    { room: 'server-room' },
+    { room: 'mac-studio' },
+    { room: 'ceo-office' },
+    { room: 'kitchen', idle: true },
+    { room: 'nap-room', idle: true },
   ],
 }
 
 describe('ladderFromPolicy — owner', () => {
   const snap = ladderFromPolicy(OWNER_POLICY)
 
-  it('builds a rung per hall, lowest budget first', () => {
+  it('builds a rung per hall, in room order', () => {
+    // Was 'lowest budget first'. The budget is retracted; room id is the only
+    // ordering left that is a fact rather than a leftover.
     expect(snap.rungs.map((r) => r.room)).toEqual([
-      'kitchen', 'nap-room',          // $0, tie broken by room id
-      'lobby',                        // $0.25
-      'meeting-room',                 // $1
-      'main-office',                  // $2
-      'mac-studio',                   // $3
-      'server-room',                  // $5
-      'ceo-office',                   // $10
+      'ceo-office',
+      'kitchen',
+      'lobby',
+      'mac-studio',
+      'main-office',
+      'meeting-room',
+      'nap-room',
+      'server-room',
     ])
   })
 
-  it('carries the real dollar caps', () => {
+  it('carries the policy\u2019s idle flag and never a price', () => {
     const ceo = snap.rungs.find((r) => r.room === 'ceo-office')!
-    expect(ceo.capUsd).toBe(10)
+    const kitchen = snap.rungs.find((r) => r.room === 'kitchen')!
+    expect(ceo.idle).toBe(false)
+    expect(kitchen.idle).toBe(true)
+    expect('capUsd' in ceo).toBe(false)
   })
 
   it('publishes no viewer standing at all', () => {
@@ -61,7 +67,7 @@ describe('ladderFromPolicy — owner', () => {
     // that nobody has mapped it.
     const withBoiler = ladderFromPolicy({
       ...OWNER_POLICY,
-      rooms: [...OWNER_POLICY.rooms, { room: 'boiler-room', budgetHourlyUsd: 4 }],
+      rooms: [...OWNER_POLICY.rooms, { room: 'boiler-room' }],
     })
     const rung = withBoiler.rungs.find((r) => r.room === 'boiler-room')
     expect(rung).toBeTruthy()
@@ -69,15 +75,23 @@ describe('ladderFromPolicy — owner', () => {
   })
 })
 
-describe('ladderFromPolicy — no budgets at all', () => {
+describe('ladderFromPolicy \u2014 a policy that only names rooms', () => {
   // The guest document (trust levels, no budgets) is no longer served to
-  // anybody. What remains is the degenerate case: a policy that names rooms
-  // but budgets none of them. The ladder must then be empty, rather than
-  // inventing rungs for rooms the policy gave no cap.
+  // anybody, and since 2026-10-20 no document carries a budget at all.
+  //
+  // INVERTED on that date. This block used to assert the opposite: a policy
+  // that named rooms without budgeting them produced an EMPTY ladder, because
+  // a rung was only real if it had a dollar cap to be sorted by. With the cost
+  // layer retracted that rule would hide every room in the building. Being
+  // named by the policy is now the whole qualification.
   const snap = ladderFromPolicy({ rooms: [{ room: 'lobby' }, { room: 'ceo-office' }] })
 
-  it('draws no rung it cannot place on the mountain by budget', () => {
-    expect(snap.rungs).toHaveLength(0)
+  it('draws a rung for every room the policy names', () => {
+    expect(snap.rungs.map((r) => r.room)).toEqual(['ceo-office', 'lobby'])
+  })
+
+  it('treats an unflagged room as in use, not as parked', () => {
+    expect(snap.rungs.every((r) => r.idle === false)).toBe(true)
   })
 
   it('grants no standing, because it has none to grant', () => {
@@ -99,8 +113,8 @@ describe('placements', () => {
   it('reads occupants for an owner policy', () => {
     const snap = ladderFromPolicy({
       rooms: [
-        { room: 'lobby', budgetHourlyUsd: 0.25, occupants: [{ agent: 'cloud' }, { agent: 'mac' }] },
-        { room: 'ceo-office', budgetHourlyUsd: 10, occupants: [{ agent: 'boss' }] },
+        { room: 'lobby', occupants: [{ agent: 'cloud' }, { agent: 'mac' }] },
+        { room: 'ceo-office', occupants: [{ agent: 'boss' }] },
       ],
     })
     expect(snap.placements).toEqual({ cloud: 'lobby', mac: 'lobby', boss: 'ceo-office' })
@@ -114,8 +128,8 @@ describe('placements', () => {
     // view's decision; it cannot make it about facts it never receives.
     const snap = ladderFromPolicy({
       rooms: [
-        { room: 'lobby', budgetHourlyUsd: 0.25, occupants: [{ agent: 'cloud' }] },
-        { room: 'not-a-hall', budgetHourlyUsd: 1, occupants: [{ agent: 'ghost' }] },
+        { room: 'lobby', occupants: [{ agent: 'cloud' }] },
+        { room: 'not-a-hall', occupants: [{ agent: 'ghost' }] },
       ],
     })
     expect(snap.placements).toEqual({ cloud: 'lobby', ghost: 'not-a-hall' })
@@ -123,13 +137,13 @@ describe('placements', () => {
 
   it('is an empty map when nobody is placed, never undefined', () => {
     // Callers iterate it unguarded; undefined here would white-screen the app.
-    const snap = ladderFromPolicy({ rooms: [{ room: 'lobby', budgetHourlyUsd: 0.25 }] })
+    const snap = ladderFromPolicy({ rooms: [{ room: 'lobby' }] })
     expect(snap.placements).toEqual({})
   })
 
   it('ignores occupant entries with no usable agent id', () => {
     const snap = ladderFromPolicy({
-      rooms: [{ room: 'lobby', budgetHourlyUsd: 0.25, occupants: [{ agent: '' }, {}, { agent: 'cloud' }] }],
+      rooms: [{ room: 'lobby', occupants: [{ agent: '' }, {}, { agent: 'cloud' }] }],
     })
     expect(snap.placements).toEqual({ cloud: 'lobby' })
   })

@@ -64,21 +64,16 @@ byte-per-byte. Tiga alasan, makin ke bawah makin penting:
 Efek sampingnya: standup bisa dihitung ulang oleh auditor dari rantai yang
 sama dan menghasilkan teks yang sama persis.
 
-## Yang tidak bisa diketahui rantai
+## ~~Yang tidak bisa diketahui rantai~~ — DICABUT 2026-10-20
 
-Tidak ada biaya terealisasi per panggilan di ledger. Event biaya masuk ke
-burn tracker, bukan ke rantai. Yang dipegang rantai hanya:
+Bagian ini menjelaskan mengapa standup tidak pernah mencetak "total belanja
+kemarin": rantai hanya memegang `budget_transition.spentUsd` (puncak di dalam
+satu jendela) dan `policy_decision.estimatedUsd` (perkiraan pra-eksekusi), dan
+menjumlahkan keduanya menghasilkan angka percaya diri yang salah.
 
-- `budget_transition.spentUsd` — belanja sejauh ini **di dalam jendela
-  anggaran itu**, pada saat transisi. Puncak, bukan total.
-- `policy_decision.estimatedUsd` — perkiraan **pra-eksekusi** untuk tindakan
-  yang mungkin ditolak dan mungkin tidak pernah berjalan.
-
-Jadi berkas ini tidak pernah mencetak "total belanja kemarin". Ia mencetak
-puncak, dan melabeli perkiraan sebagai perkiraan. Menjumlahkan field itu akan
-menghasilkan angka yang percaya diri, salah, dan terekam permanen — artefak
-terburuk yang bisa dikeluarkan basis kode ini. Ada test khusus yang mencoba
-menjumlahkannya dan harus gagal.
+Kehati-hatian itu benar, tapi sekarang tidak ada lagi yang perlu dijaga: kedua
+field itu, event `budget_transition`, dan seluruh lapisan biaya sudah dicabut.
+Standup tidak mencetak angka uang apa pun karena tidak ada angka uang.
 
 ## Temuan yang bisa muncul
 
@@ -87,9 +82,7 @@ menjumlahkannya dan harus gagal.
 | `chain-truncated` / `chain-bad` | KRITIS | rantai terpotong atau verifikasi gagal |
 | `approvals-expired` | PERLU TINDAKAN | izin kedaluwarsa tanpa jawaban |
 | `approvals-pending` | PERLU TINDAKAN | ada izin menunggu sekarang |
-| `budget-tripped` | PERLU TINDAKAN | batas tercapai, tindakan ditolak |
 | `repeat-denials` | PERLU TINDAKAN | agent+alat sama ditolak ≥3× |
-| `spend-up` | PERLU TINDAKAN | perkiraan beban ≥2× periode sebelumnya |
 | `agents-quiet` | CATATAN | aktif kemarin (≥5 catatan), nol hari ini |
 | `agents-new` | CATATAN | agent baru pada armada mapan |
 | `approval-latency` | CATATAN | median tunggu izin, ≥3 sampel |

@@ -89,7 +89,7 @@ __all__ = [
 # --------------------------------------------------------------------------
 
 #: Event types a bridge is allowed to POST. The server also knows five
-#: internal-only types (office_chat, budget_state, agent_moved,
+#: internal-only types (office_chat, agent_moved,
 #: approval_requested, approval_resolved); sending those earns a 400, so they
 #: are not listed here.
 BRIDGE_EVENT_TYPES = frozenset(

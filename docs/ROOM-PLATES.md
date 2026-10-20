@@ -53,16 +53,16 @@ Manifest mencatat **26 plate**: 18 tema bawaan di akar `rooms/`, dan 8 tema
 Perguruan di `rooms/sect/` — satu untuk setiap ruangan yang diatur `DEFAULT_POLICY`,
 tidak kurang dan tidak lebih:
 
-| berkas | aula | ruangan | cap/jam |
-|---|---|---|---|
-| `lobby.webp` | Gerbang Gunung gerbang gunung | `lobby` | $0.25 |
-| `meeting-room.webp` | Balai Musyawarah balai musyawarah | `meeting-room` | $1 |
-| `main-office.webp` | Gelanggang Latih lapangan latihan | `main-office` | $2 |
-| `mac-studio.webp` | Bilik Ramuan kamar eliksir | `mac-studio` | $3 |
-| `server-room.webp` | Bilik Rajah kamar formasi | `server-room` | $5 |
-| `ceo-office.webp` | Balai Sesepuh aula ketua sekte | `ceo-office` | $10 |
-| `kitchen.webp` | Balai Santap refektori | `kitchen` | $0 |
-| `nap-room.webp` | Bilik Hening kamar hening | `nap-room` | $0 |
+| berkas | aula | ruangan |
+|---|---|---|
+| `lobby.webp` | Gerbang Gunung gerbang gunung | `lobby` |
+| `meeting-room.webp` | Balai Musyawarah balai musyawarah | `meeting-room` |
+| `main-office.webp` | Gelanggang Latih lapangan latihan | `main-office` |
+| `mac-studio.webp` | Bilik Ramuan kamar eliksir | `mac-studio` |
+| `server-room.webp` | Bilik Rajah kamar formasi | `server-room` |
+| `ceo-office.webp` | Balai Sesepuh aula ketua sekte | `ceo-office` |
+| `kitchen.webp` | Balai Santap refektori | `kitchen` |
+| `nap-room.webp` | Bilik Hening kamar hening | `nap-room` |
 
 Nama berkas sengaja sama dengan id ruangan, jadi memilih tema adalah pencarian
 direktori (`rooms/sect/<room>.webp`), bukan tabel pemetaan yang harus dirawat.
@@ -80,9 +80,8 @@ tidak mendapat keringanan. (Angka 18 di bagian *Koreksi* dan *Ambang* di atas
 adalah catatan sejarah: ambang memang diukur dari korpus asli itu, dan
 mengubahnya akan memalsukan asal-usul aturan.)
 
-**Perluasan.** "Custom policy, theming" adalah fitur tier berbayar. Pelanggan
-yang menambah ruangan perlu tahu apa yang membuat sebuah plate pantas. Ambang
-di bawah adalah jawabannya.
+**Perluasan.** Pemilik yang menambah ruangan perlu tahu apa yang membuat
+sebuah plate pantas. Ambang di bawah adalah jawabannya.
 
 ## Kriteria penerimaan
 

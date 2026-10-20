@@ -30,7 +30,6 @@ export const KNOWN_EVENT_TYPES = [
   "service_status",
   // Burn-rate governance: emitted by the server when a budget scope crosses a
   // threshold. Internal-only — bridges must not be able to forge a budget state.
-  "budget_state",
   // Internal-only, but it must still be a *known* type or emitInternal can
   // never emit it. INTERNAL_ONLY is checked first, so POST /event still
   // answers "internal-only" rather than "unknown type".
@@ -51,7 +50,6 @@ const KNOWN_SET = new Set(KNOWN_EVENT_TYPES);
 // silently discarded by the emitter while the server was ready to accept it.
 export const INTERNAL_ONLY_TYPES = [
   "office_chat",
-  "budget_state",
   "agent_moved",
   "approval_requested",
   "approval_resolved",
@@ -173,11 +171,6 @@ const SCHEMAS = {
     if (!APPROVAL_STATES.has(b.state)) return `Invalid approval_resolved.state: ${b.state}`;
     return null;
   },
-  budget_state: (b) => {
-    if (!b.scope || !b.subject || !b.state) return "scope + subject + state required";
-    if (!BURN_STATE_SET.has(b.state)) return `Invalid budget_state.state: ${b.state}`;
-    return null;
-  },
   service_status: (b) => {
     if (!b.host || !b.unit || !b.state) return "host + unit + state required";
     if (!SERVICE_HOSTS.has(b.host)) return `Invalid service_status.host: ${b.host}`;
@@ -187,7 +180,6 @@ const SCHEMAS = {
 };
 
 const APPROVAL_STATES = new Set(["approved", "denied", "expired"]);
-const BURN_STATE_SET = new Set(["normal", "warm", "hot", "critical", "tripped"]);
 const SERVICE_STATES = new Set(["active", "failed", "inactive"]);
 const SERVICE_HOSTS = new Set(["cloud", "mac"]);
 

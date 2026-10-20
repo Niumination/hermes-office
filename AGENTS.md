@@ -26,13 +26,13 @@ other failure untrustworthy until settled.
 
 ## 1. Never edit a number to make a gate green
 
-`check-docs.py` compares 119 documented claims against the repo. When it says
+`check-docs.py` compares 104 documented claims against the repo. When it says
 the doc is wrong, the doc is *usually* wrong — but not always. Twice the
 honest fix was in the opposite direction:
 
 - ARCHITECTURE.md claimed "250 sprites programmatically stylized". Only 100
   ever were. The number was right and the sentence was a lie.
-- `docs/PRICING.md` sold "60 machine-verified claims" when the real figure
+- `docs/PRICING.md` (deleted 2026-10-20) sold "60 machine-verified claims" when the real figure
   was 87. Understating is still a false claim; it only survived because
   nothing executed it.
 

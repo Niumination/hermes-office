@@ -66,16 +66,7 @@ export const config = {
       .map((s) => s.trim())
       .filter(Boolean)
   ),
-  // --- Burn-rate governance -------------------------------------------
-  // Dollar caps enforced in the request path via POST /budget/check.
   // 0 or unset = that scope is unlimited.
-  budget: {
-    globalHourlyUsd: Number(process.env.OFFICE_BUDGET_HOURLY_USD || 0),
-    globalDailyUsd: Number(process.env.OFFICE_BUDGET_DAILY_USD || 0),
-    agentHourlyUsd: Number(process.env.OFFICE_BUDGET_AGENT_HOURLY_USD || 0),
-    // "researcher=2.50,planner=0.75"
-    perAgentRaw: process.env.OFFICE_BUDGET_PER_AGENT || "",
-  },
 
   // --- Floor-plan policy ----------------------------------------------
   // Path to a JSON floor-plan policy document. Unset = built-in default.

@@ -3,7 +3,7 @@
 check-docs.py — verify that the docs describe the repo that exists.
 
 Covers ARCHITECTURE.md, PRD.md, UI-SPEC.md, AGENTS.md, HANDOFF.md,
-README.md and docs/PRICING.md.
+README.md and the other selling documents.
 
 WHY THIS EXISTS
 ---------------
@@ -511,8 +511,15 @@ def main() -> int:
         # the section must stay, marked dicabut, so that re-adding a visitor
         # role requires deleting a documented retraction rather than quietly
         # filling a gap.
-        for phrase in ("Tidak pernah membaca isi prompt", "Jangan pernah per-kursi",
-                       "Persona 4: pengunjung anonim — **dihapus"):
+        # "Jangan pernah per-kursi" left this list on 2026-10-20: a promise not
+        # to price something a certain way is still a claim about price, and
+        # there is no price. The retraction markers below replace it — the
+        # cost layer, like the visitor role, must stay visibly removed rather
+        # than quietly reappear.
+        for phrase in ("Tidak pernah membaca isi prompt",
+                       "Persona 4: pengunjung anonim — **dihapus",
+                       "### 9. DICABUT — Kemasan & Harga".replace("### ", "## "),
+                       "### F3 · DICABUT — Breaker Burn-Rate (Fase 2)"):
             checks += 1
             if phrase not in prd:
                 failures.append(f"PRD no longer states: {phrase!r}")
@@ -597,7 +604,7 @@ def main() -> int:
                     "anti-rusak.' but the component no longer contains it")
 
 
-    # --- README.md / README.id.md / PRICING.md / PRICING.id.md -----------
+    # --- README.md / README.id.md ----------------------------------------
     # The selling documents are the ones most likely to drift and the most
     # damaging when they do: every other doc rotting embarrasses a developer,
     # these mislead a buyer.
@@ -610,9 +617,8 @@ def main() -> int:
     # carry every promise. Wording is left alone; commitments are not.
     BACKEND_PASSES = [None]
     READMES = {"en": "README.md", "id": "README.id.md"}
-    PRICINGS = {"en": "docs/PRICING.md", "id": "docs/PRICING.id.md"}
     text = {}
-    for lang, rel in list(READMES.items()) + list(PRICINGS.items()):
+    for lang, rel in READMES.items():
         full = os.path.join(ROOT, rel)
         text[rel] = open(full, encoding="utf-8").read() if os.path.exists(full) else None
     # AGENTS.md also quotes the claim total, so it has to be readable here
@@ -639,9 +645,6 @@ def main() -> int:
         ("tamper-evident, not tamper-proof", {
             "README.md": "Tamper-evident, not tamper-proof",
             "README.id.md": "Tahan-rusak, bukan anti-rusak"}),
-        ("no per-seat pricing", {
-            "README.md": "not sold per seat",
-            "README.id.md": "Tidak dijual per kursi"}),
     ]
     for label, per_file in PROMISES:
         for rel, phrase in per_file.items():
@@ -653,11 +656,10 @@ def main() -> int:
 
     # Test counts: asked of the runners, not counted by hand, and both
     # language versions must quote the same figure.
-    # PRICING.md is read by buyers, so its numbers rot in the most expensive
-    # place. It sat outside this checker and drifted exactly as predicted:
-    # it was still selling "61 machine-verified claims" when the real figure
-    # had moved to 83. Both sales files now quote the same figures as the
-    # READMEs, checked against the same runners.
+    # RETRACTED 2026-10-20: docs/PRICING.md and .id.md were deleted with the
+    # rest of the cost layer, and the checks that held their numbers went with
+    # them. They are named here so the deletion stays visible: this block used
+    # to hold four extra claims.
     # The supported runtime is a security statement, not a style note.
     # Node 20 reached end of life on 2026-04-30 and receives no patches, so
     # a README still advertising it is exactly the kind of claim that
@@ -830,12 +832,13 @@ def main() -> int:
     # second principal with it, which is exactly how the guest role and its
     # redaction pipeline were justified in the first place. So the assertion
     # is inverted rather than deleted: no price may reappear in a table row.
-    # Prose may discuss the old figures; `docs/PRICING.md` does, deliberately.
-    # Room budgets ($0.25/hr for the lobby) are facts about policy and must
-    # stay; only the retracted LICENCE figures are forbidden. Matching those
-    # exact numbers keeps the check narrow enough to be true.
+    # Prose may discuss the old figures.
+    #
+    # Widened 2026-10-20: room budgets used to be exempt here ("facts about
+    # policy"). They are not facts any more — the whole cost layer is gone, so
+    # an hourly figure in a table row is as retracted as a licence tier.
     RETRACTED = ("$39", "$299", "$2,000", "$2.000", "$2,400")
-    for rel in list(READMES.values()) + list(PRICINGS.values()):
+    for rel in READMES.values():
         if text.get(rel) is None:
             continue
         checks += 1
@@ -849,8 +852,8 @@ def main() -> int:
         ]
         if offenders:
             failures.append(
-                f"{rel} quotes a retracted licence price in a table row: "
-                f"{offenders[0][:70]!r} — see docs/PRICING.md")
+                f"{rel} quotes a retracted price in a table row: "
+                f"{offenders[0][:70]!r}")
 
     # The viewer tier is gone, and this check is its inverse.
     #
@@ -898,11 +901,10 @@ def main() -> int:
                 f"this office has one owner; see the note in frontend/src/theme/sect.ts")
 
     # Each language version must point at the other, and at its own-language
-    # pricing page. A dead language switcher is how a translation starts
+    # counterpart. A dead language switcher is how a translation starts
     # being invisible, and then being forgotten.
     SWITCHERS = [
         ("README.md", "README.id.md"), ("README.id.md", "README.md"),
-        ("docs/PRICING.md", "PRICING.id.md"), ("docs/PRICING.id.md", "PRICING.md"),
     ]
     for rel, target in SWITCHERS:
         if text.get(rel) is None:
@@ -1057,18 +1059,6 @@ def main() -> int:
                 "scripts/stylize-donghua.py hardcodes an absolute /home/user "
                 "path again — on any other machine it treats shipped art as "
                 "the pristine original and double-filters it")
-
-    # The sales files quote the backend test count in prose, not a table.
-    # Same number, same runner, different sentence — so it gets the same
-    # treatment rather than being trusted because it reads like marketing.
-    for rel in PRICINGS.values():
-        if text.get(rel) is None:
-            continue
-        m = want("the backend test count",
-                 r"(?:carries|punya) (\d+) (?:backend tests|test backend)",
-                 text[rel], rel)
-        if m:
-            check(f"{rel} backend test count", m.group(1), BACKEND_PASSES[0])
 
     # The count of checked claims is itself a claim in the README, and it is
     # the one guaranteed to rot: every future check added here invalidates
@@ -1316,8 +1306,6 @@ def main() -> int:
     GATE_COUNT = {
         "README.md": r"\*\*(\d+) gates, about",
         "README.id.md": r"\*\*(\d+) gerbang, sekitar",
-        "docs/PRICING.md": r"(\d+) gates, about \d",
-        "docs/PRICING.id.md": r"(\d+) gerbang, sekitar \d",
     }
     for rel, pattern in GATE_COUNT.items():
         m = want("its gate count", pattern, text.get(rel) or "", rel)
@@ -1358,8 +1346,6 @@ def main() -> int:
     SELF = {
         "README.md": r"\| Machine-verified doc claims \| \*\*(\d+)\*\*",
         "README.id.md": r"\| Klaim dokumen yang diverifikasi mesin \| \*\*(\d+)\*\*",
-        "docs/PRICING.md": r"(\d+) machine-verified documentation",
-        "docs/PRICING.id.md": r"(\d+) klaim dokumen yang diverifikasi mesin",
         # AGENTS.md drifted to 87 while the real total was 91 and nothing
         # caught it, because this dict was the only thing that looks at a
         # self-count and AGENTS.md was not in it. A doc that states the

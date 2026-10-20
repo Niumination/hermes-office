@@ -4,7 +4,7 @@
  * WHAT THIS IS
  * ------------
  * Fold the flight recorder forward and you get the office as it was at any
- * moment: who was in which room, what the burn state was, which approvals
+ * moment: who was in which room, which approvals
  * were pending, what was allowed and denied. Scrub the range and you have an
  * incident artifact that answers "what was actually happening at 02:14?"
  * without anyone reading 4,000 log lines.
@@ -43,15 +43,11 @@
  * artifact that looks like an evacuation and is pure reconstruction error.
  */
 
-/** Burn states, ordered. Exported so the UI and the renderer agree. */
-export const BURN_STATES = Object.freeze(["normal", "warm", "hot", "critical", "tripped"]);
-
 const FOLDABLE = Object.freeze([
   "agent_moved",
   "policy_decision",
   "approval_requested",
   "approval_resolved",
-  "budget_transition",
   "policy_loaded",
 ]);
 
@@ -70,15 +66,6 @@ export function buildReplay(records, { from = -Infinity, to = Infinity, maxFrame
   const state = {
     rooms: new Map(),        // agent -> room
     pending: new Map(),      // approvalId -> {agent, tool, kind, room, expiresAt}
-    burn: "normal",
-    spentUsd: 0,
-    // Which record last moved the money. Burn state updates on every
-    // decision, but realized spend only updates on a budget transition, so a
-    // frame can legitimately show "hot" beside a dollar figure from several
-    // records ago. Carrying the provenance lets a renderer say "as of seq N"
-    // instead of implying the two numbers were measured together.
-    spentSeq: null,
-    limitUsd: null,
     policySource: null,
   };
 
@@ -103,7 +90,7 @@ export function buildReplay(records, { from = -Infinity, to = Infinity, maxFrame
       continue;
     }
 
-    apply(state, row.type, payload, row.seq);
+    apply(state, row.type, payload);
 
     if (row.ts < from) { seeded++; continue; }   // pre-roll: fold, do not emit
     if (row.ts > to) break;
@@ -142,7 +129,7 @@ export function buildReplay(records, { from = -Infinity, to = Infinity, maxFrame
   };
 }
 
-function apply(state, type, p, seq) {
+function apply(state, type, p) {
   switch (type) {
     case "agent_moved":
       if (p.agent) {
@@ -157,7 +144,6 @@ function apply(state, type, p, seq) {
       // chain may start mid-session, and this is the only way to place an
       // agent who never moved during the window.
       if (p.agent && p.room && !state.rooms.has(p.agent)) state.rooms.set(p.agent, p.room);
-      if (p.state && BURN_STATES.includes(p.state)) state.burn = p.state;
       break;
 
     case "approval_requested":
@@ -173,15 +159,6 @@ function apply(state, type, p, seq) {
       if (p.approvalId) state.pending.delete(p.approvalId);
       break;
 
-    case "budget_transition":
-      // Only the global scope sets the office-wide mood. A per-agent breaker
-      // tripping must not repaint the whole building.
-      if (p.scope === "global" || p.scope == null) {
-        if (BURN_STATES.includes(p.state)) state.burn = p.state;
-        if (typeof p.spentUsd === "number") { state.spentUsd = p.spentUsd; state.spentSeq = seq; }
-        if (typeof p.limitUsd === "number") state.limitUsd = p.limitUsd;
-      }
-      break;
 
     case "policy_loaded":
       state.policySource = p.source ?? null;
@@ -201,10 +178,6 @@ function snapshot(state) {
   for (const room of Object.keys(occupants)) occupants[room].sort();
 
   return {
-    burn: state.burn,
-    spentUsd: round2(state.spentUsd),
-    spentAsOfSeq: state.spentSeq,
-    limitUsd: state.limitUsd,
     occupants: Object.fromEntries(Object.keys(occupants).sort().map(k => [k, occupants[k]])),
     pendingApprovals: [...state.pending.keys()].sort().map(id => ({ id, ...state.pending.get(id) })),
   };
@@ -222,17 +195,11 @@ function describe(type, p) {
       return `persetujuan diminta: ${p.agent ?? "?"} / ${p.tool ?? p.kind ?? "?"}`;
     case "approval_resolved":
       return `persetujuan ${p.state ?? "?"}: ${p.agent ?? "?"} / ${p.tool ?? p.kind ?? "?"}`;
-    case "budget_transition":
-      return `anggaran ${p.from ?? "?"} → ${p.state ?? "?"} (${p.scope ?? "global"})`;
     case "policy_loaded":
       return `kebijakan dimuat (${p.source ?? "?"})`;
     default:
       return type;
   }
-}
-
-function round2(n) {
-  return Math.round((Number(n) || 0) * 100) / 100;
 }
 
 /**
@@ -257,11 +224,9 @@ export function summarize(frames) {
   const byType = {};
   const denials = [];
   const agents = new Set();
-  let peakBurn = "normal";
 
   for (const f of frames) {
     byType[f.type] = (byType[f.type] ?? 0) + 1;
-    if (BURN_STATES.indexOf(f.burn) > BURN_STATES.indexOf(peakBurn)) peakBurn = f.burn;
     for (const list of Object.values(f.occupants)) for (const a of list) agents.add(a);
     if (f.type === "policy_decision" && /DITOLAK/.test(f.change)) {
       denials.push({ seq: f.seq, ts: f.ts, change: f.change });
@@ -272,7 +237,6 @@ export function summarize(frames) {
     frames: frames.length,
     byType: Object.fromEntries(Object.keys(byType).sort().map(k => [k, byType[k]])),
     agents: [...agents].sort(),
-    peakBurn,
     // Denials are the part anyone investigating an incident opens first.
     denials: denials.slice(0, 50),
     denialCount: denials.length,

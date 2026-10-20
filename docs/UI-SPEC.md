@@ -20,9 +20,10 @@
    lalu topik Telegram. Dua kantor tampil bergantian, tidak berdampingan.
    _Dicabut:_ "Tataran = izin". Tingkat kepercayaan dicabut di `20248f2`; satu
    pemilik tidak punya tataran untuk dinaiki.
-2. **Tenaga = burn.** Belanja adalah energi yang mengalir, bukan angka di pojok.
-   Lima keadaan server (`normal → warm → hot → critical → tripped`) menjadi
-   lima warna qi.
+2. _Dicabut 2026-10-20:_ "Tenaga = burn". Lima keadaan server
+   (`normal → warm → hot → critical → tripped`) dipetakan ke lima warna qi.
+   Seluruh lapisan biaya dihapus, jadi tidak ada lagi tenaga untuk diwarnai;
+   murid memakai satu aura (`--sect-aura`).
 3. **Tidak ada aula yang tertutup bagi pemiliknya.** _Dicabut:_ tabir "Lenyap
    di Balik Kabut". Ia hanya bisa terangkat lewat perbandingan tataran yang
    benar secara konstruksi, jadi tak pernah sekali pun muncul, dan teksnya
@@ -30,8 +31,9 @@
    `check-docs.py` kini menolak kembalinya `viewerTier`/`canEnter`/`sect-veil`.
 4. **UI tidak boleh mengarang penolakan, dan tidak boleh menyembunyikan angka
    yang sudah diketahui.** Dua sisi dari satu aturan. Menampilkan "diredaksi"
-   atas data yang dikirim server adalah kebohongan; menampilkan `$0` atas pagu
-   yang diredaksi juga.
+   atas data yang dikirim server adalah kebohongan. Ruang yang belum dipakai
+   ditandai **`idle`**, bukan `$0` — sakelar yang berarti "tutup" harus
+   terbaca "tutup".
 5. **Replay adalah tata kelola.** Kronik dan Segel bukan pelengkap — keduanya
    adalah argumen produk.
 
@@ -65,11 +67,11 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 
 ## 3. Bahasa visual
 
-| `sect.css` | 2396 | seluruh sistem desain — token, tata letak, komponen, gerak |
+| `sect.css` | 2395 | seluruh sistem desain — token, tata letak, komponen, gerak |
 
 | 64 token OKLCH | seluruh sistem desain
-| `SectApp` (694 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, halaman masuk |
-| `Hall` (218 baris) | aula, awan, Murid berdiri di denah, papan nama, "Tidak diketahui" saat belum masuk |
+| `SectApp` (688 baris) | orkestrasi, socket, latensi soket (RTT), follow-mode, halaman masuk |
+| `Hall` (208 baris) | aula, awan, Murid berdiri di denah, papan nama, "Tidak diketahui" saat belum masuk |
 | `AmanatBoard` (161 baris) | papan amanat mengambang — lajur mendatar, backdrop redup |
 | `stations` (135 baris) | peta stasiun per arketipe: koordinat lantai, skala kedalaman, urutan gambar |
 | `EcoRail` (115 baris) | rail dua kantor: ruang, jumlah meja, lencana penghuni |
@@ -79,93 +81,20 @@ rendah ke tinggi agar pembaca layar menyusurinya sesuai tangga kebijakan.
 | `Writ` (155 baris) | Titah — antrean persetujuan |
 | `Warrant` (166 baris) | pintu masuk pemilik — token → cookie sesi |
 
-### `QiRing` — tiga keadaan, bukan dua
+### ~~`QiRing`~~ — DIHAPUS 2026-10-20
 
-| situasi | tampilan | alasan |
-|---|---|---|
-| belanja belum terukur | `—` | server tidak mengirim angka |
-| pagu belum dikonfigurasi | `$1,25 · tanpa pagu` | belanja **diketahui**; hanya pagunya tidak ada |
-| keduanya diketahui | `$2,50 / $10,00` | busur proporsional |
-
-Versi pertama melipat dua situasi pertama menjadi satu `— — —`. `ratio: null`
-dari `/burn` berarti "pagu belum dikonfigurasi", **bukan** "diredaksi" —
-menyembunyikan belanja yang sudah diukur adalah pelanggaran prinsip 4.
-
-Saat tak berpagu, busurnya `stroke-dasharray: 2 6` pada opacity 0,55: pola
-putus-putus yang secara sengaja tidak menyiratkan proporsi apa pun.
-
-### `Seal` (Segel) dan `Writ` (Titah) — dipulihkan
-
-Keduanya **hilang** selama beberapa patch ketika UI sekte menggantikan chrome
-lama: `AuditBadge` dan `ApprovalGate` ikut terhapus bersama stylesheet-nya,
-dan tidak ada yang menyadarinya karena tidak ada gerbang yang mengukur fitur
-yang lenyap. Keduanya dipulihkan di sini dalam idiom sekte.
-
-**Segel** menampilkan kepala rantai dan hasil verifikasi. Dua perilaku diwarisi
-dengan sengaja:
-
-- **Tidak merender apa pun** begitu probe ditolak. Menampilkan tombol
-  "verifikasi" yang mati justru mengiklankan keberadaan log audit yang tak
-  bisa dibaca pemanggilnya.
-- **Hash kepala ditampilkan utuh dan bisa diseleksi** (`user-select: all`).
-  Memotongnya menghapus satu-satunya pertahanan terhadap pemangkasan ekor:
-  operator menyalin hash ke tempat yang tidak dikuasai server ini.
-
-Satu perilaku **tidak** diwarisi. Lencana lama melaporkan `verify.ok`, yaitu
-integritas mata rantai saja. Server juga menghitung
-`trustworthy = rantai ok DAN jangkar ok`, dan keduanya bisa berbeda. Komponen
-ini melaporkan yang lebih lemah dan menyebut mana yang gagal:
-
-> Rantai utuh (42 catatan), tetapi 2 jangkar tidak sepakat — jangan anggap
-> tersegel
-
-Kalimat di Segel yang merupakan klaim kepatuhan dan diperiksa mesin:
-
-> Tahan-rusak, bukan anti-rusak
-
-**Titah** menampilkan permohonan yang menunggu keputusan manusia. Aturannya:
-*tidak ada kontrol yang dijamin 403* — bukan tombol yang dinonaktifkan,
-melainkan tidak ada tombol sama sekali.
-
-Dulu aturannya berbunyi "mengetahui ada yang menunggu bukan hak istimewa;
-memutuskannya iya", dan kepemilikan disimpulkan dari payload (server
-meredaksi `agent` dan `tool` untuk tamu). Dengan satu principal, membaca
-antrean dan memutuskannya adalah standing yang sama: siapa pun yang bisa
-membacanya adalah pemilik. Inferensi itu dibuang; `canApprove` kini bawaan
-`true` dan pemanggil masih boleh menimpanya.
-
-Baris hanya dihapus bila server menerima keputusan. Bila server menolak (409
-kedaluwarsa, misalnya), barisnya tetap dan alasannya ditampilkan — menghapus
-baris di situ akan merender keputusan yang tidak pernah terjadi.
-
-### `Chronicle` (Babad)
-
-- Auto-scroll **hanya** bila pembaca sudah di ekor. Menarik gulir dari bawah
-  tangan orang yang sedang membaca riwayat adalah cara log audit berhenti
-  dipakai.
-- Jenis peristiwa tak dikenal **dirender**, bukan dibuang. `docs/EVENTS.md`
-  mewajibkan klien mentoleransinya; mentoleransi bukan berarti menyembunyikan.
-  Pembeli yang melihat peristiwa yang tak bisa dinamai UI belajar sesuatu yang
-  benar tentang sistemnya.
-- `channel_msg` menampilkan platform dan arah, **tidak pernah** isinya. Ini
-  kontrak privasi, diuji langsung.
-
----
+Cincin qi menampilkan belanja terhadap pagu dalam tiga keadaan (belum
+terukur · tanpa pagu · proporsional). Komponen, tesnya, `useBurnState.ts`
+dan `burnTypes.ts` dihapus bersama rute `/burn` yang memasoknya.
 
 ## 6. Aula
 
-Delapan aula, nama dan pagu dari kebijakan server:
+Enam belas aula; nama dari kebijakan server. Daftar lengkapnya ada di
+`docs/POLICY.md` dan dibangkitkan dari `DEFAULT_POLICY`.
 
-| ruang | nama | pagu/jam |
-|---|---|---|
-| `ceo-office` | Balai Sesepuh | $10 |
-| `server-room` | Bilik Rajah | $5 |
-| `mac-studio` | Bilik Ramuan | $3 |
-| `main-office` | Gelanggang Latih | $2 |
-| `meeting-room` | Balai Musyawarah | $1 |
-| `lobby` | Gerbang Gunung | $0,25 |
-| `kitchen` | Balai Santap | $0 |
-| `nap-room` | Bilik Hening | $0 |
+Kolom **pagu/jam** yang dulu ada di sini (`$10` Balai Sesepuh, `$0,25` Gerbang
+Gunung, dan seterusnya) **dicabut 2026-10-20**. Ruang yang belum dipakai —
+`mac/tools`, `mac/vault` — ditandai `idle`.
 
 Nama Tionghoa selalu tampil **berdampingan** dengan glosa Inggris, tidak
 menggantikannya.
@@ -236,7 +165,8 @@ Yang **tidak** boleh ikut terhapus, dan sempat hampir terhapus:
   satu impor **tipe**. Tipenya dipindahkan ke `hermes/burnTypes.ts` lebih
   dulu, barulah komponennya dihapus. Kontrak data tidak boleh tinggal di
   dalam komponen render — satu tampilan mati akhirnya menahan tiga modul
-  hidup tetap tertambat padanya.
+  hidup tetap tertambat padanya. (`burnTypes.ts` itu sendiri ikut dihapus
+  pada 2026-10-20 bersama lapisan biaya.)
 - `AuditBadge` dan `ApprovalGate` **fungsional** (memanggil `/ledger/verify`
   dan `/approvals`). Keduanya sempat terhapus dan dipulihkan sebagai Segel dan
   Titah. Pelajarannya tercatat di `handoff/LOG.md`: tidak ada satu pun dari 16

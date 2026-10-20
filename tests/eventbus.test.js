@@ -36,7 +36,6 @@ test("validates every known event type with golden payload", () => {
     channel_msg: { platform: "telegram", channelType: "group", direction: "in", agent: "cloud" },
     agent_status: { agent: "mac", state: "idle", uptimeH: 26.4 },
     service_status: { host: "cloud", unit: "hermes-office", kind: "systemd", state: "active", detail: "uptime 3d" },
-    budget_state: { scope: "agent", subject: "cloud", state: "hot", spentUsd: 1.2, limitUsd: 2 },
     office_chat: { text: "hello" },
     agent_moved: { agent: "cloud", fromRoom: "belum-dipetakan", room: "mac/sites", grantedBy: "owner" },
     approval_requested: { approvalId: "ap-1", agent: "cloud", room: "lightvela/infra", tool: "deploy" },
@@ -46,7 +45,7 @@ test("validates every known event type with golden payload", () => {
   // These are server-authoritative: a bridge must not be able to forge them,
   // so they only validate on the internal path.
   const INTERNAL_ONLY = new Set([
-    "budget_state", "office_chat",
+    "office_chat",
     "agent_moved", "approval_requested", "approval_resolved",
   ]);
 

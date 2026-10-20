@@ -7,13 +7,12 @@
  * it was 22 kB of code describing nothing.
  *
  * What the scene shows instead: which hall you are looking at, who is in it,
- * and what their qi is doing. Everything on screen is a fact from the event
+ * and whether they are present. Everything on screen is a fact from the event
  * stream or the policy.
  */
 import React from 'react'
 import type { RoomId } from '../rooms'
 import type { SectHall } from '../theme/sect'
-import type { BurnState } from '../hermes/burnTypes'
 import type { Archetype } from './cast'
 import { placeAll } from './stations'
 
@@ -23,7 +22,6 @@ export interface Cultivator {
   glyph: string
   task?: string
   state: 'working' | 'idle' | 'away' | 'ghost'
-  qi: BurnState
   /**
    * Character art from sect/cast.ts. Optional: absent means mark-only, which
    * is exactly how this component behaved before the cast came back.
@@ -37,13 +35,6 @@ export interface Cultivator {
   archetype?: Archetype
 }
 
-const QI_VAR: Record<BurnState, string> = {
-  normal: 'var(--sect-qi-0)',
-  warm: 'var(--sect-qi-1)',
-  hot: 'var(--sect-qi-2)',
-  critical: 'var(--sect-qi-3)',
-  tripped: 'var(--sect-qi-4)',
-}
 
 /**
  * One disciple.
@@ -72,7 +63,6 @@ const Disciple: React.FC<{
           placed ? ' sect-cul--placed' : ''
         }`}
         style={{
-          ['--qi' as string]: QI_VAR[c.qi],
           ...(placed
             ? {
                 left: `${placed.station.x}%`,

@@ -12,7 +12,7 @@ art-backup is flat slate grey, so the colour is entirely an artifact of the
 restyle, not of the original art.
 
 Magenta is not in this product's palette. Every other surface — the HUD, the
-panels, the sprite rim lights, the burn states — is jade and gold. One room
+panels, the sprite rim lights — is jade and gold. One room
 glowing pink reads as a bug in a product whose entire pitch is that it is
 carefully made.
 

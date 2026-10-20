@@ -1,16 +1,16 @@
 /**
  * policyClient — fetches /policy and builds the sect ladder rungs.
  *
- * The ladder's altitude is the policy's own budgetHourlyUsd (see theme/sect.ts):
+ * The ladder is the policy's own room list, in name order (see theme/sect.ts):
  * the order is never written down here, it is the policy's. This module is
  * only the fetch and the adaptation.
  *
- * It used to have two paths. A guest's /policy was redacted — budgets
+ * It used to have two paths. A guest's /policy was redacted — the owner's
  * dropped, because a map of where the money can be spent is the first thing
  * an attacker wants — so the guest ladder was built from the room's `trust`
  * level instead, a coarser ordering with every cap forced to 0. That path is
  * gone with the guest role: /policy is owner-only and always carries real
- * budgets, so there is exactly one way to build a rung.
+ * redaction, so there is exactly one way to build a rung.
  */
 
 import type { SectRung } from './sect'
@@ -50,7 +50,7 @@ interface ServerRoom {
   // `trust?: string` was here until 2026-10-17. The server stopped sending a
   // trust rung because nothing ever enforced one; parsing a field that is
   // never transmitted and never read would only keep the idea alive.
-  budgetHourlyUsd?: number
+  idle?: boolean
   occupants?: Array<{ agent?: string }>
   /** The server marks redaction per ROOM, not on the document — see the note
    *  in ladderFromPolicy. Declared here so callers stop casting to reach it. */
@@ -95,7 +95,7 @@ export function ladderFromPolicy(policy: ServerPolicy): PolicySnapshot {
 
   const byId: Record<string, PolicyRoomLike> = {}
   for (const r of rooms) {
-    if (typeof r.budgetHourlyUsd === 'number') byId[r.room] = { budgetHourlyUsd: r.budgetHourlyUsd }
+    if (typeof r.room === 'string' && r.room) byId[r.room] = { idle: Boolean(r.idle) }
   }
   const rungs = sectLadder(byId)
   // RETRACTED with `tier`: there is one owner, so there was never a second

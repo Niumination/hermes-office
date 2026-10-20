@@ -14,7 +14,7 @@
 Hermes Office adalah **ruang kendali spasial untuk armada AI agent**: kantor
 isometrik bergaya donghua 3D di mana **denah lantai _adalah_ kebijakan**.
 Setiap ruangan membawa tingkat kepercayaan, daftar alat yang diizinkan/ditolak,
-plafon tier model, anggaran dolar per jam, dan aturan persetujuannya sendiri.
+daftar alat yang diizinkan/ditolak dan aturan persetujuannya sendiri.
 Memindahkan agent dari satu ruangan ke ruangan lain **mengubah apa yang boleh
 ia lakukan** — bukan metafora, melainkan jalur penegakan yang sebenarnya.
 
@@ -23,7 +23,7 @@ Di bawah permukaan itu ada tiga pilar yang bisa dijual:
 | Pilar | Apa | Status |
 |---|---|---|
 | **A** | **Ingest OTLP** — terima trace OpenTelemetry GenAI dari framework apa pun, normalisasi atribut yang berbeda-beda, hitung biaya | **Selesai** (Fase 1) |
-| **B** | **Tata Kelola Spasial** — ruangan sebagai amplop kebijakan, breaker burn-rate, gerbang persetujuan | **Selesai** (Fase 2–3) |
+| **B** | **Tata Kelola Spasial** — ruangan sebagai amplop kebijakan, gerbang persetujuan | **Selesai** (Fase 2–3) |
 | **C** | **Perekam Penerbangan + Ekspor Kepatuhan** — ledger berantai SHA-256, dossier AI Act | **Selesai** (Fase 4) |
 
 **Tujuan satu kalimat:** *Satu halaman yang memperlihatkan apa yang armada agent
@@ -72,11 +72,12 @@ Agent View native. Vendor memiliki pertanyaan "apa yang sedang berjalan". Kami
 menjawab pertanyaan yang berbeda: *apa yang boleh berjalan, berapa biayanya,
 dan bisakah Anda membuktikannya enam bulan dari sekarang.*
 
-### 2.3 Harga yang sudah terbukti di pasar
+### 2.3 DICABUT — harga yang sudah terbukti di pasar
 
-Langfuse $29 / $199 / **$2.499 Enterprise**. Braintrust gratis → $249 (Seri B
-**$80 juta @ valuasi $800 juta**, Feb 2026). LangSmith $39/kursi + $0,50–2,50
-per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
+Bagian ini memuat tabel harga pesaing (Langfuse, Braintrust, LangSmith,
+Laminar) sebagai pembanding untuk tier yang akan dijual. **Dihapus 2026-10-20.**
+Kantor ini satu pemilik, tidak dijual, dan tidak punya pembeli untuk
+dibandingkan harganya.
 
 ---
 
@@ -88,19 +89,16 @@ per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
 |---|---|---|
 | G1 | Terima trace OTLP GenAI dari framework apa pun, normalisasi lintas-generasi atribut | ✅ Fase 1 |
 | G2 | Denah lantai sebagai amplop kebijakan yang dapat ditegakkan | ✅ Fase 3 |
-| G3 | Breaker burn-rate yang **mengarahkan sebelum menghentikan** | ✅ Fase 2 |
+| G3 | ~~Breaker burn-rate~~ **dicabut 20 Okt 2026** — lihat F3 | ⛔ |
 | G4 | Ledger tahan-rusak + ekspor dossier AI Act | ✅ Fase 4 |
 | G5 | Bisa di-deploy siapa pun, tanpa terikat host/akun mana pun | ✅ Fase 6 |
-| G6 | Identitas visual yang membenarkan harga premium | ✅ Fase 5 |
+| G6 | Identitas visual yang membuat denah terbaca sekilas | ✅ Fase 5 |
 | G7 | Pengujian yang membuat refactor aman (154 backend + 119 frontend) | ✅ Fase 7, 9 |
 | G8 | Dokumentasi yang klaimnya dieksekusi CI | ✅ Fase 8 |
 
 ### 3.2 Non-Goals v2
 
 - ❌ **Bersaing dengan Agent View milik vendor.** Kalah sebelum mulai.
-- ❌ **Harga per-kursi.** Pembeli kami adalah tim kecil dengan armada besar.
-  Laminar membuktikan kursi tak terbatas laku. Per-kursi menghukum tepat
-  perilaku yang kami ingin dorong.
 - ❌ **Multi-tenant SaaS.** Single-tenant yang di-self-host adalah fiturnya —
   pembeli kepatuhan tidak mau log mereka di infrastruktur orang lain.
 - ❌ **React Three Fiber.** Lihat §11 D3. (React 19 sendiri **bukan lagi**
@@ -119,10 +117,10 @@ per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
   karena ruangan memberi tahu saya apa yang boleh mereka sentuh.
 - **US2:** Ketika seorang agent mencoba `kubectl` dari meeting-room, ia
   ditolak dan saya melihat alasannya — bukan menemukannya di log besok.
-- **US3:** Saat belanja mencapai 75% anggaran, kantor berubah warna sebelum
-  ada yang perlu membaca angka.
+- **US3:** ~~Saat belanja mencapai 75% anggaran, kantor berubah warna.~~
+  **Dicabut 20 Okt 2026** bersama lapisan biaya.
 
-### Persona 2: Petugas Kepatuhan / Auditor (pembenar anggaran)
+### Persona 2: Petugas Kepatuhan / Auditor
 
 - **US4:** Saya mengunduh dossier untuk rentang tanggal dan mendapat catatan
   tahan-rusak berisi setiap keputusan, persetujuan, dan penolakan.
@@ -131,13 +129,11 @@ per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
 - **US6:** Saya bisa melihat dengan tepat apa yang **tidak** dideteksi sistem
   ini (§ FLIGHT-RECORDER) tanpa harus membaca kodenya.
 
-### Persona 3: Finance / FinOps
+### Persona 3: Finance / FinOps — **dihapus (20 Okt 2026)**
 
-- **US7:** Saya memasang plafon dolar per ruangan dan sistem **mengarahkan**
-  agent ke model lebih murah dulu, menghentikan hanya sebagai upaya terakhir.
-  (TokenOps Microsoft: tata kelola tingkat-run memangkas belanja per-tugas
-  **~78%** dan menaikkan penyelesaian 67%→96% justru dengan mengarahkan,
-  bukan menghentikan.)
+Persona ini berdiri di atas plafon dolar per ruangan. Plafonnya dicabut: ia
+tidak pernah menolak satu pun tindakan di produksi, karena tak ada jembatan
+yang mengirim angka biaya dan tak ada pemanggil yang menanyakannya.
 
 ### Persona 4: pengunjung anonim — **dihapus (Okt 2026)**
 
@@ -171,7 +167,7 @@ per 1.000 trace. Laminar $30/$150 dengan **kursi tak terbatas**.
  │ Hook/relay Anda  ├───────►│   event bus ──────────────── WS ►│ AtmosphereL │
  └──────────────────┘ /event │     │        │         │        │ (shader)    │
  ┌──────────────────┐ poll   │     ▼        ▼         │        │             │
- │ GitHub (opsional)├───────►│  policy   burn-rate    │        │ BurnOverlay │
+ │ GitHub (opsional)├───────►│  policy                │        │             │
  └──────────────────┘        │     │        │         │        │ Titah       │
                              │     └────┬───┘         │        │ Segel       │
                              │          ▼             │        └─────────────┘
@@ -198,38 +194,32 @@ Protobuf ditolak dengan **415** yang menyebutkan
 `OTEL_EXPORTER_OTLP_PROTOCOL=http/json` — pesan error yang mengajari, bukan
 yang menyalahkan. Penampakan pertama sebuah agent otomatis menyuntik
 `agent_spawned` bertanda `synthetic:true`. int64 ditangani **sebagai string**.
-`status.code===2` → `ok:false`. Biaya: `gen_ai.usage.cost` menang kalau ada,
-jika tidak pencocokan prefiks terpanjang atas tabel harga.
+`status.code===2` → `ok:false`. Atribut biaya **tidak lagi dibaca**: taksiran
+dolar dicabut 2026-10-20 bersama `pricing.js`.
 
 ### F2 · Tata Kelola Spasial (Fase 3)
 
 Setiap ruangan:
-`{label, trust, tools:{allow,deny}, maxModelTier, budgetHourlyUsd, approval[], entryApproval}`.
+`{label, tools:{allow,deny}, approval[], entryApproval?, idle?}`.
 
-| Ruangan | Anggaran/jam | Catatan |
-|---|---|---|
-| lobby | $0,25 | zona masuk |
-| meeting-room | $1 | menolak `bash shell deploy kubectl terraform psql` |
-| main-office | $2 | kerja umum |
-| server-room | $5 | + persetujuan + persetujuan masuk |
-| ceo-office | $10 | kepercayaan tertinggi |
-| kitchen / nap-room | 0 | idle — menolak segalanya, disengaja |
 
-`decide()` berurutan: idle → **deny mengalahkan allow** → tier model →
-pencocokan glob persetujuan → amplop ruangan → `burn.decide()`.
-**Lingkup paling ketat yang menang.** Persetujuan `ap-<seq>-<base36>`, TTL 5
+`decide()` berurutan: idle → **deny mengalahkan allow** → pencocokan glob
+persetujuan. Kegagalan pertama yang menang. Persetujuan `ap-<seq>-<base36>`, TTL 5
 menit, **sekali pakai, terikat ke `{agent, tool}`**, resolusi ganda → 409.
 
-### F3 · Breaker Burn-Rate (Fase 2)
+### F3 · DICABUT — Breaker Burn-Rate (Fase 2)
 
-`<0.5 normal` → `<0.75 warm` → `<0.9 hot` → `<1.0 critical` → `>=1.0 tripped`,
-dengan aksi `allow | advise | restrict | throttle | deny`.
+Tangga `normal → warm → hot → critical → tripped` dengan aksi
+`allow | advise | restrict | throttle | deny`, event `budget_state`, rute
+`/burn` dan `/budget/check`, modul `burnrate.js` (442 baris) dan `pricing.js`
+(100 baris): **semuanya dihapus 2026-10-20.**
 
-Desainnya **mengarahkan sebelum menghentikan**. `budget_state` disiarkan
-**hanya saat transisi**, dan tidak pernah membawa angka dolar — suhu dan
-nominal adalah dua fakta berbeda, dan event transisi hanya menyiarkan yang
-pertama. (Dulu alasannya supaya tamu melihat suhu tanpa melihat uang; tidak
-ada tamu lagi, tapi pemisahan itu tetap benar sebagai desain event.)
+Alasannya bukan selera. Lapisannya **inert**: `burn.record()` tak pernah
+dipanggil di produksi, `hermes_emit.py` tak pernah mengirim `costUsd`, jalur
+OTLP yang bisa menaksir biaya tak pernah dinyalakan, dan nol berkas di
+`bridges/` memanggil `/policy/check` atau `/budget/check`. Mekanisme yang
+belum pernah menolak apa pun bukan kendali — hanya hiasan yang berbentuk
+kendali, dan hiasan semacam itu membuat orang mengira ada rem.
 
 ### F4 · Perekam Penerbangan + Dossier (Fase 4)
 
@@ -262,7 +252,7 @@ dipulihkan 15 Okt bersama pembacanya), nol placeholder.
 Kesan 3D datang dari
 **cahaya**, bukan geometri: satu fragment shader WebGL2 (`AtmosphereLayer`)
 dengan god ray volumetrik, debu di tiga bidang parallax, vignette, dan
-gradasi warna yang **membaca burn state**. Biaya **+7,8 kB**.
+gradasi warna. Biaya **+7,8 kB**.
 
 ### F6 · Chat & Panel (warisan v1, dipertahankan)
 
@@ -304,7 +294,7 @@ kepatuhan menuntutnya, chat karena pengguna mengharapkannya.
 
 ## 8. Spesifikasi API
 
-26 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
+24 rute tingkat-atas + 7 sub-rute chat. **ARCHITECTURE.md memuat tabel lengkap
 beserta guard tiap rute, dan `scripts/check-docs.py` memverifikasi tabel itu
 dua arah** — rute di `index.js` tanpa baris tabel gagal, rute terdokumentasi
 yang tidak ada juga gagal.
@@ -314,7 +304,7 @@ Ringkasan per-pilar:
 | Pilar | Rute |
 |---|---|
 | Ingest | `POST /v1/traces`, `POST /event` |
-| Tata kelola | `GET /policy`, `POST /policy/check`, `POST /budget/check`, `GET /burn`, `POST /agents/:agent/room` |
+| Tata kelola | `GET /policy`, `POST /policy/check`, `POST /agents/:agent/room` |
 | Persetujuan | `GET /approvals`, `GET /approvals/:id`, `POST /approvals/:id` |
 | Kepatuhan | `GET /replay`, `GET /ledger`, `GET /ledger/head`, `GET /ledger/verify`, `GET /ledger/anchors`, `POST /ledger/anchor`, `GET /dossier` |
 | Kantor | `GET /`, `GET /roster`, `GET /presence`, `GET /tasks`, `GET /desks`, `GET /health`, `GET /debug/events`, `POST /auth/session` |
@@ -322,21 +312,16 @@ Ringkasan per-pilar:
 
 ---
 
-## 9. Kemasan & Harga
+## 9. DICABUT — Kemasan & Harga
 
-| Tier | Harga | Isi |
-|---|---|---|
-| **Open core** | $0 | Kantor, event bus, chat, feed GitHub. Lisensi MIT dari hulu. |
-| **Solo Pro** | $39 | Ingest OTLP, burn-rate, kebijakan ruangan |
-| **Team** | $299 | + perekam penerbangan, gerbang persetujuan, **≤10 kursi** |
-| **Enterprise** | $2.000+ | + ekspor dossier AI Act, penambatan ledger, SSO, dukungan |
+Tabel empat tier (Open core $0 · Solo Pro $39 · Team $299 · Enterprise
+$2.000+), argumen "Pilar C mengubah $299 jadi $2.000+", dan janji "jangan
+pernah per-kursi": **dihapus 2026-10-20**, bersama `docs/PRICING.md` dan
+`docs/PRICING.id.md`.
 
-**Pilar C adalah yang mengubah $299 menjadi $2.000+.** Pembeli berubah dari
-engineering lead yang membelanjakan anggaran tim menjadi petugas kepatuhan
-yang membelanjakan anggaran risiko, dan angka pembandingnya bukan lagi harga
-alat melainkan **€15 juta**.
-
-**Jangan pernah per-kursi.** Diulang di sini karena tekanannya akan datang.
+Tidak ada yang dijual. Satu pemilik, satu token, MIT. Kemasan yang
+mengandaikan pembeli adalah yang dulu melahirkan peran tamu — dan peran tamu
+itu melahirkan pipeline redaksi yang bocor sekali sebelum dihapus.
 
 ---
 
@@ -360,7 +345,7 @@ ada satu daftar.
 | # | Keputusan | Alternatif | Alasan |
 |---|---|---|---|
 | **D1** | Denah lantai sebagai penegakan kebijakan, bukan dekorasi | Dashboard dengan tabel aturan | Satu-satunya hal yang tidak dimiliki Langfuse/Phoenix. Metafora spasial membuat kebijakan bisa dibaca sekilas. |
-| **D2** | Mengarahkan sebelum menghentikan | Pemutus keras di 100% | Data TokenOps: mengarahkan memangkas belanja ~78% **dan** menaikkan penyelesaian 67%→96%. Pemutus keras hanya memangkas biaya. |
+| **D2** | ~~Mengarahkan sebelum menghentikan~~ | Pemutus keras di 100% | **Dicabut 20 Okt 2026.** Keputusan ini mengandaikan ada belanja yang diukur. Tidak pernah ada. |
 | **D3** | Pelat pra-render + satu shader | React Three Fiber | three ~150–200 kB setelah tree-shake + ~50 kB reconciler. Yang kami kirim: **+7,8 kB**. Alasan lama "R3F@9 butuh React 19 → migrasi menyentuh 15 komponen" **gugur** sejak React 19 masuk (2026-10-09); keputusannya bertahan karena alasan ukuran tidak pernah bergantung pada versi React. |
 | **D4** | Disiplin token OKLCH saja | Migrasi penuh Tailwind v4 + shadcn | 2.475 baris CSS yang berfungsi membuat penulisan ulang jadi biaya murni. Ambil ide warnanya, tinggalkan migrasinya. |
 | **D5** | Tidak pernah membaca isi prompt | Ingest prompt penuh untuk fitur lebih kaya | Pembeli kepatuhan tidak akan memasang alat yang menyedot prompt. Ini pagar permanen. |
@@ -375,9 +360,7 @@ ada satu daftar.
 |---|---|---|---|---|
 | R1 | **Auto-guest** membuat instance publik tanpa disadari | ~~Tinggi~~ | ~~Tinggi~~ | **Ditutup Okt 2026**: peran tamu dicabut, bukan diredaksi lebih ketat. Tanpa sesi hanya `/health` dan cangkang halaman masuk yang terjawab. Dijaga `scripts/check-live.sh` §2–4 |
 | R2 | Semconv GenAI berubah sebelum rilis bertag | Tinggi | Sedang | Normalisasi sudah menangani banyak generasi; itu justru produknya |
-| R3 | Vendor menambahkan tata kelola biaya native | Sedang | Tinggi | Pilar C (kepatuhan) paling sulit ditiru vendor; perdalam di sana |
 | R4 | Ekor ledger dipotong tanpa terdeteksi | Rendah | Tinggi | **Ditutup Fase 11** lewat penambatan. Sisa risiko: tambatan lokal-saja lemah terhadap root — pasang `OFFICE_ANCHOR_WEBHOOKS` |
-| R5 | Pembeli menuntut harga per-kursi | Sedang | Sedang | Tolak; tunjukkan preseden kursi-tak-terbatas Laminar |
 | R6 | Dokumentasi melampaui kenyataan (sudah terjadi 3×) | Tinggi | Sedang | `scripts/check-docs.py` di CI; dokumen ini masuk cakupannya |
 | R7 | Berkas/direktori hilang antar lingkungan (`.github/`, `node_modules`) | Tinggi | Rendah | Sumber kanonik + skrip pemasang + pemeriksa drift |
 
@@ -410,7 +393,6 @@ tidak ada data.)
 
 - [x] Ingest OTLP menerima dan menormalkan trace GenAI lintas-generasi
 - [x] Kebijakan ruangan ditegakkan di `decide()`, bukan hanya ditampilkan
-- [x] Burn-rate mengarahkan di 4 ambang sebelum menolak
 - [x] Ledger berantai SHA-256 + `GET /ledger/verify` + ekspor dossier
 - [x] Batasan ledger dinyatakan di UI dan di dokumen
 - [x] Nol pengikatan ke host/akun mana pun (`check-deployable.sh`)
@@ -428,7 +410,6 @@ tidak ada data.)
 |---|---|
 | `ARCHITECTURE.md` | **Sumber kebenaran teknis.** Diverifikasi CI. |
 | `OTLP.md` | Kontrak ingest, normalisasi atribut, model biaya |
-| `BURN-RATE.md` | Ambang, aksi, perilaku transisi |
 | `POLICY.md` | Skema ruangan, urutan `decide()`, siklus hidup persetujuan |
 | `STANDUP.md` | Bacaan pagi: ambang temuan, determinisme, apa yang rantai tak bisa klaim |
 | `REPLAY.md` | Time Machine: determinisme, pra-gulung, batas |

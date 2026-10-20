@@ -3,11 +3,9 @@ import assert from "node:assert/strict";
 import {
   FloorPlanPolicy,
   DEFAULT_POLICY,
-  modelTier,
   matchesPattern,
   loadPolicy,
 } from "../server/policy.js";
-import { BurnRateTracker } from "../server/burnrate.js";
 import { readFileSync } from "node:fs";
 
 function clock(start = 1_700_000_000_000) {
@@ -32,16 +30,6 @@ test("glob matching handles the patterns policy authors actually write", () => {
   assert.ok(matchesPattern("fs:read:file", "fs:*"));
   assert.ok(matchesPattern("BASH", "bash"), "matching is case-insensitive");
   assert.ok(!matchesPattern("", "bash"));
-});
-
-test("model tiering separates cheap fallbacks from premium", () => {
-  assert.equal(modelTier("gpt-4o-mini"), "cheap");
-  assert.equal(modelTier("claude-haiku-4"), "cheap");
-  assert.equal(modelTier("gemini-2.5-flash"), "cheap");
-  assert.equal(modelTier("claude-opus-4"), "premium");
-  assert.equal(modelTier("gpt-4o"), "premium");
-  assert.equal(modelTier("claude-sonnet-4-5"), "standard");
-  assert.equal(modelTier(undefined), "standard");
 });
 
 test("a broken policy file falls back to the default rather than no policy", () => {
@@ -108,27 +96,6 @@ test("the grant is recorded with who made it — this is the audit answer", () =
   const office = snap.rooms.find((r) => r.room === "mac/sites");
   assert.equal(office.occupants[0].agent, "x");
   assert.equal(office.occupants[0].grantedBy, "zaryu");
-});
-
-test("a room caps the model tier reachable inside it", () => {
-  const { p } = mk();
-  // lobby permits cheap only
-  const dear = p.decide({ agent: "x", tool: "llm:opus", model: "claude-opus-4" });
-  assert.equal(dear.allow, false);
-  assert.equal(dear.action, "restrict");
-  assert.ok(dear.suggestModel);
-  assert.equal(p.decide({ agent: "x", tool: "llm:haiku", model: "claude-haiku-4" }).allow, true);
-
-  p.assign("x", "mac/sites");
-  assert.equal(p.decide({ agent: "x", tool: "llm:opus", model: "claude-opus-4" }).allow, true);
-});
-
-test("a break room has no spend allowance, so agents parked there are idle", () => {
-  const { p } = mk();
-  p.assign("x", "mac/tools");
-  const d = p.decide({ agent: "x", tool: "llm:cheap", model: "gpt-4o-mini" });
-  assert.equal(d.allow, false);
-  assert.match(d.reason, /idle|allowance/);
 });
 
 test("assigning to a room that does not exist is an error, not a silent grant", () => {
@@ -245,50 +212,6 @@ test("the approval map is swept so it cannot grow without bound", () => {
 
 // --- room as a spend envelope ---------------------------------------------
 
-test("a small room cannot burn much, regardless of the agent's own budget", () => {
-  const c = clock();
-  const burn = new BurnRateTracker({}, { now: c.now }); // no agent/global cap
-  const p = new FloorPlanPolicy(DEFAULT_POLICY, { now: c.now, burn });
-
-  p.assign("x", "mac/sites"); // $2.00/hr envelope
-  assert.equal(p.decide({ agent: "x", tool: "llm:a", model: "claude-sonnet-4-5" }).allow, true);
-
-  p.recordSpend("x", 2.0);
-  const d = p.decide({ agent: "x", tool: "llm:a", model: "claude-sonnet-4-5" });
-  assert.equal(d.allow, false);
-  assert.equal(d.scope, "room");
-  assert.match(d.reason, /Sites budget exhausted/);
-});
-
-test("room spend follows the agent when it moves", () => {
-  const c = clock();
-  const p = new FloorPlanPolicy(DEFAULT_POLICY, { now: c.now });
-  p.assign("x", "mac/sites");
-  p.recordSpend("x", 1.5);
-  assert.equal(Math.round(p.roomSpentHour("mac/sites") * 100) / 100, 1.5);
-
-  p.assign("x", "mac/labs");
-  p.recordSpend("x", 0.4);
-  assert.equal(Math.round(p.roomSpentHour("mac/labs") * 100) / 100, 0.4);
-  assert.equal(Math.round(p.roomSpentHour("mac/sites") * 100) / 100, 1.5, "history stays with the room");
-});
-
-test("the agent budget still applies on top of the room envelope", () => {
-  const c = clock();
-  const burn = new BurnRateTracker({ agentHourlyUsd: 0.10 }, { now: c.now });
-  const p = new FloorPlanPolicy(DEFAULT_POLICY, { now: c.now, burn });
-  // ceo-office is entryApproval, so the grant must actually be signed off —
-  // the first draft of this test silently left the agent in the lobby.
-  const entry = p.assign("x", "mac/dinas");
-  p.resolveApproval(entry.approvalId, true, "zaryu");
-  assert.equal(p.roomFor("x"), "mac/dinas"); // generous $10/hr room
-
-  burn.record({ agent: "x", costUsd: 0.10 });
-  const d = p.decide({ agent: "x", tool: "llm:a", model: "claude-sonnet-4-5" });
-  assert.equal(d.allow, false, "the stricter agent cap governs");
-  assert.equal(d.scope, "agent");
-});
-
 // --- snapshot --------------------------------------------------------------
 
 test("the snapshot is a complete, readable description of the floor plan", () => {
@@ -298,7 +221,9 @@ test("the snapshot is a complete, readable description of the floor plan", () =>
 
   assert.equal(s.defaultRoom, "belum-dipetakan");
   const lobby = s.rooms.find((r) => r.room === "belum-dipetakan");
-  assert.equal(lobby.maxModelTier, "cheap");
+  assert.equal(lobby.idle, false, "the lobby is usable, just narrow");
+  const vault = s.rooms.find((r) => r.room === "mac/vault");
+  assert.equal(vault.idle, true, "a room with no work in it says so directly");
 
   const sr = s.rooms.find((r) => r.room === "lightvela/infra");
   assert.equal(sr.entryApproval, true);
@@ -306,7 +231,8 @@ test("the snapshot is a complete, readable description of the floor plan", () =>
 
   const office = s.rooms.find((r) => r.room === "mac/sites");
   assert.deepEqual(office.occupants.map((o) => o.agent), ["x"]);
-  assert.equal(office.budgetHourlyUsd, 1.5);
+  assert.equal("budgetHourlyUsd" in office, false, "the floor plan costs nothing to read");
+  assert.equal("maxModelTier" in office, false);
 });
 
 // --- the floor plan is the owner's ecosystem, not the fork's office --------

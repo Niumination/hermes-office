@@ -141,13 +141,12 @@ internal-only`. Hanya `emitInternal({internal:true})` dari dalam proses yang
 boleh menerbitkannya. Tipe baru wajib terdaftar di **`KNOWN_EVENT_TYPES` dan
 `INTERNAL_ONLY`** sekaligus — bila hanya satu, `validateEvent` menolak diam-diam.
 
-### `budget_state`
-Wajib: `scope`, `subject`, `state`. Hanya terbit saat **transisi** tangga
-(`normal → warm → hot → critical → tripped`), bukan tiap tick.
-```json
-{ "type":"budget_state", "scope":"global-hourly", "subject":"*",
-  "state":"hot", "from":"warm", "spentUsd":0.41, "limitUsd":0.50 }
-```
+### ~~`budget_state`~~ — DICABUT 2026-10-20
+Tipe event ini membawa tangga pembelanjaan
+(`normal → warm → hot → critical → tripped`). Dihapus dari
+`KNOWN_EVENT_TYPES` dan `INTERNAL_ONLY` bersama seluruh lapisan biaya.
+Penerbit yang masih mengirimnya akan ditolak `validateEvent` sebagai tipe
+tak dikenal — itu perilaku yang benar.
 
 ### `agent_moved`
 Wajib: `agent`, `room`. `grantedBy` adalah jejak audit — siapa/apa yang

@@ -166,7 +166,6 @@ async function main() {
               body: JSON.stringify({
                 agent: `bench-agent-${a}`,
                 tool: "read_file",
-                estimatedUsd: 0.0001,
               }),
             });
             lat.push(performance.now() - t0);

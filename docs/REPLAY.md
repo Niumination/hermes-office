@@ -1,8 +1,8 @@
 # Time Machine — Replay (Fase 12)
 
 Lipat perekam penerbangan ke depan dan Anda mendapat kantor sebagaimana
-adanya pada momen mana pun: siapa di ruangan mana, burn state saat itu,
-persetujuan apa yang menggantung, apa yang diizinkan dan ditolak.
+adanya pada momen mana pun: siapa di ruangan mana, persetujuan apa yang
+menggantung, apa yang diizinkan dan ditolak.
 
 `GET /replay?from=<ms>&to=<ms>` — owner saja.
 
@@ -44,15 +44,13 @@ kebetulan berpindah — artefak yang terlihat seperti evakuasi dan sepenuhnya
 kesalahan rekonstruksi. `stats.seeded` melaporkan berapa record dilipat
 sebagai pra-gulung.
 
-## Kesegaran uang
+## ~~Kesegaran uang~~ — DICABUT 2026-10-20
 
-Burn state diperbarui pada **setiap keputusan**; belanja terealisasi hanya
-pada **transisi anggaran**. Sebuah frame karena itu bisa jujur menampilkan
-`hot` di samping angka dolar dari beberapa record sebelumnya.
-
-Itu bukan bug, tapi menyandingkan keduanya seolah terukur bersamaan adalah
-kebohongan kecil yang akan ditangkap auditor. Setiap frame membawa
-`spentAsOfSeq`; renderer menulis `(per seq 14)` saat angkanya basi.
+Bagian ini menjelaskan mengapa sebuah frame bisa menampilkan `hot` di samping
+angka dolar yang sudah basi, dan bagaimana `spentAsOfSeq` membuat kebasian itu
+terlihat. Semuanya hilang bersama lapisan biaya: frame tidak lagi membawa
+`burn`, `spentUsd`, `limitUsd`, maupun `spentAsOfSeq`, dan `BURN_STATES` sudah
+tidak diekspor `server/replay.js`.
 
 ## Bidang per frame
 
@@ -60,8 +58,6 @@ kebohongan kecil yang akan ditangkap auditor. Setiap frame membawa
 |---|---|
 | `seq`, `ts`, `type`, `actor` | asal record di ledger |
 | `occupants` | `{ruangan: [agent]}`, **terurut dua sumbu** |
-| `burn` | salah satu dari lima state |
-| `spentUsd`, `limitUsd`, `spentAsOfSeq` | uang + kesegarannya |
 | `pendingApprovals` | menggantung pada momen itu |
 | `change` | satu baris bisa-dibaca-manusia |
 

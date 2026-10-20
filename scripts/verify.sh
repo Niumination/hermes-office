@@ -3,7 +3,7 @@
 # verify.sh — the whole baseline, one command.
 #
 # This exists so that "is this branch green?" has exactly one answer produced
-# exactly one way. Every number quoted in the README, the PRD and the pricing
+# exactly one way. Every number quoted in the README, the PRD and the other
 # page is produced by something below; none of them is maintained by hand.
 #
 #   bash scripts/verify.sh           # everything (~6 min, includes --regen)

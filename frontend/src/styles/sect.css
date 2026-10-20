@@ -44,17 +44,16 @@
   --sect-faint: oklch(58% 0.022 95);
 
   /* Meaning colours. Each one has exactly one job. */
+  /* Satu warna aura untuk semua murid. Dulu lima (--sect-qi-0..4), dipilih
+     oleh burn state; lapisan biaya dicabut 2026-10-20 dan skala yang tidak
+     diukur apa pun tidak boleh tetap mewarnai layar. */
+  --sect-aura: var(--sect-jade);
   --sect-jade:     oklch(76% 0.145 168);  /* alive, permitted, ok */
   --sect-gold:     oklch(83% 0.140 86);   /* attention, current, focus */
   --sect-cinnabar: oklch(70.5% 0.185 28);   /* cost, heat, refusal */
   --sect-deviate:  oklch(59% 0.235 332);  /* salah jalan — qi deviation, tripped */
 
   /* Qi ramp: the burn state made continuous. Never used for text. */
-  --sect-qi-0: var(--sect-jade);
-  --sect-qi-1: color-mix(in oklch, var(--sect-jade) 55%, var(--sect-gold));
-  --sect-qi-2: var(--sect-gold);
-  --sect-qi-3: var(--sect-cinnabar);
-  --sect-qi-4: var(--sect-deviate);
 
   --sect-rule: color-mix(in oklch, var(--sect-gold) 22%, transparent);
   --sect-rule-strong: color-mix(in oklch, var(--sect-gold) 44%, transparent);
@@ -659,7 +658,7 @@ body {
   border-radius: 50%;
   background:
     radial-gradient(circle at 50% 56%,
-      color-mix(in oklch, var(--qi) 34%, transparent) 0%,
+      color-mix(in oklch, var(--sect-aura) 34%, transparent) 0%,
       transparent 68%);
 }
 
@@ -668,9 +667,9 @@ body {
   position: absolute;
   inset: 8px;
   border-radius: 50%;
-  border: 1px solid color-mix(in oklch, var(--qi) 60%, transparent);
-  box-shadow: 0 0 18px color-mix(in oklch, var(--qi) 40%, transparent),
-              inset 0 0 14px color-mix(in oklch, var(--qi) 20%, transparent);
+  border: 1px solid color-mix(in oklch, var(--sect-aura) 60%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklch, var(--sect-aura) 40%, transparent),
+              inset 0 0 14px color-mix(in oklch, var(--sect-aura) 20%, transparent);
   animation: sect-breathe 4.2s var(--sect-ease) infinite;
 }
 
@@ -748,7 +747,7 @@ body {
   border-radius: 50%;
   background:
     radial-gradient(ellipse at 50% 74%,
-      color-mix(in oklch, var(--qi) 40%, transparent) 0%,
+      color-mix(in oklch, var(--sect-aura) 40%, transparent) 0%,
       transparent 72%);
 }
 
@@ -756,9 +755,9 @@ body {
   inset: auto 6px 4px 6px;
   height: 26px;
   border-radius: 50%;
-  border: 1px solid color-mix(in oklch, var(--qi) 55%, transparent);
-  box-shadow: 0 0 20px color-mix(in oklch, var(--qi) 38%, transparent),
-              inset 0 0 12px color-mix(in oklch, var(--qi) 18%, transparent);
+  border: 1px solid color-mix(in oklch, var(--sect-aura) 55%, transparent);
+  box-shadow: 0 0 20px color-mix(in oklch, var(--sect-aura) 38%, transparent),
+              inset 0 0 12px color-mix(in oklch, var(--sect-aura) 18%, transparent);
 }
 
 .sect-cul__art {

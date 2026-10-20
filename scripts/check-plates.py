@@ -38,7 +38,7 @@ THE THREE HOLES IT CLOSES
    stated with confidence and was wrong for 12 of 16 files. The manifest
    now says, per plate, where it came from.
 
-3. EXTENSION. "Custom policy, theming" is a paid tier feature. A customer
+3. EXTENSION. The owner may add rooms and themes. Whoever does
    adding a room needs to know what makes a plate belong. The acceptance
    checks below are that answer, in executable form.
 

@@ -4,7 +4,7 @@ Catatan tata kelola yang **append-only** dan **hash-chained**, plus
 penerjemahnya menjadi dokumen yang bisa dibaca petugas kepatuhan.
 
 Fase 1–3 membangun jalur keputusan: OTLP memberi tahu apa yang dilakukan agen,
-burn-rate dan denah lantai memutuskan apa yang boleh dilakukan berikutnya.
+denah lantai memutuskan apa yang boleh dilakukan berikutnya.
 Tidak satu pun **tercatat** dalam bentuk yang bisa dipertahankan di hadapan
 auditor. Ring buffer menyimpan 7 hari di RAM dan hilang saat restart — itu
 monitoring, bukan jejak audit.
@@ -42,7 +42,6 @@ mentah.
 | `approval_requested` | Aksi ditahan menunggu manusia |
 | `approval_resolved` | Disetujui / ditolak / **kedaluwarsa** |
 | `agent_moved` | Perubahan cakupan wewenang, berikut `grantedBy` |
-| `budget_transition` | Tangga pembelanjaan berubah keadaan |
 | `chain_checkpoint` | Jangkar periodik |
 | `chain_truncated` | Celah retensi, **dideklarasikan** bukan disembunyikan |
 | `dossier_exported` | Siapa menarik log audit, kapan |
@@ -227,7 +226,7 @@ Stabil pada tiga larian berturut (1.301 / 1.325 / 1.331 per detik).
 
 **Yang diajarkan angka ini.** 49.000/detik in-process versus ~1.300/detik
 ujung-ke-ujung adalah selisih 37×. Artinya **ledger bukan leher botolnya** —
-ia menyumbang sekitar 1,5% dari biaya satu keputusan. Sisanya HTTP, Express,
+ia menyumbang sekitar 1,5% dari waktu satu keputusan. Sisanya HTTP, Express,
 dan evaluasi kebijakan. Siapa pun yang hendak mempercepat jalur ini sebaiknya
 tidak memulai dari sini, dan siapa pun yang khawatir audit trail penuh akan
 memperlambat armadanya boleh berhenti khawatir.
@@ -261,8 +260,6 @@ benar-benar menuntut, dan siapkan jawaban saat asesor bertanya kenapa.
 
 ## 10. Hubungan dengan fase lain
 
-- **Fase 1 (OTLP)** memasok biaya nyata yang memicu transisi anggaran.
-- **Fase 2 (Burn-Rate)** menyumbang `budget_transition`.
 - **Fase 3 (Policy-as-Floor-Plan)** menyumbang sisanya. Satu hook `onEvent`
   mencakup ketiga event tata kelola, jadi tipe event baru tidak bisa
   ditambahkan ke mesin kebijakan lalu diam-diam melewati log audit.

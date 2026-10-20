@@ -4,47 +4,56 @@ import { sectLadder, type PolicyRoomLike } from './sect'
 // A miniature of the real floor-plan policy. Mirroring the shape rather than
 // importing the server keeps this a frontend test, but the "every governed
 // room has a hall" guarantee is checked against the real policy elsewhere.
-// Budgets copied from server/policy.js. Rooms are spelled `office/room`
-// because the policy table is flat and `root` exists in both offices.
+// Rooms are spelled `office/room` because the policy table is flat and `root`
+// exists in both offices.
+//
+// RETRACTED 2026-10-20: this fixture used to carry `budgetHourlyUsd` and the
+// ladder used to be sorted by it. The whole cost layer is gone — it never
+// refused anything in production — so the only thing left to order by is the
+// room's own name, and `idle` is the policy's word for "nothing runs here".
 const POLICY: Record<string, PolicyRoomLike> = {
-  'belum-dipetakan': { budgetHourlyUsd: 0.25 },
-  'mac/tools': { budgetHourlyUsd: 0 },
-  'mac/vault': { budgetHourlyUsd: 0 },
-  'mac/labs': { budgetHourlyUsd: 0.5 },
-  'mac/apps': { budgetHourlyUsd: 2 },
-  'mac/root': { budgetHourlyUsd: 3 },
-  'lightvela/content': { budgetHourlyUsd: 1.5 },
-  'lightvela/infra': { budgetHourlyUsd: 5 },
+  'belum-dipetakan': {},
+  'mac/tools': { idle: true },
+  'mac/vault': { idle: true },
+  'mac/labs': {},
+  'mac/apps': {},
+  'mac/root': {},
+  'lightvela/content': {},
+  'lightvela/infra': {},
 }
 
 describe('sect theme', () => {
-  it('orders halls by the policy budget, not by a list in this file', () => {
+  it('orders halls by room id, not by a list in this file', () => {
     const order = sectLadder(POLICY).map((r) => r.room)
+    expect(order).toEqual([...order].sort((a, b) => a.localeCompare(b)))
     expect(order).toEqual([
-      'mac/tools', 'mac/vault',   // $0 — empty on the owner's instruction
-      'belum-dipetakan',          // $0.25
-      'mac/labs',                 // $0.5
-      'lightvela/content',        // $1.5
-      'mac/apps',                 // $2
-      'mac/root',                 // $3
-      'lightvela/infra',          // $5
+      'belum-dipetakan',
+      'lightvela/content',
+      'lightvela/infra',
+      'mac/apps',
+      'mac/labs',
+      'mac/root',
+      'mac/tools',
+      'mac/vault',
     ])
   })
 
   it('follows the policy when the policy changes', () => {
-    // The whole point of deriving: move the money, the mountain moves.
-    const flipped = { ...POLICY, 'belum-dipetakan': { budgetHourlyUsd: 99 } }
-    const rungs = sectLadder(flipped)
-    expect(rungs[rungs.length - 1].room).toBe('belum-dipetakan')
+    // The whole point of deriving: add a room to the policy, the mountain grows.
+    const extended = { ...POLICY, 'zz/last': {} }
+    const rungs = sectLadder(extended)
+    expect(rungs[rungs.length - 1].room).toBe('zz/last')
   })
 
-  it('orders rooms by what they may spend, and by nothing else', () => {
-    // Was 'gives rooms on the same budget the same tier'. The tier rank is
-    // retracted; the ordering it was derived from is the real guarantee and
-    // survives on its own.
-    const caps = Object.fromEntries(sectLadder(POLICY).map((r) => [r.room, r.capUsd]))
-    expect(caps['mac/tools']).toBe(caps['mac/vault'])
-    expect(caps['belum-dipetakan']).toBeGreaterThan(caps['mac/tools'])
+  it('carries the policy\u2019s own idle flag, and no number', () => {
+    // Was 'orders rooms by what they may spend'. A room the owner has not
+    // filled yet now says exactly that, instead of being described as costing
+    // nothing per hour — a switch that means "closed" must read "closed".
+    const byRoom = Object.fromEntries(sectLadder(POLICY).map((r) => [r.room, r.idle]))
+    expect(byRoom['mac/tools']).toBe(true)
+    expect(byRoom['mac/vault']).toBe(true)
+    expect(byRoom['belum-dipetakan']).toBe(false)
+    expect(byRoom['lightvela/infra']).toBe(false)
   })
 
   it('leaves ungoverned rooms off the mountain', () => {
@@ -58,9 +67,9 @@ describe('sect theme', () => {
   it('keeps a governed room it cannot name, and shows the id instead', () => {
     // Inverted from "drops a governed room rather than inventing a name".
     // That read as modesty and acted as deletion: a gap in the naming table
-    // made a budgeted room vanish from a ladder built out of the policy, with
+    // made a real room vanish from a ladder built out of the policy, with
     // nothing on screen to admit it. The policy decides which rooms exist.
-    const withUnknown = { ...POLICY, 'boiler-room': { budgetHourlyUsd: 4 } }
+    const withUnknown = { ...POLICY, 'boiler-room': {} }
     const rung = sectLadder(withUnknown).find((r) => r.room === 'boiler-room')
     expect(rung).toBeTruthy()
     expect(rung!.hall.nameId).toBe('boiler-room')
@@ -68,12 +77,12 @@ describe('sect theme', () => {
   })
 
   it('names a governed room from the ecosystem when it knows it', () => {
-    const rung = sectLadder({ 'lightvela/infra': { budgetHourlyUsd: 2 } })[0]
+    const rung = sectLadder({ 'lightvela/infra': {} })[0]
     expect(rung.hall.nameId).toBe('Infrastruktur & Monitoring')
     expect(rung.hall.band).toBe('LightVela')
     // A bare id is no longer a room: `root` exists in both offices, so the
     // naming layer must refuse to guess which one was meant.
-    const bare = sectLadder({ root: { budgetHourlyUsd: 2 } })[0]
+    const bare = sectLadder({ root: {} })[0]
     expect(bare.hall.nameId).toBe('root')
     expect(bare.hall.band).toBe('Belum dipetakan')
   })
@@ -90,30 +99,23 @@ describe('sect theme', () => {
     RETRACTED, inverted: 'refuses halls above the viewer tier'.
 
     There is no viewer tier to be above. `canEnter` and `tier` are gone, and
-    this is the check that stops them returning by the back door: a rung may
-    carry what a room may SPEND and nothing resembling a standing to clear.
+    this is the check that stops them returning by the back door. Since
+    2026-10-20 it also stops `capUsd` returning: a rung carries a room, a
+    hall, and whether the room is parked. Nothing resembling a standing to
+    clear, and nothing denominated in money.
   */
-  it('publishes no standing a viewer could be measured against', () => {
+  it('publishes no standing and no price a rung could be ranked by', () => {
     const ladder = sectLadder(POLICY)
     expect(ladder.length).toBeGreaterThan(0)
     for (const rung of ladder) {
-      expect(Object.keys(rung).sort()).toEqual(['capUsd', 'hall', 'room'])
+      expect(Object.keys(rung).sort()).toEqual(['hall', 'idle', 'room'])
     }
   })
-})
 
-describe('qi naming', () => {
-  it('names every burn state the office already has', async () => {
-    const { QI_NAMES } = await import('./sect')
-    // Not a second scale — a renaming of the existing one. If these keys ever
-    // drift from AtmosphereState, the file stops type-checking.
-    expect(Object.keys(QI_NAMES).sort()).toEqual(
-      ['critical', 'hot', 'normal', 'tripped', 'warm'])
-  })
-
-  it('reserves the deviation term for the tripped state', async () => {
-    const { QI_NAMES } = await import('./sect')
-    expect(QI_NAMES.tripped.nameId).toBe('Salah Jalan')
-    expect(QI_NAMES.normal.nameId).not.toBe(QI_NAMES.tripped.nameId)
-  })
+  /*
+    RETRACTED 2026-10-20: describe('qi naming') — QI_NAMES mapped the five
+    burn states ('Atur Napas' … 'Salah Jalan') onto the hall atmosphere. The
+    burn states are gone from the server, so names for them would be a
+    vocabulary describing a quantity nothing measures.
+  */
 })

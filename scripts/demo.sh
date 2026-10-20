@@ -13,7 +13,7 @@
 #
 # So this seeds a specific, legible incident: an agent walks into a room it
 # needs permission for, another one gets stuck in a retry loop against a tool
-# it is not allowed to use, and spend climbs until the budget trips. That is
+# it is not allowed to use. That is
 # the story every buyer already recognises from their own logs.
 #
 # SAFETY
@@ -112,18 +112,11 @@ if [ "$KEEP" = "0" ]; then
   curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"mac/agents"}' "$B/agents/budi/room"
   for _ in $(seq 1 9); do
     curl -s -o /dev/null -X POST "${OWNER[@]}" \
-      -d '{"agent":"budi","tool":"kubectl","room":"mac/agents","estimatedUsd":0.02}' \
+      -d '{"agent":"budi","tool":"kubectl","room":"mac/agents"}' \
       "$B/policy/check"
   done
   say "budi denied 9x for kubectl — a retry loop, not an intruder"
 
-  # Spend climbs through the states until the hourly budget trips.
-  for c in 0.45 0.55 0.5 0.4 0.35; do
-    curl -s -o /dev/null -X POST "${CLOUD[@]}" \
-      -d "{\"type\":\"tool_done\",\"agentId\":\"ana\",\"tool\":\"llm\",\"costUsd\":$c}" "$B/event"
-    sleep 0.15
-  done
-  say "ana burned through the hourly budget — normal -> warm -> hot -> tripped"
 
   # A second day of history so the standup has something to compare against.
   curl -s -o /dev/null -X POST "${OWNER[@]}" -d '{"room":"mac/desktop"}' "$B/agents/eka/room"
@@ -146,9 +139,9 @@ cat <<BANNER
 
   0:00  The office                  $B/
         Five agents in rooms. The floor plan IS the policy: each room
-        carries its own trust level, tool list, model ceiling and
-        budget. Walk an agent across the room and you change what it
-        is allowed to do.
+        carries its own tool list and approval rule, and a room with
+        no work in it is marked idle. Walk an agent across the room and
+        you change what it is allowed to do.
 
   0:20  The decision waiting        (look for the approval gate, lower left)
         citra asked for the server room. Nothing happened while a
@@ -160,8 +153,8 @@ cat <<BANNER
         else until a token is presented. One occupant, one key.
 
   1:00  This morning's read         $B/standup
-        Ranked, and short. It will tell you budi is stuck in a loop
-        and the budget tripped. On a quiet night it is one line —
+        Ranked, and short. It will tell you budi is stuck in a loop.
+        On a quiet night it is one line —
         that is the feature, not a gap.
 
   1:15  The time machine            $B/replay?from=0

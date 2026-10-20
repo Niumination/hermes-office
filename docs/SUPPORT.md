@@ -94,7 +94,7 @@ been exercised here yet.
 
 ## What support does not mean
 
-Read with [`PRICING.md` → What is not for sale](PRICING.md#what-is-not-for-sale).
+Nothing here is for sale: one owner, one token, MIT.
 There is no uptime SLA, no response-time commitment on bug reports, and no
 paid support contract. The product is a repository that can prove things
 about itself; the support claim is exactly as large as the CI matrix and not

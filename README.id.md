@@ -4,12 +4,11 @@
 
 [![CI](https://github.com/Niumination/hermes-office/actions/workflows/ci.yml/badge.svg?branch=dev)](https://github.com/Niumination/hermes-office/actions/workflows/ci.yml)
 
-**Tata kelola armada agen yang bisa Anda tunjukkan ke auditor — dan ke orang
-yang menandatangani tagihannya.**
+**Tata kelola armada agen yang bisa Anda tunjukkan ke auditor.**
 
-Denah lantai **adalah** kebijakannya. Setiap ruangan membawa tingkat
-kepercayaan, daftar alat, plafon tier model, anggaran per jam, dan aturan
-persetujuannya sendiri. Memindahkan agen antar ruangan mengubah apa yang boleh
+Denah lantai **adalah** kebijakannya. Setiap ruangan membawa daftar alat dan
+aturan persetujuannya sendiri, dan ruangan yang belum dipakai ditandai
+`idle`. Memindahkan agen antar ruangan mengubah apa yang boleh
 ia lakukan — dan setiap perpindahan itu tercatat dalam rantai hash yang bisa
 diverifikasi.
 
@@ -25,14 +24,8 @@ dikenali siapa pun dari log mereka sendiri, lalu mencetak turnya.
 
 ## Masalah yang dibelinya
 
-Tiga angka, dan satu tanggal.
+Satu angka, dan satu tanggal.
 
-- **96% perusahaan melampaui proyeksi biaya AI mereka. Hanya 44% punya
-  pagar pengaman apa pun.** (IDC, Des 2025)
-- **Tidak ada satu pun framework agen besar yang mengirim pembatas dolar
-  native.** Anda bisa membatasi token, Anda bisa membatasi laju — Anda tidak
-  bisa bilang "berhenti pada $50". OWASP menamai ini **LLM10 — Denial of
-  Wallet**.
 - **Kewajiban sistem berisiko-tinggi EU AI Act berlaku 2 Agustus 2026.**
   Pasal 12(1) menuntut pencatatan otomatis, Pasal 19 dan 26(6) menuntut
   retensi minimal enam bulan, Pasal 14 menuntut pengawasan manusia. Pasal
@@ -49,8 +42,7 @@ mengapa ia diizinkan.
 
 | | |
 |---|---|
-| **Denah lantai sebagai kebijakan** | Ruangan membawa aturan. Lobi $0,25/jam, ruang rapat $1 dan menolak `bash`/`deploy`/`kubectl`, ruang server $5 dan butuh persetujuan manusia, kantor CEO $10. Kebijakan yang bisa ditunjuk di layar adalah kebijakan yang dibaca orang. |
-| **Pembatas dolar yang benar-benar berhenti** | `normal → warm → hot → critical → tripped`, dengan aksi `allow / advise / restrict / throttle / deny`. Mengarahkan sebelum menghentikan, mengikuti temuan TokenOps Microsoft bahwa menyetir memangkas biaya per tugas ~78% sementara penghentian keras merusak penyelesaian tugas. |
+| **Denah lantai sebagai kebijakan** | Ruangan membawa aturan. `mac/sites` menolak `bash`/`deploy`/`kubectl`; `lightvela/infra` butuh persetujuan manusia untuk dimasuki; `mac/vault` berstatus `idle` dan menolak segalanya. Kebijakan yang bisa Anda tunjuk. |
 | **Flight recorder tahan-rusak** | Setiap keputusan dirantai SHA-256, append-only. 0,020 ms per catatan; 100.000 catatan terverifikasi dalam 0,7 detik dan memakan 31,3 MB. |
 | **Penambatan eksternal** | Rantai saja tidak mendeteksi pemotongan ekor. Hash kepala diterbitkan ke sink luar, jadi menghapus seratus catatan terakhir menjadi terlihat. Statusnya dilaporkan sebagai `none`/`local`/`remote` — tidak pernah diklaim lebih kuat dari kenyataannya. |
 | **Time Machine** | Putar ulang rentang mana pun dari rantai. Agen punya **ruangan, bukan koordinat**: kalau rantai tidak mencatatnya, replay tidak mengarangnya. |
@@ -69,15 +61,12 @@ bukan sprite karakter — sprite dipensiunkan 12 Okt 2026 (lihat
 Daftar ini sama pentingnya dengan yang di atas, dan sengaja ada di muka.
 
 - **Tidak membaca isi prompt Anda.** Tidak pernah, di jalur mana pun. Yang
-  diproses adalah metadata tata kelola: siapa, alat apa, ruangan mana, berapa
-  biayanya, diizinkan atau tidak.
+  diproses adalah metadata tata kelola: siapa, alat apa, ruangan mana,
+  diizinkan atau tidak.
 - **Tidak bersaing dengan Agent View milik vendor.** Claude Code sudah
   mengirimkan tampilan "apa yang sedang berjalan" secara native sejak v2.1.139.
   Vendor akan selalu menang di sana. Produk ini soal **apa yang boleh
   berjalan, dan apa yang bisa Anda buktikan setelahnya.**
-- **Tidak dijual per kursi.** Alat tata kelola yang menghukum Anda karena
-  mengundang petugas kepatuhan untuk melihat adalah alat tata kelola yang
-  rusak.
 - **Bukan SaaS multi-tenant.** Ia berjalan di infrastruktur Anda, dengan data
   Anda, di SQLite yang bisa Anda salin.
 - **Tahan-rusak, bukan anti-rusak.** Tertulis persis seperti itu di dalam
@@ -86,23 +75,13 @@ Daftar ini sama pentingnya dengan yang di atas, dan sengaja ada di muka.
 
 ## Perbandingan jujur
 
-Pasar observability LLM ramai dan sebagian besar jauh lebih besar dari ini.
-
-| | Fokus | Harga 2026 |
-|---|---|---|
-| Langfuse (35,4k★) | Tracing, eval, prompt mgmt | $29 / $199 / **$2.499** Enterprise |
-| LangSmith | Tracing + eval | **$39/kursi** + $0,50–2,50 per 1k trace |
-| Braintrust | Eval, didanai $80 jt @ $800 jt | Gratis → $249 |
-| Laminar | Tracing | $30 / $150, kursi tak terbatas |
-| **Hermes Office** | **Pagar pengaman + bukti**, bukan tracing | **Host sendiri, MIT, tanpa tier** |
+Pasar observability LLM padat, dan sebagian besar jauh lebih besar dari ini.
+Dulu di sini ada tabel tier harga pesaing; dihapus 2026-10-20 bersama semua
+hal di repositori ini yang dinyatakan dalam uang.
 
 Kalau yang Anda butuhkan adalah membandingkan dua prompt, pakai Langfuse. Alat
 ini menjawab pertanyaan yang berbeda: *apa yang boleh dilakukan armada saya
-tanpa saya, berapa biayanya sebelum berhenti, dan bisakah saya membuktikannya
-enam bulan lagi.*
-
-Lihat [`docs/PRICING.md`](docs/PRICING.md) untuk paket lengkap dan alasan di
-balik angka-angkanya.
+tanpa saya, dan bisakah saya membuktikannya enam bulan lagi.*
 
 ## Arsitektur sekilas
 
@@ -112,7 +91,7 @@ Hermes Cloud ─────────┼──► office-server ──► Bro
 Hermes Mac ───────────┘    Express 5 + ws        /auth   → satu-satunya pintu
                                  │               /standup → bacaan pagi
                     kebijakan ───┤               /replay  → time machine
-                    burn-rate ───┤               /dossier → bukti
+                                 │               /dossier → bukti
                    flight rec ───┴─► SQLite (rantai hash) ──► jangkar eksternal
 ```
 
@@ -128,9 +107,9 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 
 | | |
 |---|---|
-| Test backend | **402** |
-| Test frontend | **250** |
-| Klaim dokumen yang diverifikasi mesin | **119** (`scripts/check-docs.py`) |
+| Test backend | **306** |
+| Test frontend | **232** |
+| Klaim dokumen yang diverifikasi mesin | **104** (`scripts/check-docs.py`) |
 | Bundel | 295,3 kB JS · 44,0 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
 
@@ -165,7 +144,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | handoff integrity | setiap berkas cocok `MANIFEST.sha256` byte-for-byte; tanpa berkas liar |
 | eslint | nol error lint di `server/` dan `tests/` |
 | frontend build | `tsc && vite build` — error tipe gagal di sini |
-| backend tests | 402 test |
+| backend tests | 306 test |
 | frontend tests | 170 test |
 | clean shutdown | proses keluar bersih dengan WebSocket masih tersambung |
 | ledger under load | rantai hash selamat dari 400 keputusan serentak: rapat, tanpa duplikat, verify ok |
@@ -203,13 +182,11 @@ Repo-nya adalah buktinya; bagian ini hanya daftar isinya.
 
 | Berkas | Isi |
 |---|---|
-| [`PRICING.id.md`](docs/PRICING.id.md) | Paket, dan argumen harganya |
 | [`ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Modul, rute, keputusan |
 | [`PRD.md`](docs/PRD.md) | Pilar produk, non-goal, roadmap |
 | [`SECURITY.md`](docs/SECURITY.md) | Model token, auth satu-pemilik, coordinated disclosure |
 | [`SUPPORT.md`](docs/SUPPORT.md) | Versi Node yang didukung, sampai kapan, dan apa arti "didukung" di sini |
 | [`POLICY.md`](docs/POLICY.md) | Denah lantai sebagai kebijakan |
-| [`BURN-RATE.md`](docs/BURN-RATE.md) | State, aksi, anggaran |
 | [`FLIGHT-RECORDER.md`](docs/FLIGHT-RECORDER.md) | Rantai hash, penambatan, verifikasi |
 | [`REPLAY.md`](docs/REPLAY.md) · [`STANDUP.md`](docs/STANDUP.md) | Dua permukaan turunan |
 | [`OTLP.md`](docs/OTLP.md) · [`EVENTS.md`](docs/EVENTS.md) | Kontrak ingest |
@@ -220,11 +197,11 @@ Repo-nya adalah buktinya; bagian ini hanya daftar isinya.
 
 Fork dari [Claude-Office](https://github.com/W17ant/Claude-Office) (MIT),
 yang menyumbang kantor isometrik dan seninya. Semua lapisan tata
-kelola — kebijakan, burn-rate, flight recorder, penambatan, replay,
+kelola — kebijakan, flight recorder, penambatan, replay,
 standup — adalah karya baru di fork ini. README operasional asli diarsipkan di
 [`docs/LEGACY-README.md`](docs/LEGACY-README.md).
 
-Lisensi: MIT untuk inti. Lihat `PRICING.id.md` untuk batas open-core.
+Lisensi: MIT. Satu pemilik, satu token, tidak ada yang dijual.
 
-Sebagian besar dokumen ditulis dalam bahasa Indonesia; README dan
-`PRICING` tersedia dalam dua bahasa.
+Sebagian besar dokumen ditulis dalam bahasa Indonesia; README tersedia dalam
+dua bahasa.

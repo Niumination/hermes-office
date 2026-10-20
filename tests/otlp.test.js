@@ -10,7 +10,6 @@ import {
   spanToEvents,
   otlpToEvents,
 } from "../server/otlp.js";
-import { estimateCostUsd } from "../server/pricing.js";
 
 // --- helpers ---------------------------------------------------------------
 
@@ -255,37 +254,4 @@ test("snake_case envelope keys are accepted (some exporters emit them)", () => {
   assert.equal(otlpToEvents(body).events.length, 2);
 });
 
-// --- cost ------------------------------------------------------------------
 
-test("cost estimation matches published per-MTok rates", () => {
-  // 12k in @ $3/MTok + 800 out @ $15/MTok = 0.036 + 0.012
-  assert.equal(estimateCostUsd("claude-sonnet-4-5-20250929", 12000, 800), 0.048);
-  // 5k in @ $2.50 + 1.2k out @ $10 = 0.0125 + 0.012
-  assert.equal(estimateCostUsd("gpt-4o", 5000, 1200), 0.0245);
-});
-
-test("longest-prefix matching stops gpt-4o-mini being billed as gpt-4", () => {
-  const mini = estimateCostUsd("gpt-4o-mini-2024-07-18", 1e6, 0);
-  const four = estimateCostUsd("gpt-4", 1e6, 0);
-  assert.equal(mini, 0.15);
-  assert.equal(four, 30);
-});
-
-test("cost is undefined for unknown models and zero for local inference", () => {
-  assert.equal(estimateCostUsd("some-homegrown-model", 1000, 1000), undefined);
-  assert.equal(estimateCostUsd("llama3", 1000, 1000, "ollama"), 0);
-  assert.equal(estimateCostUsd("gpt-4o", undefined, undefined), undefined, "no tokens, no guess");
-});
-
-test("provider-reported cost wins over the estimate", () => {
-  const [, done] = spanToEvents(
-    span("chat gpt-4o", {
-      "gen_ai.operation.name": "chat",
-      "gen_ai.request.model": "gpt-4o",
-      "gen_ai.usage.input_tokens": 5000,
-      "gen_ai.usage.output_tokens": 1200,
-      "gen_ai.usage.cost": 0.99,
-    })
-  );
-  assert.equal(done.costUsd, 0.99);
-});

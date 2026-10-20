@@ -6,7 +6,7 @@
 // adds is a second set of names and an altitude.
 //
 // The one rule that matters here: ALTITUDE IS NEVER WRITTEN DOWN. It is
-// derived from the floor-plan policy's own budgetHourlyUsd. "Policy as floor
+// derived from the floor-plan policy's own room list. "Policy as floor
 // plan" has been a product principle since Fase 3 while the floor plan was
 // still a flat office; making the ladder a function of the policy is what
 // turns that line from a metaphor into something a test can fail on.
@@ -84,78 +84,48 @@ function hallFor(id: string): SectHall {
 
 /** The shape this needs from a policy room. Anything else is ignored. */
 export interface PolicyRoomLike {
-  budgetHourlyUsd?: number
+  /** The policy's own word for "nothing works here yet". */
+  idle?: boolean
 }
 
 export interface SectRung {
   room: string
   hall: SectHall
-  /** Straight from the policy. Never rounded, never re-stated. */
-  capUsd: number
+  /** Straight from the policy. A parked room says so; it does not say "$0". */
+  idle: boolean
 }
 
 /*
-  RETRACTED: `tier`, and `canEnter(rung, viewerTier)` with it.
+  RETRACTED 2026-10-17: `tier`, and `canEnter(rung, viewerTier)` with it.
+  RETRACTED 2026-10-20: `capUsd`, and the ordering built on top of it.
 
   The trust tiers came out in 20248f2, but the idea survived here in
   disguise: rungs were ranked by budget band and that rank was called a
   tier, `viewerTier` was then defined as the HIGHEST rank present, and
   `canEnter` compared the two. A predicate that is true by construction is
-  not a guarantee, it is a decoration shaped like one — and it kept a
-  second principal alive in the type system of an office that has exactly
-  one owner.
+  not a guarantee, it is a decoration shaped like one.
 
-  Budgets stay: `capUsd` is the spending brake and a fact about policy.
-  What is gone is the standing ladder built on top of it.
+  The budget band itself is now gone too. It was never a brake: nothing in
+  production ever called the check, so no ceiling ever refused anything. A
+  ladder sorted by a number that governs nothing ranks rooms by fiction.
+  Rungs are ordered by name, which is at least true.
 */
 
 /**
- * Build the ladder from a policy document, lowest hall first.
+ * Build the ladder from a policy document, in room order.
  *
- * Rooms the policy does not govern are dropped — that much is still right,
- * since the policy is what grants standing. Governed rooms this file cannot
- * name are NOT dropped any more. That rule was written as modesty ("better
- * than inventing a name") but it let a gap in one naming table shorten the
- * ladder built from the policy, which is a different and much worse edit: a
- * budgeted room simply stopped existing, with nothing on screen to say so.
+ * Rooms the policy does not govern are dropped — the policy is what grants
+ * standing. Governed rooms this file cannot name are NOT dropped. That rule
+ * was written as modesty ("better than inventing a name") but it let a gap in
+ * one naming table shorten the ladder built from the policy: a real room
+ * simply stopped existing, with nothing on screen to say so.
  */
 export function sectLadder(rooms: Record<string, PolicyRoomLike>): SectRung[] {
-  const entries = Object.entries(rooms)
+  return Object.entries(rooms)
     .map(([id, room]) => ({
       room: id,
       hall: hallFor(id),
-      capUsd: room?.budgetHourlyUsd ?? 0,
+      idle: Boolean(room?.idle),
     }))
-    .sort((a, b) => a.capUsd - b.capUsd || a.room.localeCompare(b.room))
-
-  return entries
-}
-
-
-// ── Tenaga: names for the burn states ──────────────────────────────────
-//
-// The office already has five burn states and the hall atmosphere already reacts
-// to them. The sect theme must NOT introduce a second scale — two ladders for
-// one quantity is how a UI starts lying. So this renames, and nothing else.
-//
-// Typed as a total Record over BurnState on purpose: add a sixth burn
-// state and this stops compiling, which is cheaper than shipping a state with
-// no name. The xianxia term for the last rung describes qi turning on its
-// owner. Indonesian persilatan already has the phrase for it: 'salah jalan',
-// the cultivator whose own power has gone wrong. That is what a tripped
-// budget is, and it needed translating rather than transliterating.
-
-import type { BurnState } from '../hermes/burnTypes'
-
-export interface QiName {
-  nameId: string
-  nameEn: string
-}
-
-export const QI_NAMES: Record<BurnState, QiName> = {
-  normal: { nameId: 'Atur Napas', nameEn: 'regulated' },
-  warm: { nameId: 'Himpun Tenaga', nameEn: 'gathering' },
-  hot: { nameId: 'Tenaga Meluap', nameEn: 'surging' },
-  critical: { nameId: 'Tenaga Berbalik', nameEn: 'reversal' },
-  tripped: { nameId: 'Salah Jalan', nameEn: 'deviation' },
+    .sort((a, b) => a.room.localeCompare(b.room))
 }

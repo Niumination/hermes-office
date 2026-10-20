@@ -22,7 +22,6 @@ import { AnchorStore, startAnchoring, redactUrl } from "./anchor.js";
 import { buildReplay, sample, summarize } from "./replay.js";
 import { buildStandup, renderText as renderStandupText, renderMarkdown as renderStandupMarkdown } from "./standup.js";
 import { renderMarkdown, renderJson } from "./dossier.js";
-import { BurnRateTracker, parsePerAgentBudget } from "./burnrate.js";
 import { FloorPlanPolicy, loadPolicy } from "./policy.js";
 import { TaskBoard } from "./tasks.js";
 import { readFileSync } from "fs";
@@ -180,8 +179,6 @@ app.get("/health", (_req, res) => {
 
 // Roster — any authenticated identity
 // ---------------------------------------------------------------------------
-// Burn-rate governance
-// ---------------------------------------------------------------------------
 // Flight recorder — see server/ledger.js for the threat model.
 //
 // Constructed before the governance layers so that no decision can be made
@@ -301,30 +298,6 @@ function recordGovernance(type, payload, meta) {
     }
   }
 
-  const burn = new BurnRateTracker(
-  {
-    globalHourlyUsd: config.budget.globalHourlyUsd,
-    globalDailyUsd: config.budget.globalDailyUsd,
-    agentHourlyUsd: config.budget.agentHourlyUsd,
-    perAgentHourlyUsd: parsePerAgentBudget(config.budget.perAgentRaw),
-  },
-  {
-    // A threshold crossing is itself an event: the office reacts live
-    // (room heats up, catches fire, sprinklers trip) without polling.
-    onStateChange: (ev) => {
-      emitInternal(ev);
-      recordGovernance(
-        "budget_transition",
-        { scope: ev.scope, subject: ev.subject, from: ev.from, state: ev.state,
-          spentUsd: ev.spentUsd, limitUsd: ev.limitUsd },
-        { subject: ev.subject }
-      );
-    },
-  }
-);
-
-// Every event carrying a realized cost feeds the tracker. This sits on the bus
-// rather than inside the OTLP route so bridge events with cost data count too.
 /**
  * Fold task-bearing events onto the board.
  *
@@ -347,55 +320,6 @@ bus.on("event", (ev) => {
   }
 });
 
-bus.on("event", (ev) => {
-  if (ev.type === "budget_state") return; // never recurse
-  const cost = Number(ev.costUsd);
-  if (!Number.isFinite(cost) || cost <= 0) return;
-  const agent =
-    typeof ev.agentId === "string" ? ev.agentId : ev.agent?.name || ev.agent;
-  burn.record({
-    agent: typeof agent === "string" ? agent : undefined,
-    costUsd: cost,
-    tokens: Number(ev.totalTokens) || 0,
-  });
-});
-
-/**
- * The enforcement decision. Agents call this BEFORE spending.
- *
- * Observability reports after the fact; by the time a chart shows a runaway
- * loop the money is gone. This answers from memory in microseconds so it can
- * live in the request path.
- */
-app.post("/budget/check", requireAuth(["bridge", "owner"]), (req, res) => {
-  const { agent, model, estimatedUsd } = req.body || {};
-  const decision = burn.decide({
-    agent: typeof agent === "string" ? agent.slice(0, 120) : undefined,
-    model: typeof model === "string" ? model.slice(0, 120) : undefined,
-    estimatedUsd: Number(estimatedUsd) || 0,
-  });
-  // 200 even on deny: this is a policy answer, not a transport failure. The
-  // caller must read `allow`. Returning 4xx here would make well-behaved
-  // clients retry a decision that will not change.
-  res.json(decision);
-});
-
-/**
- * Current burn state — drives the UI physics layer and external alerting.
- *
- * Owner-only, like every data route here: hourly spend is a competitive
- * disclosure and there is no second principal to show a softened version to.
- * This used to serve a redacted shape giving the *temperature* but not the
- * *invoice*; that shape existed only for guests, and guests are gone.
- *
- * Kept for context: the burn state drives the UI physics layer, so it must
- * visibly catch fire, nothing that discloses what this business spends on AI
- * or which agent is expensive. Hourly spend is a competitive disclosure.
- */
-app.get("/burn", requireAny, (_req, res) => {
-  res.json(burn.snapshot());
-});
-
 // ---------------------------------------------------------------------------
 // Floor-plan policy — rooms are scopes, doors are approval gates.
 // ---------------------------------------------------------------------------
@@ -414,7 +338,6 @@ if (config.policyFile) {
 }
 
 const floor = new FloorPlanPolicy(policyDoc, {
-  burn,
   approvalTtlMs: Math.max(1, config.approvalTtlMin) * 60_000,
   onEvent: (ev) => {
     emitInternal(ev);
@@ -454,14 +377,6 @@ recordGovernance("policy_loaded", {
   approvalTtlMin: config.approvalTtlMin,
 });
 
-// Room spend is tracked alongside agent/global spend.
-bus.on("event", (ev) => {
-  const cost = Number(ev.costUsd);
-  if (!Number.isFinite(cost) || cost <= 0) return;
-  const agent = typeof ev.agentId === "string" ? ev.agentId : ev.agent?.name || ev.agent;
-  if (typeof agent === "string") floor.recordSpend(agent, cost);
-});
-
 setInterval(() => floor.sweepApprovals(), 600_000).unref?.();
 
 // Retention enforcement. Daily is frequent enough for a 400-day window, and
@@ -476,9 +391,8 @@ if (ledger && config.ledger.retentionDays > 0) {
 }
 
 /**
- * The unified gate. Room policy first (is this permitted here?), then spend
- * (can we afford it?). Supersedes /budget/check, which remains for callers
- * that only care about money.
+ * The unified gate: is this action permitted in this agent's room?
+ * The office does not account for money at all; this answers permission only.
  */
 /**
  * Per-agent limiter for the decision hot path.
@@ -493,7 +407,7 @@ if (ledger && config.ledger.retentionDays > 0) {
 const policyLimiter = new RateLimiter({ perMinute: 600, burst: 60, burstWindowMs: 5000 });
 
 app.post("/policy/check", requireAuth(["bridge", "owner"]), (req, res) => {
-  const { agent, tool, model, estimatedUsd, approvalId } = req.body || {};
+  const { agent, tool, model, approvalId } = req.body || {};
   const limitKey = typeof agent === "string" && agent ? `agent:${agent.slice(0, 120)}` : "agent:*";
   const gate = policyLimiter.check(limitKey);
   if (!gate.ok) {
@@ -514,7 +428,6 @@ app.post("/policy/check", requireAuth(["bridge", "owner"]), (req, res) => {
     agent: str(agent),
     tool: str(tool),
     model: str(model),
-    estimatedUsd: Number(estimatedUsd) || 0,
     approvalId: str(approvalId),
   });
 
@@ -534,7 +447,6 @@ app.post("/policy/check", requireAuth(["bridge", "owner"]), (req, res) => {
         state: decision.state,
         reason: decision.reason,
         suggestModel: decision.suggestModel,
-        estimatedUsd: Number(estimatedUsd) || 0,
         approvalId: str(approvalId) || null,
       },
       { subject: str(agent) || null, actor: req.identity?.role }

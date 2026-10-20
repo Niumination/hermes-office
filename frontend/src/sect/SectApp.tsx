@@ -13,7 +13,7 @@
  *   Babad chronicle — history, as a record
  *
  * The data layer underneath is untouched: useOfficeSocket, eventMap,
- * useBurnState and policyClient are the same modules the old UI used, because
+ * policyClient is the same module the old UI used, because
  * none of them were the problem.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -22,7 +22,6 @@ import '../styles/sect.css'
 import { useOfficeSocket } from '../hermes/useOfficeSocket'
 import { usePresence } from '../hermes/usePresence'
 import { formatLastSeen } from '../hermes/wib'
-import { useBurnState } from '../hermes/useBurnState'
 import { targetRoomFor, agentForEnvelope } from '../hermes/eventMap'
 import type { HermesEnvelope } from '../hermes/types'
 import { fetchLadder, type PolicySnapshot } from '../theme/policyClient'
@@ -45,13 +44,12 @@ import { useOutposts } from './useOutposts'
 import AmanatBoard from './AmanatBoard'
 import { useAmanat } from './useAmanat'
 import { useSabda } from './useSabda'
-import QiRing from './QiRing'
 import Seal from './Seal'
 import Warrant from './Warrant'
 import Writ from './Writ'
 
 /**
- * A disciple's mark — the two letters inside the qi aura.
+ * A disciple's mark — the two letters inside the badge.
  *
  * These used to be single Han glyphs — one for the boss, one for the test
  * engineer, which is a thing Chinese can do and Latin script cannot: one
@@ -223,7 +221,6 @@ export const SectApp: React.FC = () => {
     onTyping: sabda.onTyping,
     onReaction: sabda.onReaction,
   })
-  const { state: burn, snapshot } = useBurnState(events)
 
   useEffect(() => {
     let alive = true
@@ -355,7 +352,6 @@ export const SectApp: React.FC = () => {
         glyph: MARK[t.id] ?? t.id.slice(0, 1).toUpperCase(),
         task: t.task,
         state,
-        qi: burn,
         sprite: spriteFor(t.id, state, roleOf[t.id]),
         archetype: archetypeFor(t.id, roleOf[t.id]),
       }
@@ -387,11 +383,10 @@ export const SectApp: React.FC = () => {
         name: a.id,
         glyph: MARK[a.id] ?? a.id.slice(0, 1).toUpperCase(),
         state: 'ghost' as const,
-        qi: burn,
         sprite: spriteFor(a.id, 'ghost', a.role),
         archetype: archetypeFor(a.id, a.role),
       }))
-  }, [rosterAgents, tracked, presence, room, ladder, burn])
+  }, [rosterAgents, tracked, presence, room, ladder])
 
   /**
    * Agents the server HAS placed, in a room this office cannot draw.
@@ -455,7 +450,6 @@ export const SectApp: React.FC = () => {
 
         <div className="sect-bar__spacer" />
 
-        <QiRing state={burn} snapshot={snapshot} />
 
         <div className="sect-stat">
           <span className="caps">Murid</span>

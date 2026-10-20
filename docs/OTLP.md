@@ -101,20 +101,17 @@ All of these are read and collapsed into one canonical shape:
 When both an old and a new spelling are present, the **newer wins**.
 `total_tokens` is derived when absent.
 
-## Cost attribution
+## ~~Cost attribution~~ — RETRACTED 2026-10-20
 
-`tool_done`, `agent_finished` and `mcp_call` carry `inputTokens`,
-`outputTokens`, `totalTokens` and `costUsd`.
+`tool_done`, `agent_finished` and `mcp_call` still carry `inputTokens`,
+`outputTokens` and `totalTokens`. They no longer carry `costUsd`.
 
-- Provider-reported cost (`gen_ai.usage.cost`) always wins.
-- Otherwise cost is estimated from `server/pricing.js` using longest-prefix
-  matching on the model id, so `gpt-4o-mini-2024-07-18` is never billed at
-  `gpt-4` rates.
-- Known local providers (`ollama`, `vllm`, `llamacpp`, `lmstudio`) cost `0`.
-- Unknown models yield **no** `costUsd` rather than a wrong one.
-
-These are estimates for visualization and budget signalling, not billing.
-Cached-token and batch discounts are not modelled, so figures skew high.
+This section described `gen_ai.usage.cost` winning over a longest-prefix
+estimate from `server/pricing.js`. That module is deleted, `estimateCostUsd`
+is gone from `server/otlp.js`, and the ingest path drops cost attributes
+instead of converting them. Tokens are a measurement; the dollar figure was a
+guess layered on a price table nobody maintained, feeding a brake that never
+engaged.
 
 ## Privacy
 

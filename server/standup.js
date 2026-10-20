@@ -53,9 +53,7 @@
  * There is no realized per-call cost in the ledger. Cost events go to the
  * burn tracker, not the chain. What the chain holds is:
  *
- *   - `budget_transition.spentUsd` — spend so far *within that budget window*
  *     at the moment of the transition. Peaks, not totals.
- *   - `policy_decision.estimatedUsd` — a PRE-FLIGHT estimate for an action
  *     that may have been denied and may never have run at all.
  *
  * So this file never prints a "total spent yesterday". It prints peaks and
@@ -75,7 +73,6 @@ export const REPEAT_DENIAL_THRESHOLD = 3;
 /** An agent must have been this busy yesterday for its silence to be notable. */
 export const QUIET_AGENT_MIN_PRIOR = 5;
 
-const usd = (n) => `$${Number(n).toFixed(2)}`;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 function mins(ms) {
@@ -114,14 +111,9 @@ export function tally(records = []) {
     denialsBy: new Map(), // "agent\u0000tool" -> count
     approvals: { requested: 0, approved: 0, denied: 0, expired: 0, waits: [] },
     moves: 0,
-    trips: [],
-    peakSpend: new Map(), // scope\u0000subject -> {spentUsd, limitUsd, state}
-    estimatedUsd: 0,
     agents: new Map(), // agent -> record count
     truncations: [],
-    worstState: "normal",
   };
-  const order = ["normal", "warm", "hot", "critical", "tripped"];
 
   for (const r of records) {
     const p = r?.payload || {};
@@ -131,13 +123,11 @@ export function tally(records = []) {
     switch (r?.type) {
       case "policy_decision": {
         t.decisions += 1;
-        t.estimatedUsd += Number(p.estimatedUsd) || 0;
         if (p.action === "deny" || p.allow === false) {
           t.denials += 1;
           const key = `${agent ?? "?"}\u0000${p.tool ?? "?"}`;
           t.denialsBy.set(key, (t.denialsBy.get(key) || 0) + 1);
         }
-        if (order.indexOf(p.state) > order.indexOf(t.worstState)) t.worstState = p.state;
         break;
       }
       case "approval_requested":
@@ -150,19 +140,6 @@ export function tally(records = []) {
       case "agent_moved":
         t.moves += 1;
         break;
-      case "budget_transition": {
-        const key = `${p.scope ?? "global"}\u0000${p.subject ?? ""}`;
-        const prev = t.peakSpend.get(key);
-        const spent = Number(p.spentUsd) || 0;
-        if (!prev || spent > prev.spentUsd) {
-          t.peakSpend.set(key, { spentUsd: spent, limitUsd: Number(p.limitUsd) || 0, state: p.state });
-        }
-        if (p.state === "tripped") {
-          t.trips.push({ ts: r.ts, scope: p.scope, subject: p.subject, limitUsd: Number(p.limitUsd) || 0 });
-        }
-        if (order.indexOf(p.state) > order.indexOf(t.worstState)) t.worstState = p.state;
-        break;
-      }
       case "chain_truncated":
         t.truncations.push({ seq: r.seq, ...p });
         break;
@@ -248,16 +225,6 @@ export function buildStandup({
   }
 
   // --- Work that stopped. --------------------------------------------------
-  if (cur.trips.length) {
-    const scopes = [...new Set(cur.trips.map((x) => x.subject || x.scope || "global"))].sort();
-    add(
-      "action",
-      "budget-tripped",
-      `Anggaran terlampaui: ${scopes.join(", ")}`,
-      `${plural(cur.trips.length, "kali", "kali")} batas tercapai dan tindakan ditolak.`,
-      "Naikkan batas kalau pekerjaannya sah; kalau tidak, cari agent yang berputar-putar."
-    );
-  }
 
   // --- Repeat denials: a misconfiguration wearing an attack costume. -------
   // The same agent denied the same tool ten times is almost never an intruder.
@@ -280,28 +247,6 @@ export function buildStandup({
       repeats.length > 1 ? `Dan ${repeats.length - 1} pasangan agent/alat lain di ambang yang sama.` : "",
       "Penolakan berulang biasanya salah konfigurasi, bukan serangan: beri izin, atau hentikan loop-nya."
     );
-  }
-
-  // --- Spend, stated only as far as the chain can support it. --------------
-  const peaks = [...cur.peakSpend.entries()]
-    .map(([k, v]) => {
-      const [scope, subject] = k.split("\u0000");
-      return { scope, subject, ...v };
-    })
-    .sort((a, b) => b.spentUsd - a.spentUsd || a.scope.localeCompare(b.scope));
-
-  const prevEst = prev.estimatedUsd;
-  if (cur.estimatedUsd > 0 && prevEst > 0) {
-    const x = cur.estimatedUsd / prevEst;
-    if (x >= 2) {
-      add(
-        "action",
-        "spend-up",
-        `Beban diperkirakan ${x.toFixed(1)}× periode sebelumnya`,
-        `${usd(cur.estimatedUsd)} vs ${usd(prevEst)} — perkiraan pra-eksekusi, bukan tagihan.`,
-        "Periksa agent mana yang tumbuh sebelum ini muncul di tagihan sungguhan."
-      );
-    }
   }
 
   // --- Agents that went silent. --------------------------------------------
@@ -374,11 +319,8 @@ export function buildStandup({
         medianWaitMs: med,
       },
       activeAgents: [...cur.agents.keys()].sort(),
-      worstState: cur.worstState,
-      estimatedUsd: Number(cur.estimatedUsd.toFixed(4)),
-      peakSpend: peaks,
     },
-    prevStats: { records: prev.total, decisions: prev.decisions, estimatedUsd: Number(prevEst.toFixed(4)) },
+    prevStats: { records: prev.total, decisions: prev.decisions },
   };
 }
 
@@ -402,7 +344,7 @@ export function renderText(model) {
     L.push("");
     L.push(
       `${model.stats.records} catatan · ${model.stats.decisions} keputusan · ` +
-        `${model.stats.denials} penolakan · status tertinggi: ${model.stats.worstState}`
+        `${model.stats.denials} penolakan`
     );
   } else {
     for (const f of model.findings) {
@@ -419,13 +361,6 @@ export function renderText(model) {
     );
   }
 
-  if (model.stats.peakSpend.length) {
-    const top = model.stats.peakSpend[0];
-    L.push(
-      `Puncak belanja dalam jendela anggaran: ${usd(top.spentUsd)} / ${usd(top.limitUsd)} ` +
-        `(${top.subject || top.scope}) — puncak, bukan total harian.`
-    );
-  }
 
   const c = model.chain;
   const verdict = c.ok === true ? "utuh" : c.ok === false ? "GAGAL" : "tidak diperiksa";
@@ -453,13 +388,7 @@ export function renderMarkdown(model) {
   L.push(`| Catatan | ${model.stats.records} |`);
   L.push(`| Keputusan | ${model.stats.decisions} (${model.stats.denials} ditolak) |`);
   L.push(`| Izin | ${model.stats.approvals.requested} diminta, ${model.stats.approvals.expired} kedaluwarsa |`);
-  L.push(`| Agent aktif | ${model.stats.activeAgents.length} |`);
-  L.push(`| Status tertinggi | ${model.stats.worstState} |`);
-  if (model.stats.peakSpend.length) {
-    const top = model.stats.peakSpend[0];
-    L.push(`| Puncak belanja | ${usd(top.spentUsd)} / ${usd(top.limitUsd)} (puncak, bukan total) |`);
-  }
-  const c = model.chain;
+  L.push(`| Agent aktif | ${model.stats.activeAgents.length} |`);  const c = model.chain;
   L.push(`| Rantai | ${c.ok === true ? "utuh" : c.ok === false ? "**GAGAL**" : "tidak diperiksa"} · jangkar ${c.anchorStrength} |`);
   return L.join("\n");
 }

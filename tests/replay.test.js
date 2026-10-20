@@ -10,7 +10,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 
-import { buildReplay, sample, summarize, BURN_STATES } from "../server/replay.js";
+import { buildReplay, sample, summarize } from "../server/replay.js";
 
 let seq = 0;
 function rec(type, payload, ts, actor = null) {
@@ -18,7 +18,7 @@ function rec(type, payload, ts, actor = null) {
 }
 function reset() { seq = 0; }
 
-/** A small, realistic session: two agents, a denial, an approval, a burn climb. */
+/** A small, realistic session: two agents, a denial, an approval. */
 function session() {
   reset();
   return [
@@ -27,7 +27,7 @@ function session() {
     rec("agent_moved", { agent: "budi", fromRoom: "belum-dipetakan", room: "mac/labs", trust: 1 }, 3000),
     rec("policy_decision", { agent: "budi", tool: "kubectl", room: "mac/labs", allow: false, reason: "tool denied in room" }, 4000),
     rec("approval_requested", { approvalId: "ap-1", agent: "ana", tool: "deploy", kind: "tool", room: "lightvela/infra", expiresAt: 9999 }, 5000),
-    rec("budget_transition", { scope: "global", from: "normal", state: "warm", spentUsd: 1.234, limitUsd: 2 }, 6000),
+    rec("policy_loaded", { source: "file" }, 6000),
     rec("approval_resolved", { approvalId: "ap-1", agent: "ana", tool: "deploy", state: "granted", decidedBy: "owner" }, 7000),
     rec("agent_moved", { agent: "ana", fromRoom: "mac/sites", room: "lightvela/infra", trust: 3 }, 8000),
   ];
@@ -116,63 +116,6 @@ describe("approvals", () => {
 });
 
 // ---------------------------------------------------------------------------
-describe("burn state", () => {
-  test("follows global budget transitions", () => {
-    const r = buildReplay(session());
-    assert.equal(r.frames.find(f => f.ts === 5000).burn, "normal");
-    assert.equal(r.frames.find(f => f.ts === 6000).burn, "warm");
-    assert.equal(r.frames.find(f => f.ts === 6000).spentUsd, 1.23);
-  });
-
-  test("a per-agent breaker does not repaint the whole office", () => {
-    // One agent hitting their own cap must not make the building look like
-    // the global budget tripped.
-    reset();
-    const r = buildReplay([
-      rec("budget_transition", { scope: "agent", subject: "ana", from: "normal", state: "tripped", spentUsd: 99 }, 1000),
-    ]);
-    assert.equal(r.frames[0].burn, "normal");
-    assert.equal(r.frames[0].spentUsd, 0);
-  });
-
-  test("ignores a burn state that is not one of the five", () => {
-    reset();
-    const r = buildReplay([
-      rec("budget_transition", { scope: "global", state: "on-fire", spentUsd: 1 }, 1000),
-    ]);
-    assert.equal(r.frames[0].burn, "normal");
-    assert.ok(BURN_STATES.includes(r.frames[0].burn));
-  });
-
-  test("carries the seq the money came from, so staleness is visible", () => {
-    // Burn state updates on every decision; realized spend only moves on a
-    // budget transition. A frame can honestly read "hot" beside a figure from
-    // several records earlier — but only if it says which record.
-    const r = buildReplay(session());
-    const transition = r.frames.find(f => f.ts === 6000);
-    const later = r.frames.find(f => f.ts === 8000);
-
-    assert.equal(transition.spentAsOfSeq, transition.seq, "fresh at the transition");
-    assert.equal(later.spentUsd, 1.23);
-    assert.equal(later.spentAsOfSeq, transition.seq, "stale afterwards, and says so");
-    assert.notEqual(later.spentAsOfSeq, later.seq);
-  });
-
-  test("spentAsOfSeq is null before any money is recorded", () => {
-    reset();
-    const r = buildReplay([rec("agent_moved", { agent: "ana", room: "belum-dipetakan" }, 1000)]);
-    assert.equal(r.frames[0].spentAsOfSeq, null);
-    assert.equal(r.frames[0].spentUsd, 0);
-  });
-
-  test("rounds dollars to cents", () => {
-    reset();
-    const r = buildReplay([
-      rec("budget_transition", { scope: "global", state: "hot", spentUsd: 1.23456789 }, 1000),
-    ]);
-    assert.equal(r.frames[0].spentUsd, 1.23);
-  });
-});
 
 // ---------------------------------------------------------------------------
 describe("seeding — state before the window opens", () => {
@@ -187,12 +130,6 @@ describe("seeding — state before the window opens", () => {
       "mac/labs": ["budi"],
       "lightvela/infra": ["ana"],
     });
-  });
-
-  test("burn state carries into the window", () => {
-    const r = buildReplay(session(), { from: 7500 });
-    assert.equal(r.frames[0].burn, "warm");
-    assert.equal(r.frames[0].spentUsd, 1.23);
   });
 
   test("counts how many records were folded as pre-roll", () => {
@@ -325,10 +262,6 @@ describe("change descriptions", () => {
     assert.equal(r.frames.find(f => f.ts === 2000).change, "ana → mac/sites (dari belum-dipetakan)");
   });
 
-  test("a budget transition names both states", () => {
-    const r = buildReplay(session());
-    assert.match(r.frames.find(f => f.ts === 6000).change, /normal → warm/);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -372,16 +305,6 @@ describe("summarize", () => {
     assert.deepEqual(summarize(buildReplay(session()).frames).agents, ["ana", "budi"]);
   });
 
-  test("reports the peak burn state, not the final one", () => {
-    reset();
-    const frames = buildReplay([
-      rec("budget_transition", { scope: "global", state: "critical", spentUsd: 5 }, 1000),
-      rec("budget_transition", { scope: "global", state: "normal", spentUsd: 0 }, 2000),
-    ]).frames;
-    // An incident that recovered still happened.
-    assert.equal(summarize(frames).peakBurn, "critical");
-  });
-
   test("surfaces denials separately", () => {
     const s = summarize(buildReplay(session()).frames);
     assert.equal(s.denialCount, 1);
@@ -391,11 +314,7 @@ describe("summarize", () => {
   test("an empty replay summarizes without throwing", () => {
     const s = summarize([]);
     assert.equal(s.frames, 0);
-    assert.equal(s.peakBurn, "normal");
     assert.deepEqual(s.agents, []);
   });
 });
 
-test("BURN_STATES is ordered coldest to hottest", () => {
-  assert.deepEqual(BURN_STATES, ["normal", "warm", "hot", "critical", "tripped"]);
-});

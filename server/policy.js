@@ -7,35 +7,40 @@
  * nobody reads. Hermes Office already draws a building. So: make the drawing
  * authoritative.
  *
+ * RETRACTED 2026-10-20 — every cost control.
+ * Rooms used to carry `budgetHourlyUsd` and `maxModelTier`, and `decide()`
+ * composed a room spend envelope with a global burn tracker. All of it is
+ * gone: burnrate.js and pricing.js are deleted, /burn and /budget/check are
+ * removed, and nothing in this office counts money any more. The owner asked
+ * for an office that shows agents working, not an accounting system, and the
+ * cost layer never once refused anything in production because nothing ever
+ * reported a cost to it.
+ * A room that should hold no agents now says so directly with `idle: true`,
+ * instead of being inferred from a budget of zero. A switch that means
+ * "closed" should read as "closed", not as "$0/hr".
+ *
  * RETRACTED 2026-10-17 — the `trust` field.
  * Every room used to carry one of four rungs — untrusted, standard,
  * privileged, idle. It is gone. It was never read: grep found it written in eight room
  * literals, copied into three output objects, attached to the agent_moved
  * event and accumulated into a Map in replay.js that nothing ever consumed.
  * No branch anywhere compared it. It denied nothing.
- * What actually refuses an action is below, and is unchanged: a missing room,
- * budgetHourlyUsd === 0, the tools deny list, the allow list, maxModelTier,
- * and the approval gates. Those are mechanisms. `trust` was a four-rung
+ * What actually refuses an action is below: a missing room, an idle room, the
+ * tools deny list, the allow list, and the approval gates. Those are
+ * mechanisms. `trust` was a four-rung
  * ladder printed beside them, and a label that ranks without enforcing reads
  * as proof of an enforcement that does not exist.
  * Historical agent_moved records still carry `trust` in their payload. Replay
  * ignores unknown payload keys, so the chain stays valid and verifiable; old
  * events are not rewritten.
  *
- *   room          = scope           (which tools and models are reachable)
- *   room budget   = spend envelope  (a small room cannot burn much)
- *   door          = policy gate     (some transitions need a human)
+ *   room          = scope        (which tools are reachable)
+ *   door          = policy gate  (some transitions need a human)
  *   moving an agent into a room = granting it that room's scope
  *
  * The result is a governance model a non-engineer can audit by looking at it.
  * "Why was the agent allowed to run kubectl?" becomes "because someone put it
  * in the server room, and here is who did that and when."
- *
- * Relationship to burnrate.js
- * ---------------------------
- * burnrate.js answers "can we afford this?" across agent/global scopes. This
- * module answers "is this permitted here?" and adds a third spend scope: the
- * room. `decide()` composes both and returns the strictest outcome.
  *
  * Deny-by-default
  * ---------------
@@ -44,23 +49,8 @@
  * is not policy.
  */
 
-import { SlidingWindow, isPremium, suggestDowngrade, stateForRatio } from "./burnrate.js";
 
 /** Model capability tiers, cheapest first. A room caps the tier it permits. */
-export const MODEL_TIERS = ["cheap", "standard", "premium"];
-
-const CHEAP = [
-  /-mini\b/, /-nano\b/, /haiku/, /flash/, /-8b\b/, /small/,
-  /gpt-3\.5/, /embedding/,
-];
-
-export function modelTier(model) {
-  if (!model) return "standard";
-  const id = String(model).toLowerCase();
-  if (CHEAP.some((re) => re.test(id))) return "cheap";
-  if (isPremium(id)) return "premium";
-  return "standard";
-}
 
 /**
  * Glob matching for tool names: "*" and "fs:*" style patterns only.
@@ -105,9 +95,9 @@ const anyMatch = (name, patterns) =>
  * this map is flat. The same convention already names agents in the frontend
  * cast table (`mac/orkestrator`, `lightvela/infra`).
  *
- * What refuses an action: a missing room, budgetHourlyUsd === 0, the deny
- * list, the allow list, maxModelTier, and the approval gates. There is no
- * trust rung — see the retraction at the head of this file.
+ * What refuses an action: a missing room, `idle: true`, the deny list, the
+ * allow list, and the approval gates. There is no trust rung and no budget —
+ * see the retractions at the head of this file.
  *
  * Removing a room does not freeze the agents in it. roomFor() checks that an
  * assignment still names a room in this map and degrades to `defaultRoom`
@@ -136,8 +126,6 @@ export const DEFAULT_POLICY = {
     "belum-dipetakan": {
       label: "Belum dipetakan",
       tools: { allow: ["web_search", "read_file", "fetch", "llm:*"], deny: [] },
-      maxModelTier: "cheap",
-      budgetHourlyUsd: 0.25,
       approval: [],
     },
 
@@ -147,16 +135,12 @@ export const DEFAULT_POLICY = {
     "mac/root": {
       label: "Root Ekosistem",
       tools: { allow: ["*"], deny: PRODUCTION },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 3.0,
       approval: ["bash"],
     },
     // Shipped and tested: Niu-LKH, PemdiAcehTengah, niu-dash, cc-switch, ...
     "mac/apps": {
       label: "Apps",
       tools: { allow: ["*"], deny: PRODUCTION },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 2.0,
       approval: [],
     },
     // Backends and engines: sapa-ai, niu-cast, latticesend. These are the
@@ -165,38 +149,28 @@ export const DEFAULT_POLICY = {
     "mac/services": {
       label: "Services",
       tools: { allow: ["*"], deny: ["kubectl", "terraform"] },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 2.0,
       approval: ["deploy", "bash"],
     },
     "mac/sites": {
       label: "Sites",
       tools: { allow: ["*"], deny: HANDS_OFF },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 1.5,
       approval: [],
     },
     "mac/desktop": {
       label: "Desktop",
       tools: { allow: ["*"], deny: HANDS_OFF },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 1.5,
       approval: [],
     },
     // No desks yet. Kept because the folder exists and agents land here.
     "mac/agents": {
       label: "Agents",
       tools: { allow: ["*"], deny: PRODUCTION },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 1.0,
       approval: ["bash"],
     },
     // Experiments are allowed to fail, not allowed to be expensive.
     "mac/labs": {
       label: "Labs",
       tools: { allow: ["*"], deny: HANDS_OFF },
-      maxModelTier: "standard",
-      budgetHourlyUsd: 0.5,
       approval: [],
     },
     // asn-admin. The owner's rule is that ASN output must never reach a public
@@ -207,8 +181,6 @@ export const DEFAULT_POLICY = {
     "mac/dinas": {
       label: "Dinas",
       tools: { allow: ["*"], deny: HANDS_OFF },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 1.0,
       approval: [],
       entryApproval: true,
     },
@@ -216,16 +188,12 @@ export const DEFAULT_POLICY = {
     "mac/brain": {
       label: "Brain",
       tools: { allow: ["read_file", "write_file", "web_search", "fetch", "llm:*"], deny: [] },
-      maxModelTier: "standard",
-      budgetHourlyUsd: 0.5,
       approval: [],
     },
     // 238 skills, 21 domains. Read-mostly reference.
     "mac/skills": {
       label: "Skills",
       tools: { allow: ["read_file", "write_file", "web_search", "llm:*"], deny: [] },
-      maxModelTier: "standard",
-      budgetHourlyUsd: 0.5,
       approval: [],
     },
     // Empty on the owner's instruction: leave Tools and Vault alone for now.
@@ -234,15 +202,13 @@ export const DEFAULT_POLICY = {
     "mac/tools": {
       label: "Tools",
       tools: { allow: [] },
-      maxModelTier: "cheap",
-      budgetHourlyUsd: 0,
+      idle: true,
       approval: [],
     },
     "mac/vault": {
       label: "Vault",
       tools: { allow: [] },
-      maxModelTier: "cheap",
-      budgetHourlyUsd: 0,
+      idle: true,
       approval: [],
       entryApproval: true,
     },
@@ -253,8 +219,6 @@ export const DEFAULT_POLICY = {
     "lightvela/root": {
       label: "Root Ekosistem",
       tools: { allow: ["*"], deny: ["kubectl", "terraform"] },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 2.0,
       approval: ["deploy", "bash"],
     },
     // 9router, Hermes Gateway, Office Octo, Hermes Cron, Agro-Climate. The
@@ -263,42 +227,34 @@ export const DEFAULT_POLICY = {
     "lightvela/infra": {
       label: "Infrastruktur & Monitoring",
       tools: { allow: ["*"] },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 5.0,
       approval: ["deploy", "kubectl", "terraform", "psql", "bash"],
       entryApproval: true,
     },
     "lightvela/content": {
       label: "Content Studio",
       tools: { allow: ["*"], deny: HANDS_OFF },
-      maxModelTier: "premium",
-      budgetHourlyUsd: 1.5,
       approval: [],
     },
   },
 };
 
-const TIER_RANK = Object.fromEntries(MODEL_TIERS.map((t, i) => [t, i]));
 
 let approvalSeq = 0;
 
 export class FloorPlanPolicy {
   /**
    * @param {object} policy floor-plan policy document
-   * @param {{now?: () => number, burn?: import("./burnrate.js").BurnRateTracker,
+   * @param {{now?: () => number,
    *          onEvent?: (e: object) => void, approvalTtlMs?: number}} [opts]
    */
   constructor(policy = DEFAULT_POLICY, opts = {}) {
     this.policy = { ...DEFAULT_POLICY, ...policy, rooms: { ...DEFAULT_POLICY.rooms, ...(policy.rooms || {}) } };
     this.now = opts.now || (() => Date.now());
-    this.burn = opts.burn || null;
     this.onEvent = opts.onEvent || (() => {});
     this.approvalTtlMs = opts.approvalTtlMs ?? 300_000; // 5 min
 
     /** @type {Map<string, {room: string, since: number, grantedBy: string}>} */
     this.assignments = new Map();
-    /** @type {Map<string, SlidingWindow>} room -> hourly spend */
-    this.roomSpend = new Map();
     /** @type {Map<string, object>} pending + resolved approvals */
     this.approvals = new Map();
   }
@@ -373,24 +329,6 @@ export class FloorPlanPolicy {
       grantedBy,
       ts: this.now(),
     });
-  }
-
-  // --- spend --------------------------------------------------------------
-
-  recordSpend(agent, costUsd) {
-    if (!(costUsd > 0)) return;
-    const room = this.roomFor(agent);
-    let w = this.roomSpend.get(room);
-    if (!w) {
-      w = new SlidingWindow(3_600_000, 60);
-      this.roomSpend.set(room, w);
-    }
-    w.add(costUsd, this.now());
-  }
-
-  roomSpentHour(roomId) {
-    const w = this.roomSpend.get(roomId);
-    return w ? w.total(this.now()) : 0;
   }
 
   // --- approvals ----------------------------------------------------------
@@ -506,16 +444,15 @@ export class FloorPlanPolicy {
   // --- the decision -------------------------------------------------------
 
   /**
-   * Unified gate: room policy first, then spend.
+   * The gate: is this action permitted in this agent's room?
    *
    * @param {{agent?: string, tool?: string, model?: string,
-   *          estimatedUsd?: number, approvalId?: string}} req
+   *          approvalId?: string}} req
    */
   decide(req = {}) {
     const agent = typeof req.agent === "string" && req.agent ? req.agent : null;
     const tool = typeof req.tool === "string" ? req.tool : "";
     const model = typeof req.model === "string" ? req.model : "";
-    const estimatedUsd = Number(req.estimatedUsd) || 0;
 
     const roomId = agent ? this.roomFor(agent) : this.defaultRoom();
     const room = this.room(roomId) || this.room(this.defaultRoom());
@@ -524,8 +461,7 @@ export class FloorPlanPolicy {
       agent,
       room: roomId,
       roomLabel: room?.label ?? roomId,
-      // Which rule decided this. Steps 1–4 are the room's own doing; step 5
-      // delegates to the burn tracker, which overrides it with its own scope.
+      // Which rule decided this. Without a default, a room-policy refusal
       // Without a default, a room-policy refusal reached the audit dossier
       // with an empty "Rule" column — a refusal nobody can attribute is not
       // defensible evidence.
@@ -543,13 +479,13 @@ export class FloorPlanPolicy {
     //    Checking tools first would answer "write_file is outside the scope of
     //    Kitchen", which is true but tells the operator far less than "agents
     //    parked here are idle".
-    if (room.budgetHourlyUsd === 0) {
+    if (room.idle) {
       return {
         ...base,
         allow: false,
         action: "deny",
         scope: "room",
-        reason: `${room.label} has no spend allowance (agents here are idle)`,
+        reason: `${room.label} is not in use yet (agents parked here are idle)`,
       };
     }
 
@@ -575,27 +511,12 @@ export class FloorPlanPolicy {
       }
     }
 
-    // 2. Model tier ceiling.
-    if (model) {
-      const tier = modelTier(model);
-      const ceiling = room.maxModelTier || "premium";
-      if (TIER_RANK[tier] > TIER_RANK[ceiling]) {
-        return {
-          ...base,
-          allow: false,
-          action: "restrict",
-          reason: `${model} is ${tier}; ${room.label} permits up to ${ceiling}`,
-          suggestModel: suggestDowngrade(model),
-        };
-      }
-    }
-
-    // 3. Human gate at the door.
+    // 2. Human gate at the door.
     if (tool && anyMatch(tool, room.approval)) {
       if (req.approvalId) {
         const ap = this.getApproval(req.approvalId);
         if (ap && ap.status === "approved" && ap.agent === agent && ap.tool === tool) {
-          // fall through to the spend checks
+          // fall through: the door is open for this one action
         } else {
           return {
             ...base,
@@ -630,44 +551,11 @@ export class FloorPlanPolicy {
       }
     }
 
-    // 4. Room spend envelope — a small room cannot burn much.
-    const roomLimit = room.budgetHourlyUsd;
-    if (roomLimit != null) {
-      const spent = this.roomSpentHour(roomId);
-      const ratio = (spent + Math.max(0, estimatedUsd)) / roomLimit;
-      if (ratio >= 1) {
-        return {
-          ...base,
-          allow: false,
-          action: "deny",
-          scope: "room",
-          state: "tripped",
-          spentUsd: round(spent),
-          limitUsd: roomLimit,
-          ratio: round(ratio, 4),
-          reason: `${room.label} budget exhausted ($${spent.toFixed(2)} of $${roomLimit.toFixed(2)}/hr)`,
-        };
-      }
-    }
-
-    // 5. Agent and global spend, delegated to the burn tracker.
-    if (this.burn) {
-      const d = this.burn.decide({ agent, model, estimatedUsd });
-      if (!d.allow || d.action !== "allow") {
-        return { ...base, ...d, scope: d.scope ?? "room", reason: d.reason };
-      }
-    }
-
-    const spent = roomLimit ? this.roomSpentHour(roomId) : 0;
     return {
       ...base,
       allow: true,
       action: "allow",
       scope: "room",
-      state: roomLimit ? stateForRatio(spent / roomLimit) : "normal",
-      spentUsd: round(spent),
-      limitUsd: roomLimit ?? null,
-      ratio: roomLimit ? round(spent / roomLimit, 4) : 0,
       reason: `permitted in ${room.label}`,
     };
   }
@@ -687,8 +575,6 @@ export class FloorPlanPolicy {
   /** The floor plan as data — drives the UI and is the audit artifact. */
   snapshot() {
     const rooms = Object.entries(this.policy.rooms).map(([id, r]) => {
-      const spent = this.roomSpentHour(id);
-      const limit = r.budgetHourlyUsd;
       const occupants = [];
       for (const [agent, a] of this.assignments) {
         if (a.room === id) occupants.push({ agent, since: a.since, grantedBy: a.grantedBy });
@@ -696,15 +582,11 @@ export class FloorPlanPolicy {
       return {
         room: id,
         label: r.label,
-        maxModelTier: r.maxModelTier,
+        idle: Boolean(r.idle),
         toolsAllow: r.tools?.allow ?? [],
         toolsDeny: r.tools?.deny ?? [],
         approval: r.approval ?? [],
         entryApproval: Boolean(r.entryApproval),
-        budgetHourlyUsd: limit ?? null,
-        spentHourUsd: round(spent),
-        ratio: limit > 0 ? round(spent / limit, 4) : null,
-        state: limit > 0 ? stateForRatio(spent / limit) : "normal",
         occupants,
       };
     });
@@ -717,11 +599,6 @@ export class FloorPlanPolicy {
   }
 }
 
-function round(n, dp = 6) {
-  if (!Number.isFinite(n)) return 0;
-  const f = 10 ** dp;
-  return Math.round(n * f) / f;
-}
 
 /** Load a floor-plan policy from JSON, falling back to the default. */
 export function loadPolicy(raw) {

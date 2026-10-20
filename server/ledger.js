@@ -59,7 +59,6 @@ export const LEDGER_TYPES = Object.freeze([
   "approval_requested",
   "approval_resolved",
   "agent_moved",
-  "budget_transition",
   "policy_loaded",
   "chain_checkpoint",
   "chain_anchored",

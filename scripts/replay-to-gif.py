@@ -16,10 +16,10 @@ reconstruction, is already done in server/replay.py's JS counterpart.
 WHAT IT DRAWS
 -------------
 One GIF frame per replay frame. Each shows:
-  - the room grid, tinted by the burn state at that moment
+  - the room grid
   - occupants listed per room
   - the governance change that produced the frame
-  - a progress bar and the running spend
+  - a progress bar
 
 It deliberately does NOT draw the isometric plates or sprites. A replay knows
 rooms, not coordinates (see server/replay.js), and compositing characters onto
@@ -44,16 +44,11 @@ def canvas_height(n_rooms, n_pending):
     rows = max(1, -(-min(n_rooms, COLS * 3) // COLS))
     return 86 + rows * (CELL_H + 12) + (46 if n_pending else 8) + 74
 
-# Burn palette. Same five states as BURN_STATES in server/replay.js and the
-# same hues as the OKLCH tokens in donghua.css — a replay that disagreed with
-# the live office about what "hot" looks like would be its own bug report.
-BURN = {
-    "normal":   ((18, 28, 34), (90, 200, 190), "NORMAL"),
-    "warm":     ((36, 30, 20), (224, 176, 84), "WARM"),
-    "hot":      ((44, 26, 16), (232, 140, 60), "HOT"),
-    "critical": ((48, 20, 20), (228, 88, 72), "CRITICAL"),
-    "tripped":  ((20, 26, 44), (120, 150, 230), "TRIPPED"),
-}
+# RETRACTED 2026-10-20: a five-colour burn palette tinted every frame by the
+# spend state. `BURN_STATES` no longer exists in server/replay.js and frames
+# no longer carry `burn`, `spentUsd`, `limitUsd` or `spentAsOfSeq`.
+BG      = (18, 28, 34)
+ACCENT  = (90, 200, 190)
 
 ROOM_ORDER = [
     "belum-dipetakan",
@@ -79,30 +74,14 @@ F_TITLE, F_ROOM, F_BODY, F_SMALL = font(22, True), font(14, True), font(13), fon
 
 
 def draw_frame(f, idx, total, rooms_seen, H):
-    bg, accent, label = BURN.get(f.get("burn", "normal"), BURN["normal"])
+    bg, accent = BG, ACCENT
     img = Image.new("RGB", (W, H), bg)
     d = ImageDraw.Draw(img)
 
     # --- header ----------------------------------------------------------
     d.text((MARGIN, 18), "HERMES OFFICE — TIME MACHINE", font=F_TITLE, fill=(236, 238, 240))
-    d.rectangle([W - MARGIN - 150, 20, W - MARGIN, 46], fill=accent)
-    d.text((W - MARGIN - 142, 25), f"BURN: {label}", font=F_ROOM, fill=bg)
 
-    spent = f.get("spentUsd", 0) or 0
-    limit = f.get("limitUsd")
-    money = f"${spent:,.2f}" + (f" / ${limit:,.2f}" if limit else "")
-    # Burn state refreshes on every decision; spend only on a budget
-    # transition. Printing them side by side as if simultaneous is a small
-    # lie that an auditor would catch, so say how old the money is.
-    # "field absent" (an older replay file) is NOT the same as "zero spend",
-    # and conflating them printed "no spend recorded" over a $1.12 frame on
-    # the first render of this file.
-    as_of = f.get("spentAsOfSeq")
-    if spent == 0 and as_of is None:
-        money = "belum ada belanja tercatat"
-    elif as_of is not None and as_of != f["seq"]:
-        money += f"  (per seq {as_of})"
-    d.text((MARGIN, 50), f"seq {f['seq']}  ·  {money}", font=F_BODY, fill=(170, 180, 190))
+    d.text((MARGIN, 50), f"seq {f['seq']}", font=F_BODY, fill=(170, 180, 190))
 
     # --- room grid -------------------------------------------------------
     occ = f.get("occupants", {})

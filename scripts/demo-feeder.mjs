@@ -70,10 +70,10 @@ async function main() {
 
   let n = 0
   for (;;) {
-    const [tok, agentId, tool, detail, costUsd] = WORK[n % WORK.length]
+    const [tok, agentId, tool, detail] = WORK[n % WORK.length]
     await post(tok, { type: 'tool_call', agentId, tool, detail })
     await sleep(jitter(2200))
-    await post(tok, { type: 'tool_done', agentId, tool, costUsd })
+    await post(tok, { type: 'tool_done', agentId, tool })
 
     if (n % 5 === 4) {
       await post(CLOUD, {

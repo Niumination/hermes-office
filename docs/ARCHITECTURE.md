@@ -17,16 +17,16 @@ bergaya donghua 3D** — tetapi inti komersialnya bukan visualisasi itu.
 Reposisi yang menentukan arsitektur: *bukan "dasbor yang menampilkan agen",
 melainkan **ruang kendali spasial di mana denah lantai ADALAH kebijakan***.
 Ruangan bukan dekorasi. Ruangan adalah unit kebijakan: setiap ruangan membawa
-tingkat kepercayaan, daftar alat yang diizinkan/ditolak, plafon tier model,
-anggaran per jam, dan aturan persetujuan. Memindahkan agen antar ruangan
+daftar alat yang diizinkan/ditolak, aturan persetujuan, dan penanda `idle`
+untuk ruang yang belum dipakai. Memindahkan agen antar ruangan
 **mengubah apa yang boleh ia lakukan**.
 
 Tiga pilar yang sudah berdiri:
 
 | Pilar | Modul inti | Yang dijual |
 |---|---|---|
-| **A. Ingest OTLP** | `otlp.js`, `pricing.js` | Menerima jejak OpenTelemetry GenAI apa adanya; menormalkan ejaan atribut yang berbeda-beda antar framework |
-| **B. Tata kelola spasial** | `policy.js`, `burnrate.js` | Penegakan **di jalur permintaan**, bukan laporan setelah kejadian. Mengarahkan sebelum menghentikan |
+| **A. Ingest OTLP** | `otlp.js` | Menerima jejak OpenTelemetry GenAI apa adanya; menormalkan ejaan atribut yang berbeda-beda antar framework |
+| **B. Tata kelola spasial** | `policy.js` | Penegakan **di jalur permintaan**, bukan laporan setelah kejadian. Mengarahkan sebelum menghentikan |
 | **C. Perekam penerbangan** | `ledger.js`, `anchor.js`, `dossier.js` | Rantai hash anti-rusak + ekspor dosier EU AI Act |
 
 ---
@@ -36,43 +36,39 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1377   entry: HTTP + WS + static, semua rute, shutdown bersih
-policy.js     736   Fase 3 — denah lantai sebagai kebijakan, persetujuan
-burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
-eventbus.js   392   validasi, clamp, REDAKSI, rate limit, ring buffer
-otlp.js       403   Fase 1 — OTel GenAI → event Hermes
-ledger.js     423   Fase 4 — rantai hash append-only
-standup.js    465   Fase 14 — bacaan pagi; deterministik, tanpa panggilan model
-replay.js     280   Fase 12 — Time Machine: rekonstruksi deterministik
+index.js      1289   entry: HTTP + WS + static, semua rute, shutdown bersih
+policy.js     613   Fase 3 — denah lantai sebagai kebijakan, persetujuan
+eventbus.js   384   validasi, clamp, REDAKSI, rate limit, ring buffer
+otlp.js       397   Fase 1 — OTel GenAI → event Hermes
+ledger.js     422   Fase 4 — rantai hash append-only
+standup.js    394   Fase 14 — bacaan pagi; deterministik, tanpa panggilan model
+replay.js     244   Fase 12 — Time Machine: rekonstruksi deterministik
 anchor.js     296   Fase 11 — penambatan eksternal (anti-pemotongan ekor)
-dossier.js    375   Fase 4 — rantai → dokumen untuk petugas kepatuhan
+dossier.js    355   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
 desks.js      393   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
 proof.js      140   Fase 6 — bukti: gerbang tercatat + pengikatan bundel yang disajikan
-config.js     150   seluruh konfigurasi env, validasi wajib saat boot
+config.js     141   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
 chat-db.js    101   SQLite (WAL) untuk riwayat chat
-pricing.js    100   token → USD, pencocokan prefiks-terpanjang
 auth.js       221   Bearer per-sumber, SHA-256
 ```
 
 ### Frontend (`frontend/src/`, ~9103 baris non-tes)
 
 ```
-styles/sect.css    2396   seluruh sistem desain: token, tata letak, gerak
+styles/sect.css    2395   seluruh sistem desain: token, tata letak, gerak
 SectApp.tsx         691   orkestrasi: socket, follow-mode, halaman masuk
 rooms.ts            540   SENI panggung: furnitur, waypoint, pelat latar
 eco/ecosystem.ts    457   model kantor→ruang→meja→agen; satu-satunya yang
                           tahu ejaan referensi `kantor/ruang`
 hermes/useOfficeSocket 270 klien WS, reconnect
 sect/Seal.tsx       241   Segel — integritas rantai ledger, hash kepala utuh
-sect/Hall.tsx       218   aula, awan, Murid berdiri di denah, papan nama
+sect/Hall.tsx       208   aula, awan, Murid berdiri di denah, papan nama
 sect/Writ.tsx       155   Titah — antrean persetujuan, hanya pemilik memutuskan
 sect/Chronicle.tsx  123   Babad — catatan; mentoleransi jenis tak dikenal
-hermes/useBurnState 117   Fase 6 — seed sekali + push WS, NOL polling
 sect/EcoRail.tsx    115   rail dua kantor: ruang, meja, lencana penghuni
 sect/QiRing.tsx      92   cincin Tenaga, tiga keadaan
-hermes/burnTypes.ts  41   kontrak /burn, terpisah dari komponen render
 ```
 
 > 38 berkas dihapus pada patch 017 — seluruh UI kantor isometrik lama
@@ -102,7 +98,6 @@ hermes/burnTypes.ts  41   kontrak /burn, terpisah dari komponen render
                                                     │
    POST /policy/check ──→ policy.decide() ──────────┤
         │                      │                    │
-        │                      └→ burnrate.decide() │
         │                                           │
         └──────────→ ledger.append() ───────────────┤
                      (rantai SHA-256)               │
@@ -111,7 +106,7 @@ hermes/burnTypes.ts  41   kontrak /burn, terpisah dari komponen render
                                                     │
                                      ┌──────────────┼──────────────┐
                                      ▼              ▼              ▼
-                              OfficeStage    useBurnState    AgentsPanel
+                              OfficeStage                    AgentsPanel
                                      │              │
                                      └→ AtmosphereLayer (shader membaca state)
 ```
@@ -133,9 +128,7 @@ dan keduanya harus diperiksa saat menambah endpoint.
 | POST | `/auth/session` | — | Bearer → cookie `office_session` |
 | POST | `/event` | `requireAuth` | sumber dipaksa dari identitas |
 | POST | `/v1/traces` | `requireAuth` | OTLP, **JSON saja**; protobuf → 415 |
-| GET | `/burn` | `requireAny` | angka USD penuh |
-| POST | `/budget/check` | `requireAuth` | **200 walau ditolak** |
-| GET | `/policy` | `requireAny` | denah penuh: tools, approval, anggaran |
+| GET | `/policy` | `requireAny` | denah penuh: tools, approval, ruang `idle` |
 | GET | `/tasks` | `requireAny` | Amanat; judul & repo apa adanya |
 | POST | `/policy/check` | `requireAuth` | rate limit 600/mnt, dicatat ke ledger |
 | GET | `/approvals` | `requireAny` | `agent`, `tool`, `reason` apa adanya |
@@ -247,9 +240,10 @@ adalah fenomena per-frame yang tetap bisa dijalankan di atas pelat statis. Biaya
   ulang dan dicerminkan dari 16 render di `art/donghua-cast/`. **`unsourced`
   = 0**: 150 sprite cast lama dihapus pada 2026-10-10 (108 di antaranya rupa
   yang dapat dikenali dari sebuah serial televisi, dan nol dirujuk kode).
-- **`AtmosphereLayer.tsx`** membaca **burn state Fase 2**, jadi kantor berubah
-  suhu seiring belanja naik. Lapisan tata kelola dan arah seni adalah hal yang
-  sama.
+- **`AtmosphereLayer.tsx`** dulu membaca **burn state Fase 2** sehingga kantor
+  berubah suhu seiring belanja naik. **DICABUT 2026-10-20** bersama seluruh
+  lapisan biaya: suhu yang membaca angka yang tak pernah diukur bukan tata
+  kelola, hanya hiasan.
 
 Fallback: tanpa WebGL2 lapisan ini **tidak merender apa pun** dan ruangan tetap
 tampil baik. Dipasak 10 test (jsdom tidak punya WebGL2, jadi jalur
@@ -261,8 +255,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **402** | `npm test` |
-| Frontend | **250** | `cd frontend && npx vitest run` |
+| Backend | **306** | `npm test` |
+| Frontend | **232** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

@@ -33,7 +33,6 @@
  * enforces: the office shows that work happened, never what was said.
  */
 
-import { estimateCostUsd } from "./pricing.js";
 
 // ---------------------------------------------------------------------------
 // OTLP/JSON primitive decoding
@@ -245,11 +244,7 @@ export function spanToEvents(span, resource = {}, _options = {}) {
   // status.code 2 = ERROR (1 = OK, 0 = UNSET)
   const failed = span.status?.code === 2 || span.status?.code === "STATUS_CODE_ERROR";
 
-  const costUsd =
-    g.reportedCost ??
-    estimateCostUsd(g.model, g.inputTokens, g.outputTokens, g.provider);
-
-  // Carried on every event so the UI can correlate and cost-attribute.
+  // Carried on every event so the UI can correlate spans to agents.
   const common = {
     traceId: traceId || undefined,
     spanId: spanId || undefined,
@@ -262,7 +257,6 @@ export function spanToEvents(span, resource = {}, _options = {}) {
   if (g.inputTokens !== undefined) usage.inputTokens = g.inputTokens;
   if (g.outputTokens !== undefined) usage.outputTokens = g.outputTokens;
   if (g.totalTokens !== undefined) usage.totalTokens = g.totalTokens;
-  if (costUsd !== undefined) usage.costUsd = costUsd;
 
   const pair = (callType, doneType, callExtra, doneExtra) => [
     { type: callType, ts: startTs, ...common, ...callExtra },

@@ -26,7 +26,7 @@ describe("tally", () => {
     const t = tally([
       decision("ana", "bash", "deny"),
       decision("ana", "bash", "deny"),
-      decision("budi", "llm", "allow", { estimatedUsd: 0.5 }),
+      decision("budi", "llm", "allow"),
       rec("agent_moved", { agent: "ana", room: "lightvela/infra" }),
       rec("approval_requested", { agent: "ana", tool: "deploy" }),
       rec("approval_resolved", { agent: "ana", state: "approved", waitedMs: 30_000 }),
@@ -37,25 +37,6 @@ describe("tally", () => {
     assert.equal(t.moves, 1);
     assert.equal(t.approvals.requested, 1);
     assert.equal(t.approvals.approved, 1);
-    assert.equal(t.estimatedUsd, 0.5);
-  });
-
-  test("tracks the worst burn state reached, not the last one seen", () => {
-    // A window that hit `critical` at noon and recovered by evening still had
-    // a critical afternoon. Reporting the final state would hide it.
-    const t = tally([
-      rec("budget_transition", { scope: "global", state: "critical", spentUsd: 9, limitUsd: 10 }),
-      rec("budget_transition", { scope: "global", state: "normal", spentUsd: 1, limitUsd: 10 }),
-    ]);
-    assert.equal(t.worstState, "critical");
-  });
-
-  test("peak spend keeps the high-water mark per scope, not the latest", () => {
-    const t = tally([
-      rec("budget_transition", { scope: "agent", subject: "ana", state: "hot", spentUsd: 8, limitUsd: 10 }),
-      rec("budget_transition", { scope: "agent", subject: "ana", state: "normal", spentUsd: 0.2, limitUsd: 10 }),
-    ]);
-    assert.equal([...t.peakSpend.values()][0].spentUsd, 8);
   });
 
   test("median approval wait is the median, with an odd and an even sample", () => {
@@ -68,7 +49,6 @@ describe("tally", () => {
     const t = tally([]);
     assert.equal(t.total, 0);
     assert.equal(t.approvals.medianWaitMs, null);
-    assert.equal(t.worstState, "normal");
   });
 
   test("malformed records do not take the report down", () => {
@@ -107,7 +87,7 @@ describe("the quiet day — the feature most daily reports get wrong", () => {
 
   test("a busy but healthy day is still quiet — volume alone is not news", () => {
     const records = [
-      ...nTimes(500, (i) => decision(`a${i % 9}`, "llm", "allow", { estimatedUsd: 0.001 })),
+      ...nTimes(500, (i) => decision(`a${i % 9}`, "llm", "allow")),
       ...nTimes(50, (i) => rec("agent_moved", { agent: `a${i % 9}`, room: "mac/sites" })),
     ];
     assert.equal(buildStandup({ records, now: T0 }).quiet, true);
@@ -131,7 +111,6 @@ describe("findings that earn their place", () => {
     const m = buildStandup({
       records: [
         rec("approval_resolved", { agent: "ana", state: "expired" }),
-        rec("budget_transition", { scope: "global", state: "tripped", spentUsd: 10, limitUsd: 10 }),
         ...nTimes(5, () => decision("ana", "bash", "deny")),
       ],
       now: T0,
@@ -140,16 +119,6 @@ describe("findings that earn their place", () => {
       if (f.severity === "notice") continue;
       assert.ok(f.action && f.action.length > 10, `finding ${f.id} has no actionable guidance`);
     }
-  });
-
-  test("a budget trip names who tripped it", () => {
-    const m = buildStandup({
-      records: [rec("budget_transition", { scope: "agent", subject: "ana", state: "tripped", spentUsd: 10, limitUsd: 10 })],
-      now: T0,
-    });
-    const f = m.findings.find((x) => x.id === "budget-tripped");
-    assert.ok(f);
-    assert.match(f.headline, /ana/);
   });
 
   test("pending approvals are listed by agent so the reader can act now", () => {
@@ -222,48 +191,10 @@ describe("repeat denials — a misconfiguration wearing an attack costume", () =
 
 // ---------------------------------------------------------------------------
 describe("what the chain cannot support, the report must not claim", () => {
-  test("no 'total spent' is ever printed — the ledger does not hold one", () => {
-    // Cost events go to the burn tracker, not the chain. Summing
-    // budget_transition.spentUsd would double-count across windows and
-    // produce a confident, wrong, auditable number.
-    const m = buildStandup({
-      records: [
-        rec("budget_transition", { scope: "global", state: "hot", spentUsd: 8, limitUsd: 10 }),
-        rec("budget_transition", { scope: "global", state: "warm", spentUsd: 3, limitUsd: 10 }),
-      ],
-      now: T0,
-    });
-    const text = renderText(m);
-    assert.ok(!/total harian:/i.test(text));
-    assert.ok(!/\$11/.test(text), "peaks were summed into a fictional total");
-    assert.match(text, /puncak, bukan total/i);
-  });
-
-  test("estimated spend is labelled as an estimate wherever it appears", () => {
-    const m = buildStandup({
-      records: nTimes(10, () => decision("ana", "llm", "allow", { estimatedUsd: 1 })),
-      prevRecords: nTimes(10, () => decision("ana", "llm", "allow", { estimatedUsd: 0.1 })),
-      now: T0,
-    });
-    const f = m.findings.find((x) => x.id === "spend-up");
-    assert.ok(f, "a 10x estimated jump should be reported");
-    assert.match(f.detail, /perkiraan|estimasi/i);
-    assert.match(f.headline, /diperkirakan/i);
-  });
-
-  test("a spend rise under 2x is noise and is not reported", () => {
-    const m = buildStandup({
-      records: nTimes(10, () => decision("ana", "llm", "allow", { estimatedUsd: 0.15 })),
-      prevRecords: nTimes(10, () => decision("ana", "llm", "allow", { estimatedUsd: 0.1 })),
-      now: T0,
-    });
-    assert.equal(m.findings.find((x) => x.id === "spend-up"), undefined);
-  });
-
   test("a first-ever run does not report an infinite increase", () => {
     // Dividing by an empty prior window is the classic day-one embarrassment.
     const m = buildStandup({
-      records: nTimes(10, () => decision("ana", "llm", "allow", { estimatedUsd: 1 })),
+      records: nTimes(10, () => decision("ana", "llm", "allow")),
       prevRecords: [],
       now: T0,
     });
@@ -395,7 +326,6 @@ describe("ordering and determinism", () => {
     // and whoever notices first will be the person you least want noticing.
     const records = [
       ...nTimes(7, (i) => decision(`a${i % 3}`, "bash", "deny")),
-      rec("budget_transition", { scope: "global", state: "tripped", spentUsd: 10, limitUsd: 10 }),
       rec("approval_resolved", { agent: "ana", state: "expired" }),
     ];
     const once = renderText(buildStandup({ records, now: T0 }));

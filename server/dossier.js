@@ -50,7 +50,6 @@ const safe = (v, max = 200) =>
 const esc = (v, max = 200) => safe(v, max).replace(/\|/g, "\\|");
 const iso = (ts) => new Date(ts).toISOString().replace("T", " ").replace(/\.\d+Z$/, "Z");
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-const usd = (n) => (typeof n === "number" ? `$${n.toFixed(4).replace(/0+$/, "").replace(/\.$/, "")}` : "—");
 
 /** Turn one ledger record into a single plain-language sentence. */
 export function narrate(rec) {
@@ -68,9 +67,8 @@ export function narrate(rec) {
       const where = p.room ? ` in the ${safe(p.room)}` : "";
       const verdict = ACTION_LABEL[p.action] || safe(p.action);
       const because = p.reason ? ` Reason given: ${safe(p.reason, 400)}` : "";
-      const cost = p.estimatedUsd ? ` Estimated cost ${usd(p.estimatedUsd)}.` : "";
       const alt = p.suggestModel ? ` Suggested alternative model: \`${safe(p.suggestModel)}\`.` : "";
-      return `${who} attempted ${what}${where} and was **${verdict}** by the ${safe(p.scope) || "policy"} rule.${because}${cost}${alt}`;
+      return `${who} attempted ${what}${where} and was **${verdict}** by the ${safe(p.scope) || "policy"} rule.${because}${alt}`;
     }
     case "approval_requested":
       return `${safe(p.agent) || "An agent"} requested human approval to ` +
@@ -85,10 +83,6 @@ export function narrate(rec) {
     case "agent_moved":
       return `${safe(p.agent)} moved from ${safe(p.fromRoom) || "outside"} to the ${safe(p.room)}, ` +
         `changing the permissions that apply to it. Authorised by: ${safe(p.grantedBy) || "unrecorded"}.`;
-    case "budget_transition":
-      return `Spending ${p.scope === "global-daily" ? "for the day" : "this hour"} crossed from **${safe(p.from)}** to **${safe(p.state)}**` +
-        (typeof p.spentUsd === "number" && typeof p.limitUsd === "number"
-          ? ` (${usd(p.spentUsd)} of ${usd(p.limitUsd)})` : "") + `.`;
     case "chain_checkpoint":
       return `Integrity checkpoint: ${p.records} records, head \`${String(p.headHash).slice(0, 16)}…\`.`;
     case "chain_truncated":
@@ -133,7 +127,6 @@ export function summarize(records) {
     denials: [],
     approvals: { requested: 0, approved: 0, denied: 0, expired: 0, waits: [] },
     moves: 0,
-    budgetTransitions: [],
     agents: new Set(),
     rooms: new Set(),
     truncations: [],
@@ -154,7 +147,6 @@ export function summarize(records) {
         if (typeof p.waitedMs === "number") s.approvals.waits.push(p.waitedMs);
         break;
       case "agent_moved": s.moves += 1; break;
-      case "budget_transition": s.budgetTransitions.push({ seq: r.seq, ts: r.ts, ...p }); break;
       case "chain_truncated": s.truncations.push({ seq: r.seq, ...p }); break;
       case "desk_action":
         // Owner-executed action on an outpost. Not a policy decision — the
@@ -299,18 +291,6 @@ export function renderMarkdown({ records, verification, period, system = {} }) {
   L.push(`Agents observed: ${s.agents.length ? s.agents.map((a) => `\`${safe(a)}\``).join(", ") : "none"}.  `);
   L.push(`Areas involved: ${s.rooms.length ? s.rooms.map((r) => safe(r)).join(", ") : "none"}.  `);
   L.push(`Permission scope changed ${plural(s.moves, "time", "times")}.`);
-  L.push(``);
-  if (s.budgetTransitions.length) {
-    L.push(`Spending controls changed state ${plural(s.budgetTransitions.length, "time", "times")}:`);
-    L.push(``);
-    L.push(`| Seq | Time (UTC) | Scope | Transition | Spend |`);
-    L.push(`|---|---|---|---|---|`);
-    for (const b of s.budgetTransitions) {
-      L.push(`| ${b.seq} | ${iso(b.ts)} | ${esc(b.scope)} | ${esc(b.from)} → **${esc(b.state)}** | ${usd(b.spentUsd)} / ${usd(b.limitUsd)} |`);
-    }
-  } else {
-    L.push(`Spending controls remained in their normal state throughout the period.`);
-  }
   L.push(``);
 
   // --- Full narrative.

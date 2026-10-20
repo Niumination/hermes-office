@@ -140,7 +140,7 @@ Keputusan: **hapus.** Diterapkan 2026-10-10.
 
 Alasannya bukan ukuran, meski ukurannya ikut turun (7,9 MB → 3,2 MB): 108
 dari 150 berkas itu adalah rupa yang dapat dikenali dari sebuah serial
-televisi, di dalam produk berharga $2.000+. Nol di antaranya dirujuk kode —
+televisi, di dalam produk yang saat itu masih dikira berharga. Nol di antaranya dirujuk kode —
 aplikasi memakai 8 arketipe donghua di `sprites/donghua/`. Jalur mundur satu
 baris di `Character.tsx` memang nyata, tapi menahan paparan HKI sebagai harga
 sebuah opsi yang tak akan ditebus adalah pertukaran yang buruk.
@@ -243,7 +243,6 @@ Aturan yang membuatnya berguna, bukan seremonial:
 | `CHANGELOG-v2.md` | 2858 baris, Fase 0–21, alasan di balik setiap keputusan |
 | `docs/ARCHITECTURE.md` · `PRD.md` · `UI-SPEC.md` | spesifikasi, semuanya diperiksa mesin |
 | `docs/SPRITES.md` · `ROOM-PLATES.md` | provenance aset + apa yang menangkap apa |
-| `docs/PRICING.md` · `.id.md` | halaman harga, angkanya kini ikut diperiksa |
 | `scripts/verify.sh` | satu perintah, 18 gerbang |
 | `scripts/check-handoff.sh` | integritas transfer |
 | `MANIFEST.sha256` | 561 berkas, sha256 |
