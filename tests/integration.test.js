@@ -1043,17 +1043,16 @@ test("the gate itself: mayAutoSession refuses by default and by proxy", async ()
   // sets OFFICE_AUTO_SESSION_CIDRS — force it empty so this test exercises
   // the shipped default, not the local deploy's allowlist. This assignment
   // is synchronous (no await between read and write), so no rule is violated.
-  const saved = process.env.OFFICE_AUTO_SESSION_CIDRS;
-  const original = saved;
-  process.env.OFFICE_AUTO_SESSION_CIDRS = ""; // eslint-disable-next-line require-atomic-updates
+  const original = process.env.OFFICE_AUTO_SESSION_CIDRS;
+  process.env.OFFICE_AUTO_SESSION_CIDRS = "";
   const { mayAutoSession } = await import("../server/auth.js");
   const local = { socket: { remoteAddress: "127.0.0.1" }, headers: {} };
   assert.equal(mayAutoSession(local), false, "empty allowlist means nobody");
   assert.equal(mayAutoSession({ ...local, headers: { "x-forwarded-for": "1.2.3.4" } }), false);
   assert.equal(mayAutoSession({ socket: {}, headers: {} }), false, "no address means no");
   assert.equal(mayAutoSession({}), false, "a malformed request means no");
-  if (original === undefined) delete process.env.OFFICE_AUTO_SESSION_CIDRS;
-  else process.env.OFFICE_AUTO_SESSION_CIDRS = original;
+  if (original === undefined) delete process.env.OFFICE_AUTO_SESSION_CIDRS; // eslint-disable-line require-atomic-updates
+  else process.env.OFFICE_AUTO_SESSION_CIDRS = original; // eslint-disable-line require-atomic-updates
 });
 
 test("a full session table evicts the oldest, it never locks the owner out", async () => {
