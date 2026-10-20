@@ -150,20 +150,56 @@ export function authenticate(req) {
 const sessionTokens = new Map();
 const SESSION_TTL_MS = 12 * 3600 * 1000;
 
+const MAX_SESSIONS = 1000;
+
 export function createSession(token, now = Date.now()) {
   // purge expired
   for (const sid of sessionTokens.keys()) {
     const issued = parseInt(sid.split(".")[1]) || 0;
     if (now - issued > SESSION_TTL_MS) sessionTokens.delete(sid);
   }
-  if (sessionTokens.size > 1000) return null;
+  // Evict oldest rather than refuse. Refusing looks safer and is not: with a
+  // bounded table and a 12h TTL, enough sessions in one window made
+  // createSession return null and locked the owner out with a 429 until the
+  // TTL expired. A full table is a reason to forget the oldest visitor, never
+  // a reason to turn away the next one. Map preserves insertion order, and
+  // ids are minted in time order, so the first key is the oldest.
+  while (sessionTokens.size >= MAX_SESSIONS) {
+    const oldest = sessionTokens.keys().next().value;
+    if (oldest === undefined) break;
+    sessionTokens.delete(oldest);
+  }
   const sid = randomUUID() + "." + now;
   sessionTokens.set(sid, token);
   return sid;
 }
 
-export function sessionCookieHeader(sid) {
-  return `office_session=${sid}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_MS / 1000}`;
+/** Drop every live session. Used when credentials rotate. */
+export function revokeAllSessions() {
+  const n = sessionTokens.size;
+  sessionTokens.clear();
+  return n;
+}
+
+/**
+ * `secure` must be set whenever the browser reached us over HTTPS, otherwise
+ * the cookie is also sent over plain HTTP and any network between the browser
+ * and the edge can lift an owner session off the wire. It is conditional
+ * rather than always-on because the office is legitimately served over plain
+ * HTTP on loopback and over a tailnet, where a Secure cookie would simply be
+ * dropped by the browser and nothing would work.
+ */
+export function sessionCookieHeader(sid, { secure = false } = {}) {
+  return `office_session=${sid}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_MS / 1000}` +
+    (secure ? "; Secure" : "");
+}
+
+/** Did this request reach us over TLS, directly or through a trusted proxy? */
+export function isSecureRequest(req) {
+  if (req?.secure === true) return true;
+  const xf = req?.headers?.["x-forwarded-proto"];
+  if (typeof xf === "string" && xf.split(",")[0].trim().toLowerCase() === "https") return true;
+  return req?.socket?.encrypted === true;
 }
 
 

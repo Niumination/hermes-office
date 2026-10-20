@@ -9,7 +9,8 @@ import { existsSync } from "fs";
 import { join, dirname, sep } from "path";
 import { fileURLToPath } from "url";
 import { config, assertConfig } from "./config.js";
-import { authenticate, getBearer, createSession, sessionCookieHeader, requireAuth, requireAny, requireOwner, isTrustedProxyIp, mayAutoSession, autoSessionEnabled } from "./auth.js";
+import { authenticate, getBearer, createSession, sessionCookieHeader, isSecureRequest, requireAuth, requireAny, requireOwner, isTrustedProxyIp, mayAutoSession, autoSessionEnabled } from "./auth.js";
+import { mayAutoSessionViaAccess, accessConfigured } from "./cfaccess.js";
 import { OfficeEventBus, RateLimiter } from "./eventbus.js";
 import { createChatRouter } from "./chat.js";
 import { DeskBoard, createDesksRouter } from "./desks.js";
@@ -885,7 +886,7 @@ app.get("/roster", requireAny, (_req, res) => {
     if (!identity) return res.status(401).json({ error: "Tidak terotorisasi" });
     const sid = createSession(getBearer(req));
     if (!sid) return res.status(429).json({ error: "Terlalu banyak sesi" });
-    res.setHeader("Set-Cookie", sessionCookieHeader(sid));
+    res.setHeader("Set-Cookie", sessionCookieHeader(sid, { secure: isSecureRequest(req) }));
     res.json({ ok: true, role: identity.role });
   });
 
@@ -1035,6 +1036,28 @@ app.use("/proof", createProofRouter({
 // still reach /debug/events (owner) and the WebSocket. Nothing was lost except
 // a second door to the same room.
 
+/**
+ * Hand the browser an owner session, but only when something has already
+ * proven who it is. Two independent proofs are accepted:
+ *
+ *   1. Network: the peer is in OFFICE_AUTO_SESSION_CIDRS and the request
+ *      carries no proxy headers — i.e. it did not come through the tunnel.
+ *      Use this for tailnet / loopback access.
+ *   2. Identity: Cloudflare Access signed a JWT for this request. Use this
+ *      when the office keeps a public hostname.
+ *
+ * With neither configured nothing is minted and the office needs a token,
+ * which is the correct default for a server whose front door faces the
+ * internet.
+ */
+async function autoSessionIfVouchedFor(req, res) {
+  if (authenticate(req)) return;
+  const vouched = mayAutoSession(req) || (await mayAutoSessionViaAccess(req));
+  if (!vouched) return;
+  const sid = createSession(config.tokens.owner);
+  if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid, { secure: isSecureRequest(req) }));
+}
+
 // Static frontend build (dist/) when present
 const DIST = join(__dirname, "..", "frontend", "dist");
 if (existsSync(DIST)) {
@@ -1057,12 +1080,9 @@ if (existsSync(DIST)) {
 //
 // Must be registered BEFORE express.static — otherwise static serves
 // index.html directly and this handler never runs.
-app.get("/", (req, res) => {
+app.get("/", async (req, res) => {
   res.setHeader("Cache-Control", "no-cache");
-  if (!authenticate(req) && mayAutoSession(req)) {
-    const sid = createSession(config.tokens.owner);
-    if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid));
-  }
+  await autoSessionIfVouchedFor(req, res);
   res.sendFile("index.html", { root: DIST });
 });
 
@@ -1092,14 +1112,11 @@ app.get("/", (req, res) => {
   // default of nobody — OFFICE_TRUSTED_ORIGINS never existed in code, so the
   // allowlist it referred to was never enforced.
 
-  app.use((req, res, next) => {
+  app.use(async (req, res, next) => {
     if (req.method !== "GET") return next();
     if (ASSET_NS.test(req.path)) return res.status(404).type("txt").send("Tidak ditemukan");
     res.setHeader("Cache-Control", "no-cache");
-    if (!authenticate(req) && mayAutoSession(req)) {
-      const sid = createSession(config.tokens.owner);
-      if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid));
-    }
+    await autoSessionIfVouchedFor(req, res);
     res.sendFile("index.html", { root: DIST });
   });
 } else {
@@ -1285,7 +1302,8 @@ httpServer.listen(config.port, config.host, () => {
         otlp: config.tokens?.otlp ? "on" : "off",
         // Auto-session hands out owner cookies with no token. An operator must
         // never have to read source to find out whether that is on.
-        autoSession: autoSessionEnabled() ? "on" : "off",
+        autoSession: autoSessionEnabled() ? "network" : (accessConfigured() ? "off" : "off"),
+        cfAccess: accessConfigured() ? "on" : "off",
     })
   );
 });

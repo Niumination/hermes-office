@@ -115,6 +115,8 @@ kredensial, karena `systemctl --user cat` akan membeberkannya. Pakai
 
 ### Auto-session: kantor tanpa login, tanpa membuka pintu ke internet
 
+Panduan lengkap memilih mode akses ada di `docs/AKSES.md`.
+
 Kantor ini boleh menyerahkan sesi owner tanpa token supaya pemiliknya tidak
 perlu login di jaringannya sendiri. Fitur itu **mati secara bawaan** dan
 dinyalakan lewat `OFFICE_AUTO_SESSION_CIDRS`, misalnya
@@ -122,7 +124,8 @@ dinyalakan lewat `OFFICE_AUTO_SESSION_CIDRS`, misalnya
 baris boot sebagai `autoSession: on|off` — jangan sampai operator harus
 membaca kode untuk mengetahuinya.
 
-Dua syarat harus terpenuhi bersamaan, dan keduanya gagal-tertutup:
+Ada dua bukti yang diterima, dan tanpa salah satunya tidak ada cookie yang
+terbit. **Bukti jaringan** — dua syarat berikut harus terpenuhi bersamaan:
 
 1. alamat peer ada di `OFFICE_AUTO_SESSION_CIDRS`, **dan**
 2. permintaan tidak membawa header penerusan (`X-Forwarded-For`,
@@ -141,6 +144,20 @@ diasumsikan. Pelajarannya: **rotasi kredensial tidak bisa menutup lubang yang
 tidak memakai kredensial.** Komentar di kode saat itu menyatakan UFW dan
 terowongan membuat "siapa pun yang sampai di sini sudah ada di dalam" —
 kalimat yang terdengar meyakinkan dan salah total.
+
+**Bukti identitas** — Cloudflare Access menandatangani permintaan dan kantor
+memverifikasi tanda tangannya (`OFFICE_CF_ACCESS_TEAM` + `OFFICE_CF_ACCESS_AUD`,
+lihat `server/cfaccess.js`). Diperiksa: tanda tangan RS256 terhadap JWKS,
+`kid` dikenal, `aud` persis aplikasi ini, `iss` tim ini, `exp`/`nbf` dengan
+toleransi 60 detik. Verifier memakunya ke RSA-SHA256 dan tidak pernah membaca
+`alg` dari token, sehingga serangan algorithm-confusion gagal secara struktural.
+Header tanpa tanda tangan sah tidak berarti apa pun.
+
+Sesi berumur 12 jam, tabelnya dibatasi 1000, dan saat penuh ia **membuang yang
+tertua** alih-alih menolak yang baru. Versi lama menolak dengan 429, sehingga
+cukup banyak kunjungan dalam satu jendela mengunci pemiliknya sendiri selama
+12 jam. Ketersediaan adalah bagian dari keamanan ketika kunci itu satu-satunya
+jalan masuk. Cookie diberi flag `Secure` saat permintaan tiba lewat TLS.
 
 `scripts/check-live.sh` §2 menembak kantor lewat URL publiknya, jadi setiap
 permintaannya melewati terowongan. Cookie yang diberikan kepada permintaan

@@ -1041,6 +1041,26 @@ test("the gate itself: mayAutoSession refuses by default and by proxy", async ()
   assert.equal(mayAutoSession({}), false, "a malformed request means no");
 });
 
+test("a full session table evicts the oldest, it never locks the owner out", async () => {
+  // The bounded table once returned null when full, so 1001 visits in a 12h
+  // window meant the owner's own /auth/session answered 429 until the TTL
+  // expired. Availability is part of security when the lock is the only way in.
+  const { createSession } = await import("../server/auth.js");
+  let last = null;
+  for (let i = 0; i < 1200; i++) last = createSession("t" + i);
+  assert.ok(last, "the 1200th session must still be issued");
+});
+
+test("the session cookie is marked Secure when the request arrived over TLS", async () => {
+  const { sessionCookieHeader, isSecureRequest } = await import("../server/auth.js");
+  assert.match(sessionCookieHeader("x", { secure: true }), /; Secure/);
+  assert.doesNotMatch(sessionCookieHeader("x"), /; Secure/);
+  assert.equal(isSecureRequest({ headers: { "x-forwarded-proto": "https" } }), true);
+  assert.equal(isSecureRequest({ headers: { "x-forwarded-proto": "https,http" } }), true);
+  assert.equal(isSecureRequest({ headers: { "x-forwarded-proto": "http" } }), false);
+  assert.equal(isSecureRequest({ headers: {} }), false);
+});
+
 test("an anonymous browser can read nothing but the shell", async () => {
   // Without a session cookie (e.g. a direct curl to a data route, or a
   // browser that never hit GET /) nothing is served.
