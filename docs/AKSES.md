@@ -42,22 +42,47 @@ Baris boot selalu mencetak mode yang aktif:
 
 ### Mode 1 — Tailnet saja (paling sederhana, paling aman) ✅ disarankan
 
-Hapus hostname publik. Sajikan kantor hanya ke tailnet:
+Kantor sudah mendengarkan di antarmuka tailnet. Akses langsung lewat alamat
+tailnet mesinnya:
 
 ```bash
-tailscale serve --bg --https=443 http://127.0.0.1:7333
-tailscale serve status        # https://<mesin>.<tailnet>.ts.net
+tailscale ip -4              # mis. 100.71.4.9
+# lalu buka http://100.71.4.9:7333 dari perangkat tailnet mana pun
 ```
 
-Lalu di `.env.office`:
+`.env.office`:
 
 ```
-OFFICE_AUTO_SESSION_CIDRS=127.0.0.1,100.64.0.0/10
+OFFICE_AUTO_SESSION_CIDRS=100.64.0.0/10
 ```
 
-Hasilnya: buka URL `.ts.net` dari perangkat mana pun yang tergabung tailnet
-— Mac, iPhone, laptop — langsung masuk. Tanpa login, tanpa token. Dari
-internet, kantor **tidak ada**; tidak ada hostname publik untuk dijangkau.
+Hasilnya: buka alamat itu dari Mac, iPhone, atau laptop yang tergabung
+tailnet — langsung masuk. Tanpa login, tanpa token. Dari internet, alamat
+`100.x` tidak dapat dirutekan sama sekali.
+
+**Jangan pakai `tailscale serve` untuk jalur ini.** `tailscale serve` adalah
+reverse proxy: ia menyerahkan permintaan ke `127.0.0.1` dan menambahkan
+`X-Forwarded-For`, sehingga `mayAutoSession()` menolaknya — dengan benar,
+karena dari sisi kantor ia tidak bisa dibedakan dari terowongan. Versi
+pertama dokumen ini menyarankan `tailscale serve`, dan itu keliru. Diuji:
+peer `127.0.0.1` + `X-Forwarded-For: 100.71.4.9` → **ditolak**.
+
+**Kenapa `127.0.0.1` tidak ada di allowlist.** Terowongan Cloudflare juga
+menyerahkan permintaan lewat loopback. Selama `cloudflared` selalu
+menstempel `CF-Ray` dan `X-Forwarded-For` — dan ia memang selalu begitu —
+memasukkan `127.0.0.1` tetap aman. Tetapi itu menggantungkan seluruh batas
+pada perilaku satu program pihak ketiga. Mengeluarkannya membuat alamat
+peer sendiri yang menjadi bukti, dan tidak ada lagi yang perlu dipercaya.
+Yang hilang hanya kemampuan membuka kantor dari browser di VM itu sendiri.
+
+Diuji, allowlist `100.64.0.0/10` saja:
+
+| permintaan | hasil |
+|---|---|
+| peer `100.71.4.9`, tanpa header | **cookie** |
+| peer `127.0.0.1`, tanpa header | ditolak |
+| peer `127.0.0.1` + `CF-Ray` | ditolak |
+| peer `127.0.0.1` + `X-Forwarded-For` | ditolak |
 
 Batas keamanannya nyata karena Tailscale memverifikasi perangkat secara
 kriptografis sebelum paket mencapai Anda, bukan karena ada firewall yang
@@ -122,7 +147,10 @@ atau sandbox mana pun:
 curl -s -D- -o /dev/null https://dash.abstract.biz.id/ | grep -i set-cookie
 ```
 
-- **Mode 1:** host tidak teresolusi atau menolak — kantor tidak publik.
+- **Mode 1:** hostname publik sudah dilepas, jadi tidak ada yang menjawab.
+  Kalau `dash.abstract.biz.id` masih hidup berdampingan dengan Mode 1,
+  perintah di atas harus `200` **tanpa** `Set-Cookie`, dan setiap rute data
+  harus `401`.
 - **Mode 2:** Anda diarahkan ke halaman login Cloudflare Access, bukan ke
   kantor. Tidak ada `office_session` yang terbit.
 - **Mode 3:** `200` tanpa `Set-Cookie`.
