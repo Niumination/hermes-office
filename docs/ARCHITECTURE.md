@@ -36,7 +36,7 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1358   entry: HTTP + WS + static, semua rute, shutdown bersih
+index.js      1359   entry: HTTP + WS + static, semua rute, shutdown bersih
 policy.js     736   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 burnrate.js   442   Fase 2 — akuntansi biaya, tangga keadaan, keputusan
 eventbus.js   392   validasi, clamp, REDAKSI, rate limit, ring buffer
@@ -53,7 +53,7 @@ config.js     150   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
 chat-db.js    101   SQLite (WAL) untuk riwayat chat
 pricing.js    100   token → USD, pencocokan prefiks-terpanjang
-auth.js       122   Bearer per-sumber, SHA-256
+auth.js       185   Bearer per-sumber, SHA-256
 ```
 
 ### Frontend (`frontend/src/`, ~9103 baris non-tes)
@@ -261,7 +261,7 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **386** | `npm test` |
+| Backend | **389** | `npm test` |
 | Frontend | **250** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:

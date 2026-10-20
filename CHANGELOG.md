@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### 🔴 Perbaikan bypass autentikasi — 20 Oktober 2026
+
+`GET /` menyerahkan cookie sesi **owner** kepada setiap pengunjung yang
+belum terotentikasi, tanpa satu pun pemeriksaan. Karena kantor dipublikasikan
+lewat terowongan Cloudflare, itu berarti siapa pun di internet bisa membuka
+`dash.abstract.biz.id`, menerima cookie owner, lalu membaca `/ledger` dan
+`/dossier` — diverifikasi dari luar jaringan dengan hasil **200**.
+
+Komentar di kode menjanjikan allowlist (`OFFICE_TRUSTED_ORIGINS`) yang tidak
+pernah ada implementasinya, dan menyatakan bahwa UFW plus terowongan membuat
+setiap pemanggil "sudah ada di dalam". Terowongan berjalan di host kantor,
+jadi pengunjung internet justru tiba sebagai `127.0.0.1`.
+
+Dua penjaga yang seharusnya menangkap ini sudah ada sebelumnya dan **dibalik
+pada commit yang sama**: tes `GET / mints no session for an anonymous
+browser`, dan `check-live.sh` §2 yang berbunyi *"a cookie here would mean the
+auto-session came back"*. Keduanya dipulihkan.
+
+Perbaikan: auto-session kini dijaga `mayAutoSession()` yang menuntut alamat
+peer ada di `OFFICE_AUTO_SESSION_CIDRS` **dan** permintaan tidak membawa
+header penerusan apa pun. Bawaannya kosong, artinya fitur mati. Status
+tercetak di baris boot sebagai `autoSession`.
+
+Diperbaiki sekalian: predikat `trust proxy` dipanggil Express dengan
+`(alamat, hop)`, bukan dengan `req`. Bentuk lamanya melempar `TypeError`
+begitu ada kode yang membaca `req.ip` — 500 yang menunggu pembatas laju atau
+log akses pertama yang menyentuhnya.
+
 ### Rotasi kredensial produksi — 19 Oktober 2026
 
 Pesan commit `b4250ab` memuat potongan nilai `OFFICE_TOKEN` dan

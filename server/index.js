@@ -9,7 +9,7 @@ import { existsSync } from "fs";
 import { join, dirname, sep } from "path";
 import { fileURLToPath } from "url";
 import { config, assertConfig } from "./config.js";
-import { authenticate, getBearer, createSession, sessionCookieHeader, requireAuth, requireAny, requireOwner, isTrustedProxyIp } from "./auth.js";
+import { authenticate, getBearer, createSession, sessionCookieHeader, requireAuth, requireAny, requireOwner, isTrustedProxyIp, mayAutoSession, autoSessionEnabled } from "./auth.js";
 import { OfficeEventBus, RateLimiter } from "./eventbus.js";
 import { createChatRouter } from "./chat.js";
 import { DeskBoard, createDesksRouter } from "./desks.js";
@@ -80,7 +80,11 @@ app.use(express.json({ limit: "16kb" }));
 // is always the Cloudflare edge IP and the auto-owner session below can never
 // match a tailnet allowlist. Trust only hops that look like known CDN/proxy
 // ranges or private / tailnet space.
-app.set("trust proxy", (req) => isTrustedProxyIp(req.socket.remoteAddress));
+// Express calls this predicate with (addressString, hopIndex) — not with
+// `req`. Passing it a request-shaped lambda throws TypeError the moment
+// anything reads req.ip, which is a 500 waiting for the first rate
+// limiter or access log that touches it.
+app.set("trust proxy", (addr) => isTrustedProxyIp(addr));
 
 /**
  * Is this request's Origin the server's own origin?
@@ -1034,18 +1038,28 @@ app.use("/proof", createProofRouter({
 // Static frontend build (dist/) when present
 const DIST = join(__dirname, "..", "frontend", "dist");
 if (existsSync(DIST)) {
-// Private office, no login: GET / is the browser's entry point. If the
-// visitor is not yet authenticated, issue an owner session cookie on the
-// very response that delivers index.html, so the page's subsequent data
-// requests (WS, /presence, …) carry a valid session with zero user action.
+// Private office, no login: GET / is the browser's entry point. A visitor
+// who is already inside the network boundary may be handed an owner session
+// on the very response that delivers index.html, so the page's data requests
+// (WS, /presence, …) are authenticated with zero user action.
+//
+// Who counts as "inside" is decided by mayAutoSession() in auth.js, and it
+// defaults to nobody. Two things must both hold: the peer address is in
+// OFFICE_AUTO_SESSION_CIDRS, and the request did not arrive through a proxy.
+//
+// The second check is not belt-and-braces, it is the whole boundary. The
+// Cloudflare tunnel runs on this host, so a visitor from the open internet
+// reaches the socket as 127.0.0.1 — indistinguishable from a local browser
+// by address alone. Comments once claimed UFW and the tunnel made everyone
+// here trusted; that was false, and for a time every anonymous request to
+// dash.abstract.biz.id was issued an owner cookie and could read /ledger
+// and /dossier. Verified from outside, not assumed.
+//
 // Must be registered BEFORE express.static — otherwise static serves
 // index.html directly and this handler never runs.
-// The boundary is the network: UFW accepts only the tailscale0 interface
-// and the Cloudflare tunnel only forwards dash.abstract.biz.id — anyone
-// reaching this handler is already inside.
 app.get("/", (req, res) => {
   res.setHeader("Cache-Control", "no-cache");
-  if (!authenticate(req)) {
+  if (!authenticate(req) && mayAutoSession(req)) {
     const sid = createSession(config.tokens.owner);
     if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid));
   }
@@ -1074,31 +1088,15 @@ app.get("/", (req, res) => {
   // path-to-regexp 8 changed catch-all semantics.
   const ASSET_NS = /^\/(sprites|rooms|assets)\//;
 
-  // Private office: no login, no token. The first GET / from a browser whose
-  // resolved client IP (after trust-proxy) or Host matches OFFICE_TRUSTED_ORIGINS
-  // receives an owner session cookie silently — the page then connects to WS
-  // and data routes with that cookie, full owner access, no user action.
-  //
-  // Security boundary: UFW accepts only the tailscale0 interface, the Cloudflare
-  // tunnel only forwards dash.abstract.biz.id, and OFFICE_TRUSTED_ORIGINS is a
-  // tight allowlist (default: tailnet IP + 127.0.0.1 + the domain name).
-  // Default allowlist: loopback (local browser) + the office's own hostname,
-  // taken from the Host header of the very request being served. A production
-  // site must set OFFICE_TRUSTED_ORIGINS explicitly — the empty default
-  // deliberately names no third-party domain and no private IP.
-// Private office, no login. The SPA catch-all below is where the browser's
-// first GET lands; auto-issue the owner session cookie there so it rides along
-// on the response that actually delivers index.html (middleware setHeader
-// does not propagate once a downstream handler calls sendFile/res.end).
+  // SPA deep-links land here rather than on GET / above. Same gate, same
+  // default of nobody — OFFICE_TRUSTED_ORIGINS never existed in code, so the
+  // allowlist it referred to was never enforced.
 
   app.use((req, res, next) => {
     if (req.method !== "GET") return next();
     if (ASSET_NS.test(req.path)) return res.status(404).type("txt").send("Tidak ditemukan");
     res.setHeader("Cache-Control", "no-cache");
-    // Already handled: GET / above sets the auto-session cookie on the very
-    // response that delivers index.html, so subsequent data requests are
-    // authenticated. This catch-all only mints a session for SPA deep-links.
-    if (!authenticate(req)) {
+    if (!authenticate(req) && mayAutoSession(req)) {
       const sid = createSession(config.tokens.owner);
       if (sid) res.setHeader("Set-Cookie", sessionCookieHeader(sid));
     }
@@ -1283,8 +1281,11 @@ httpServer.listen(config.port, config.host, () => {
       // "pointing somewhere useful" looked identical from the outside. An
       // operator should be able to read one log line and know what is live.
       a2aMac: config.hermesA2aMacUrl ? "on" : "off",
-      ledger: config.ledger?.enabled ? "on" : "off",
-      otlp: config.tokens?.otlp ? "on" : "off",
+        ledger: config.ledger?.enabled ? "on" : "off",
+        otlp: config.tokens?.otlp ? "on" : "off",
+        // Auto-session hands out owner cookies with no token. An operator must
+        // never have to read source to find out whether that is on.
+        autoSession: autoSessionEnabled() ? "on" : "off",
     })
   );
 });

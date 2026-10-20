@@ -27,20 +27,83 @@ const CF_AND_PRIVATE_RANGES = (
   "127.0.0.1,::1"
 ).split(",").map((s) => s.trim());
 
+const IPV4 = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+
+/** `::ffff:127.0.0.1` is how an IPv4 peer looks on a dual-stack socket. */
+function normalizeIp(ip) {
+  if (!ip) return "";
+  const s = String(ip).trim();
+  return s.startsWith("::ffff:") ? s.slice(7) : s;
+}
+
 function ipInCidr(ip, cidr) {
   if (cidr.includes("/")) {
     const [net, bits] = cidr.split("/");
     const b = parseInt(bits, 10);
+    // IPv4 maths only. An IPv6 address can never belong to an IPv4 CIDR, and
+    // feeding one to the shift arithmetic below silently yields NaN — which
+    // compares equal to nothing, but only by luck. Refuse explicitly.
+    if (!IPV4.test(ip) || !IPV4.test(net) || !(b >= 0 && b <= 32)) return false;
     const toN = (s) => s.split(".").reduce((a, o) => ((a << 8) + parseInt(o)) >>> 0, 0);
-    return (toN(ip) & ((0xffffffff << (32 - b)) >>> 0)) === (toN(net) & ((0xffffffff << (32 - b)) >>> 0));
+    const mask = b === 0 ? 0 : (0xffffffff << (32 - b)) >>> 0;
+    return (toN(ip) & mask) === (toN(net) & mask);
   }
   return ip === cidr; // bare IP = exact match
 }
 
 export function isTrustedProxyIp(ip) {
-  if (!ip) return false;
-  return CF_AND_PRIVATE_RANGES.some((c) => ipInCidr(ip, c));
+  const n = normalizeIp(ip);
+  if (!n) return false;
+  return CF_AND_PRIVATE_RANGES.some((c) => ipInCidr(n, c));
 }
+
+/**
+ * Auto-session allowlist — who may be handed an owner cookie with no token.
+ *
+ * Default is EMPTY, which disables the feature outright. This must fail
+ * closed: an office that mints owner sessions for everyone is strictly worse
+ * than one that asks for a token, because no credential rotation can close
+ * it. Opt in with OFFICE_AUTO_SESSION_CIDRS, e.g. "127.0.0.1,100.64.0.0/10"
+ * for loopback plus the tailnet.
+ */
+const AUTO_SESSION_CIDRS = (process.env.OFFICE_AUTO_SESSION_CIDRS || "")
+  .split(",").map((s) => s.trim()).filter(Boolean);
+
+/**
+ * Headers that only ever appear when the request crossed a reverse proxy or
+ * tunnel. Their presence means the peer address is the tunnel, not the
+ * visitor — so the office cannot tell a tailnet browser from the open
+ * internet by IP, and must not try.
+ */
+const FORWARDED_HEADERS = [
+  "x-forwarded-for", "forwarded", "x-real-ip",
+  "cf-connecting-ip", "cf-ray", "true-client-ip",
+];
+
+export function cameThroughProxy(req) {
+  const h = req?.headers || {};
+  return FORWARDED_HEADERS.some((k) => typeof h[k] === "string" && h[k] !== "");
+}
+
+/**
+ * May this request be given an owner session without presenting a token?
+ *
+ * Both conditions must hold, and both default to "no":
+ *  1. the direct peer address is in OFFICE_AUTO_SESSION_CIDRS, and
+ *  2. the request did not arrive through a proxy or tunnel.
+ *
+ * Condition 2 is the one that matters in this deployment. The Cloudflare
+ * tunnel runs on the office host, so every visitor from the public internet
+ * arrives at the socket as 127.0.0.1. An IP allowlist alone would therefore
+ * hand an owner cookie to the entire internet while looking correct.
+ */
+export function mayAutoSession(req) {
+  if (AUTO_SESSION_CIDRS.length === 0) return false;
+  if (cameThroughProxy(req)) return false;
+  return AUTO_SESSION_CIDRS.some((c) => ipInCidr(normalizeIp(req?.socket?.remoteAddress), c));
+}
+
+export const autoSessionEnabled = () => AUTO_SESSION_CIDRS.length > 0;
 
 function hashToken(t) {
   return createHash("sha256").update(t).digest("hex");

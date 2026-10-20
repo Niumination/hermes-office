@@ -113,6 +113,40 @@ Hal yang sama berlaku untuk unit systemd: jangan pakai `Environment=` untuk
 kredensial, karena `systemctl --user cat` akan membeberkannya. Pakai
 `EnvironmentFile=` yang berisi berkas mode 0600.
 
+### Auto-session: kantor tanpa login, tanpa membuka pintu ke internet
+
+Kantor ini boleh menyerahkan sesi owner tanpa token supaya pemiliknya tidak
+perlu login di jaringannya sendiri. Fitur itu **mati secara bawaan** dan
+dinyalakan lewat `OFFICE_AUTO_SESSION_CIDRS`, misalnya
+`127.0.0.1,100.64.0.0/10` untuk loopback plus tailnet. Statusnya tercetak di
+baris boot sebagai `autoSession: on|off` — jangan sampai operator harus
+membaca kode untuk mengetahuinya.
+
+Dua syarat harus terpenuhi bersamaan, dan keduanya gagal-tertutup:
+
+1. alamat peer ada di `OFFICE_AUTO_SESSION_CIDRS`, **dan**
+2. permintaan tidak membawa header penerusan (`X-Forwarded-For`,
+   `Forwarded`, `X-Real-IP`, `CF-Connecting-IP`, `CF-Ray`, `True-Client-IP`).
+
+Syarat kedua bukan pelengkap, melainkan **seluruh batasnya**. Terowongan
+Cloudflare berjalan di host kantor, jadi pengunjung dari internet terbuka
+tiba di soket sebagai `127.0.0.1` — tidak bisa dibedakan dari browser lokal
+berdasarkan alamat saja. Allowlist IP sendirian akan menyerahkan cookie
+owner ke seluruh internet sambil tampak benar.
+
+Ini pernah terjadi. Selama jendela itu, `GET /` memberi cookie owner kepada
+siapa pun yang membuka `dash.abstract.biz.id`, dan cookie itu dijawab **200**
+oleh `/ledger` dan `/dossier`. Diverifikasi dari luar jaringan, bukan
+diasumsikan. Pelajarannya: **rotasi kredensial tidak bisa menutup lubang yang
+tidak memakai kredensial.** Komentar di kode saat itu menyatakan UFW dan
+terowongan membuat "siapa pun yang sampai di sini sudah ada di dalam" —
+kalimat yang terdengar meyakinkan dan salah total.
+
+`scripts/check-live.sh` §2 menembak kantor lewat URL publiknya, jadi setiap
+permintaannya melewati terowongan. Cookie yang diberikan kepada permintaan
+itu **tidak pernah sah**, berapa pun isi allowlist lokal. Gerbang itu
+sempat dibalik agar justru menuntut cookie; sekarang ia menolaknya lagi.
+
 ### Rotasi token
 
 Ketiga token sumber (`OWNER`, `CLOUD`, `MAC`) adalah 32 karakter heksadesimal

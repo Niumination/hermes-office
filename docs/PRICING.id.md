@@ -41,7 +41,7 @@ runner sungguhan. Bila halaman ini dan kodenya berselisih, CI gagal. Versi
 Inggris dan Indonesia diikat ke angka yang sama, karena terjemahan adalah
 tempat kedua bagi klaim untuk membusuk.
 
-Repo ini punya 386 test backend dan 119 klaim dokumen yang diverifikasi mesin,
+Repo ini punya 389 test backend dan 119 klaim dokumen yang diverifikasi mesin,
 justru karena rantai hash yang benar, otorisasi yang bertahan di REST
 **dan** WebSocket alih-alih di salah satu dari dua tempatnya, serta replay
 deterministik yang layak jadi bukti semuanya mudah dibuat *nyaris* benar.

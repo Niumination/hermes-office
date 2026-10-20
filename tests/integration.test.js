@@ -990,25 +990,55 @@ test("policy/check: a looping agent is rate limited and fails closed", async () 
   assert.notEqual(other.scope, "limiter", "the limiter is keyed per agent");
 });
 
-// --- Auto-session for the private office: the door opens by network, not by token ---
+// --- Auto-session: the door must not open itself to the internet ---------
 //
-// The office is strictly private: UFW accepts only the tailscale0 interface
-// and the Cloudflare tunnel only forwards dash.abstract.biz.id. Anyone
-// reaching GET / is already inside that boundary, so it is safe to hand
-// them an owner session without a token — the page then connects to WS and
-// every data route with that session, no login form, no token rotation.
+// `GET /` may hand a browser an owner session with no token, but only when
+// the visitor is genuinely inside the network boundary. Getting this wrong
+// is not a small bug: an owner cookie for everyone cannot be closed by
+// rotating credentials, because no credential is involved.
 //
-// The anonymous-browser tests below still hold: a request that does not
-// carry a recognised token or session arrives without a Set-Cookie until
-// GET / runs — which is the documented path. Direct route access
-// (/presence, /roster, …) without a session is still refused 401.
+// It was wrong in production. The comments claimed UFW and the Cloudflare
+// tunnel meant "anyone reaching this handler is already inside". They do
+// not. The tunnel runs on the office host, so a visitor from the open
+// internet arrives at the socket as 127.0.0.1, identical to a local
+// browser. For a time, an anonymous request to dash.abstract.biz.id was
+// issued an owner cookie and answered 200 on /ledger and /dossier.
+//
+// So the gate is two conditions, both defaulting to refusal: the peer must
+// be in OFFICE_AUTO_SESSION_CIDRS, and the request must not carry proxy
+// headers. The test server sets no CIDRs, which is the shipped default.
 
-test("GET / mints an owner session for a trusted browser, no token needed", async () => {
+test("auto-session is off by default: GET / mints nothing", async () => {
   const r = await fetch(BASE + "/", { redirect: "manual" });
-  // The cookie must be present on the GET / response itself so the browser
-  // picks it up before any subsequent data fetch.
-  assert.match(r.headers.get("set-cookie") || "", /office_session=/,
-    "trusted browser should receive an owner session on the first GET /");
+  assert.equal(r.status, 200, "the shell is still public");
+  assert.equal(r.headers.get("set-cookie"), null,
+    "no owner cookie may be handed out when OFFICE_AUTO_SESSION_CIDRS is unset");
+});
+
+test("auto-session refuses anything that arrived through a proxy", async () => {
+  // Even with loopback allowlisted, these headers prove the peer address is
+  // a tunnel rather than the visitor, so the address proves nothing.
+  for (const h of [
+    { "X-Forwarded-For": "203.0.113.9" },
+    { "CF-Connecting-IP": "203.0.113.9" },
+    { "CF-Ray": "8f2a1b3c4d5e6f70-SIN" },
+    { "True-Client-IP": "203.0.113.9" },
+    { "X-Real-IP": "203.0.113.9" },
+    { Forwarded: "for=203.0.113.9" },
+  ]) {
+    const r = await fetch(BASE + "/", { headers: h, redirect: "manual" });
+    assert.equal(r.headers.get("set-cookie"), null,
+      `a request carrying ${Object.keys(h)[0]} must never be auto-sessioned`);
+  }
+});
+
+test("the gate itself: mayAutoSession refuses by default and by proxy", async () => {
+  const { mayAutoSession } = await import("../server/auth.js");
+  const local = { socket: { remoteAddress: "127.0.0.1" }, headers: {} };
+  assert.equal(mayAutoSession(local), false, "empty allowlist means nobody");
+  assert.equal(mayAutoSession({ ...local, headers: { "x-forwarded-for": "1.2.3.4" } }), false);
+  assert.equal(mayAutoSession({ socket: {}, headers: {} }), false, "no address means no");
+  assert.equal(mayAutoSession({}), false, "a malformed request means no");
 });
 
 test("an anonymous browser can read nothing but the shell", async () => {
@@ -1018,6 +1048,20 @@ test("an anonymous browser can read nothing but the shell", async () => {
                       "/ledger", "/ledger/head", "/dossier", "/presence"]) {
     const st = (await fetch(BASE + path)).status;
     assert.ok(st === 401 || st === 403, `${path} answered ${st} to an anonymous visitor`);
+  }
+});
+
+test("an anonymous browser cannot bootstrap owner access via GET /", async () => {
+  // The whole production failure in one assertion: visit the front page like
+  // a browser, keep whatever cookie you are given, then try the owner-only
+  // routes with it.
+  const r = await fetch(BASE + "/", { redirect: "manual" });
+  const cookie = (r.headers.get("set-cookie") || "").split(";")[0];
+  for (const path of ["/ledger", "/dossier", "/presence"]) {
+    const st = (await fetch(BASE + path,
+      cookie ? { headers: { Cookie: cookie } } : undefined)).status;
+    assert.ok(st === 401 || st === 403,
+      `${path} answered ${st} to a browser that only visited the front page`);
   }
 });
 
