@@ -253,6 +253,15 @@ export class FloorPlanPolicy {
     this.onEvent = opts.onEvent || (() => {});
     this.approvalTtlMs = opts.approvalTtlMs ?? 300_000; // 5 min
 
+    /**
+     * agent -> room id. Owner-authored (OFFICE_AGENT_HOMES). Says where an
+     * agent BELONGS; it does not by itself put anyone anywhere. See
+     * homeRoomFor() for the two refusals that keep this from becoming a
+     * privilege escalation dressed as configuration.
+     * @type {Record<string, string>}
+     */
+    this.agentHomes = { ...(opts.agentHomes || {}) };
+
     /** @type {Map<string, {room: string, since: number, grantedBy: string}>} */
     this.assignments = new Map();
     /** @type {Map<string, object>} pending + resolved approvals */
@@ -274,6 +283,34 @@ export class FloorPlanPolicy {
     const a = this.assignments.get(agent);
     if (a && this.room(a.room)) return a.room;
     return this.defaultRoom();
+  }
+
+  /**
+   * The room this agent should be placed in when it first proves it is alive,
+   * or `null` to fall back to the default room.
+   *
+   * Two refusals, both deliberate:
+   *
+   * 1. **Unknown room -> null.** A typo in OFFICE_AGENT_HOMES must not invent
+   *    a room or strand an agent off the floor plan.
+   * 2. **`entryApproval` room -> null.** Those doors exist because a human
+   *    signs off on entering. Letting a config line walk an agent through one
+   *    would turn the gate into decoration — and `assign()` would not even
+   *    place the agent, it would open an approval and leave it nowhere, which
+   *    is strictly worse than the default room.
+   *
+   * The owner can still move an agent into a gated room: POST
+   * /agents/:agent/room with the owner token, approval raised, human answers.
+   * That path is untouched. This one only answers "where does it stand when
+   * it wakes up".
+   */
+  homeRoomFor(agent) {
+    const want = this.agentHomes[agent];
+    if (!want) return null;
+    const room = this.room(want);
+    if (!room) return null;
+    if (room.entryApproval) return null;
+    return want;
   }
 
   /**

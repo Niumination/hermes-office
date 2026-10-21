@@ -210,6 +210,35 @@ export function officeOfRef(ref: RoomRef): OfficeId | undefined {
   return office === 'mac' || office === 'lightvela' ? office : undefined
 }
 
+/**
+ * Is this placement a real room, just in the office the viewer is not
+ * currently looking at?
+ *
+ * The two offices are one building on two screens. An agent in `mac/root`
+ * while the viewer is on the LightVela tab is somewhere perfectly well
+ * known — one tab away. The status bar used to fold this case together with
+ * genuinely unresolvable rooms and print "di ruangan tak dikenal" for both,
+ * which told the owner the office had lost track of its own fleet when the
+ * honest sentence was "look at the other tab".
+ */
+export function isInOtherOffice(ref: string | undefined, viewing: OfficeId): boolean {
+  if (!ref) return false
+  const room = roomByRef(ref as RoomRef)
+  return Boolean(room) && room!.office !== viewing
+}
+
+/**
+ * Did the server place this agent in a room this build has never heard of?
+ *
+ * Unlike isInOtherOffice this one IS a real gap, and it stays loud. Switching
+ * tabs will not find the agent; something upstream named a room that is not
+ * on either floor plan.
+ */
+export function isUnknownRoom(ref: string | undefined): boolean {
+  if (!ref) return false
+  return !roomByRef(ref as RoomRef)
+}
+
 // ---------------------------------------------------------------------------
 // Desks — a desk is a repository
 // ---------------------------------------------------------------------------

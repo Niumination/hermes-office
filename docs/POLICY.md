@@ -53,6 +53,61 @@ Override with `OFFICE_POLICY_FILE=/path/to/floorplan.json`. An unreadable or
 malformed file logs a warning and falls back to the built-in default — it never
 boots with no policy at all.
 
+## `OFFICE_AGENT_HOMES` — where an agent stands when it wakes up
+
+```bash
+OFFICE_AGENT_HOMES='mac=mac/root,cloud=lightvela/root,boss=mac/root'
+```
+
+Until 2026-10-21 every agent that proved it was alive was placed in
+`defaultRoom` and nowhere else. A working fleet therefore rendered as a crowd
+standing in **Belum dipetakan** while fifteen labelled rooms stayed empty —
+the floor plan is supposed to BE the policy, and it could not say where the
+Mac agent sits.
+
+This map is owner-authored, the same trust level as `OFFICE_POLICY_FILE`. It
+is read once at boot and applied the first time an agent is seen. Agents
+already placed are never moved by it.
+
+**It is not a way around the door gate.** Two refusals, both deliberate:
+
+| home points at | result |
+|---|---|
+| a room that does not exist | ignored → `defaultRoom`, boot line shows the shortfall |
+| a room with `entryApproval` (`mac/dinas`, `mac/vault`, `lightvela/infra`) | ignored → `defaultRoom` |
+
+Walking an agent through a gated door is still `POST /agents/:agent/room`
+with the owner token, which raises an approval a human has to answer.
+
+Placement from this map is recorded as `grantedBy: "home"`, distinct from
+`"auto"` (nobody knew) and `"owner"` (somebody decided). "The owner's config
+put it here" and "nobody knew where it goes" are different answers to an
+auditor and must not share a label.
+
+The boot line reports honoured-over-configured, so a typo is visible
+immediately instead of being discovered by watching agents pile up:
+
+```json
+{"log":"boot", …, "agentHomes":"3/5"}
+```
+
+Malformed entries (no `=`, empty side) are dropped with a warning rather than
+throwing: one typo must not stop the office from booting.
+
+## `boss` presence
+
+`boss` is in the permanent cast but nothing ever emitted an event attributable
+to it, so it had no heartbeat, was never placed, and read as permanently away.
+It is now marked present when an **owner session is authenticated** —
+`POST /auth/session` or an owner WebSocket connect — throttled to one event
+per 15 s.
+
+That is a true signal, not a decorative one: the boss is in the office when
+the boss is looking at it. It is deliberately NOT wired to every owner
+request, because polling `/presence` from a background tab must not keep a
+closed laptop looking occupied. The 90 s watchdog is what makes the away
+state honest.
+
 ## `POST /policy/check`
 
 The gate: is this tool permitted in this room, and does it need a human to

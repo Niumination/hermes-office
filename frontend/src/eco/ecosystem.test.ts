@@ -4,6 +4,7 @@ import {
   roomsOf, desksOf, agentsOf, deskAt, agentAt, roomAt,
   pinnedAgents, mayWorkAt, placeAgent, describePlacement,
   roomRef, roomByRef, officeOfRef,
+  isInOtherOffice, isUnknownRoom,
 } from './ecosystem'
 
 /**
@@ -257,5 +258,53 @@ describe('room references', () => {
     expect(roomAt('mac', 'root')).toBeDefined()
     expect(roomAt('mac', 'mac/root')).toBeUndefined()
     expect(roomAt('lightvela', 'lightvela/infra')).toBeUndefined()
+  })
+})
+
+// --- "elsewhere" is not "unknown" ------------------------------------------
+//
+// The status bar printed `N di ruangan tak dikenal` for every agent the
+// current screen could not draw — including agents standing in a named room
+// in the other office. Two offices, one building, two screens: "one tab away"
+// and "the server named a room that does not exist" are not the same fact and
+// must not share a sentence.
+
+describe('isInOtherOffice / isUnknownRoom', () => {
+  it('names a real room in the office the viewer is not looking at', () => {
+    expect(isInOtherOffice('mac/root', 'lightvela')).toBe(true)
+    expect(isInOtherOffice('lightvela/root', 'mac')).toBe(true)
+  })
+
+  it('is false for a room on the screen the viewer is already on', () => {
+    expect(isInOtherOffice('mac/root', 'mac')).toBe(false)
+    expect(isInOtherOffice('lightvela/infra', 'lightvela')).toBe(false)
+  })
+
+  it('does not claim an unresolvable room lives in the other office', () => {
+    // This is the whole point of the split: a room nobody can resolve must
+    // NOT be reported as "go look at the other tab", because it is not there.
+    expect(isInOtherOffice('fork/server-room', 'mac')).toBe(false)
+    expect(isUnknownRoom('fork/server-room')).toBe(true)
+  })
+
+  it('does not call a known room unknown, in either office', () => {
+    expect(isUnknownRoom('mac/root')).toBe(false)
+    expect(isUnknownRoom('lightvela/content')).toBe(false)
+  })
+
+  it('treats an unplaced agent as neither — that is what a ghost is', () => {
+    expect(isInOtherOffice(undefined, 'mac')).toBe(false)
+    expect(isUnknownRoom(undefined)).toBe(false)
+    expect(isInOtherOffice('', 'mac')).toBe(false)
+    expect(isUnknownRoom('')).toBe(false)
+  })
+
+  it('the two predicates never both answer true for the same placement', () => {
+    const refs = ['mac/root', 'lightvela/root', 'mac/vault', 'fork/lobby', 'nonsense', '', undefined]
+    for (const office of ['mac', 'lightvela'] as const) {
+      for (const r of refs) {
+        expect(isInOtherOffice(r, office) && isUnknownRoom(r)).toBe(false)
+      }
+    }
   })
 })

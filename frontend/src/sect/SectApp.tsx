@@ -23,6 +23,7 @@ import { useOfficeSocket } from '../hermes/useOfficeSocket'
 import { usePresence } from '../hermes/usePresence'
 import { formatLastSeen } from '../hermes/wib'
 import { targetRoomFor, agentForEnvelope } from '../hermes/eventMap'
+import { UNMAPPED_ROOM } from '../theme/sect'
 import type { HermesEnvelope } from '../hermes/types'
 import { fetchLadder, type PolicySnapshot } from '../theme/policyClient'
 import { platePath } from '../theme/plates'
@@ -35,6 +36,8 @@ import {
   OFFICES, roomsOf, roomAt, desksOf, type OfficeId,
   roomRef,
   roomByRef,
+  isInOtherOffice,
+  isUnknownRoom,
 } from '../eco/ecosystem'
 import Hall, { type Cultivator } from './Hall'
 import Chronicle from './Chronicle'
@@ -184,7 +187,15 @@ export const SectApp: React.FC = () => {
         : typeof e.tool === 'string' ? e.tool
         : typeof e.summary === 'string' ? e.summary
         : prev?.task
-    const where = targetRoomFor(e)
+    // An event that cannot say where the agent is must not CLAIM the agent
+    // moved. targetRoomFor returns UNMAPPED_ROOM when the envelope carries no
+    // machine it recognises, and writing that over a placement the server
+    // already gave us replaced a fact with a shrug: the office had cloud in
+    // lightvela/root, then cloud's own heartbeat demoted it to "ruangan tak
+    // dikenal". A live event is fresher than a snapshot only about things the
+    // event actually knows. Location is not one of them here.
+    const mapped = targetRoomFor(e)
+    const where = mapped === UNMAPPED_ROOM && prev?.room ? prev.room : mapped
     agentsRef.current.set(who, {
       id: who,
       room: where,
@@ -294,6 +305,26 @@ export const SectApp: React.FC = () => {
   }, [tracked])
   const presence = usePresence({ heartbeats })
 
+  /**
+   * The freshest sighting we have for an agent: the socket's, or the
+   * server's, whichever is newer.
+   *
+   * `t.seen` is 0 for every agent seeded from the floor plan, deliberately —
+   * a placement says where an agent stands, never that it is awake. But the
+   * server DOES know who is awake, and it says so in `GET /presence`. Reading
+   * only `t.seen` meant the office drew three live agents greyed out as
+   * `away` and printed `MURID 0` over them, while `/presence` answered
+   * `online: true` for all three. Two sources, one question, and the UI was
+   * using the one that did not know the answer.
+   *
+   * Same rule as usePresence itself: newest wins, never an average and never
+   * the first one that happens to be non-zero.
+   */
+  const seenOf = useCallback(
+    (t: { id: string; seen: number }) => Math.max(t.seen, presence[t.id]?.lastSeenTs ?? 0),
+    [presence],
+  )
+
   // Roster = everyone the socket has seen, PLUS everyone the server knows
   // about. Deliberately asymmetric with the hall: presence says who is alive,
   // not where they are, and drawing an agent into a hall on that evidence
@@ -324,11 +355,11 @@ export const SectApp: React.FC = () => {
   const occupancy = useMemo(() => {
     const o: Record<string, number> = {}
     for (const t of tracked) {
-      if (now - t.seen > PRESENT_MS) continue
+      if (now - seenOf(t) > PRESENT_MS) continue
       o[t.room] = (o[t.room] ?? 0) + 1
     }
     return o
-  }, [tracked, now])
+  }, [tracked, now, seenOf])
 
   const roleOf = useMemo(() => {
     const m: Record<string, string | undefined> = {}
@@ -342,10 +373,10 @@ export const SectApp: React.FC = () => {
   const here = roomRef(office, room)
   const cultivators: Cultivator[] = tracked
     .filter((t) => t.room === here)
-    .sort((a, b) => b.seen - a.seen)
+    .sort((a, b) => seenOf(b) - seenOf(a))
     .map((t) => {
       const state: Cultivator['state'] =
-        now - t.seen > PRESENT_MS ? 'away' : t.working ? 'working' : 'idle'
+        now - seenOf(t) > PRESENT_MS ? 'away' : t.working ? 'working' : 'idle'
       return {
         id: t.id,
         name: t.id,
@@ -389,18 +420,35 @@ export const SectApp: React.FC = () => {
   }, [rosterAgents, tracked, presence, room, ladder])
 
   /**
-   * Agents the server HAS placed, in a room this office cannot draw.
+   * Agents the server HAS placed, in a room this screen is not showing.
    *
    * Distinct from ghosts, which are placed nowhere at all. These have a
-   * location; it just is not one of ours. While the server still answers in
-   * the fork's vocabulary this is where most of the fleet lands, and saying
-   * so out loud is the point: the alternative is an empty-looking court with
-   * no stated reason, which is the exact failure the floor plan was rebuilt
-   * to end.
+   * location; it is just not on this screen.
+   *
+   * Split in two, because collapsing them printed a falsehood. The two
+   * offices are one building shown on two screens, so an agent standing in
+   * `mac/root` while the viewer is looking at LightVela is NOT in an unknown
+   * room — it is in a room with a name, a floor, and a plate, one tab away.
+   * Calling that "ruangan tak dikenal" told the owner the office had lost
+   * track of its own fleet when the truth was "look at the other tab".
+   *
+   * `elsewhere` resolves to a real room in the other office — we can name it.
+   * `strays` does not resolve at all — the server placed the agent somewhere
+   * this build has never heard of, and saying so out loud is still the point.
    */
-  const strays = useMemo(
-    () => tracked.filter((t) => t.room && roomByRef(t.room)?.office !== office),
+  const elsewhere = useMemo(
+    () => tracked.filter((t) => isInOtherOffice(t.room, office)),
     [tracked, office],
+  )
+  const strays = useMemo(
+    () => tracked.filter((t) => isUnknownRoom(t.room)),
+    [tracked],
+  )
+
+  /** Which other offices `elsewhere` agents are in, named, for the label. */
+  const elsewhereOffices = useMemo(
+    () => [...new Set(elsewhere.map((t) => roomByRef(t.room)!.office))],
+    [elsewhere],
   )
 
   // Signed out means the server answered 401 and there is no ladder at all.
@@ -567,10 +615,20 @@ export const SectApp: React.FC = () => {
               {ghosts.length} belum terlihat
             </span>
           )}
+          {elsewhere.length > 0 && (
+            <span
+              className="sect-status__item sect-status__item--dim"
+              title={`Berdiri di kantor lain: ${
+                [...new Set(elsewhere.map((t) => t.room))].join(', ')
+              }`}
+            >
+              {elsewhere.length} di {elsewhereOffices.map((o) => OFFICES[o].label).join(' / ')}
+            </span>
+          )}
           {strays.length > 0 && (
             <span
               className="sect-status__item sect-status__item--dim"
-              title={`Ditempatkan server di ruangan yang tidak ada di kantor ini: ${
+              title={`Ditempatkan server di ruangan yang tidak dikenal build ini: ${
                 [...new Set(strays.map((t) => t.room))].join(', ')
               }`}
             >

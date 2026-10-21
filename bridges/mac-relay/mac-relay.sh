@@ -25,7 +25,20 @@ AUDIT_LOG="${AUDIT_LOG:-$HOME/.hermes/a2a_audit.jsonl}"
 LOGFILE="${LOGFILE:-$HOME/Library/Logs/office-relay.log}"
 HEARTBEAT_EVERY=30
 
-log() { echo "$(date '+%F %T') $*" >> "$LOGFILE"; }
+# Every diagnostic this script produces goes to $LOGFILE and nowhere else,
+# including the FATAL that fires when there is no token. If the directory does
+# not exist the append silently fails and the operator gets a relay that
+# appears to start and explains nothing — which is how a missing token reads
+# as "the office is just quiet". Create the directory, and fall back to a
+# path that is always writable if we cannot.
+mkdir -p "$(dirname "$LOGFILE")" 2>/dev/null \
+  || LOGFILE="${TMPDIR:-/tmp}/office-relay.log"
+if ! touch "$LOGFILE" 2>/dev/null; then
+  LOGFILE="${TMPDIR:-/tmp}/office-relay.log"
+  touch "$LOGFILE" 2>/dev/null || true
+fi
+
+log() { echo "$(date '+%F %T') $*" >> "$LOGFILE" 2>/dev/null; }
 
 read_token() {
   if [ -n "${OFFICE_MAC_TOKEN:-}" ]; then return 0; fi

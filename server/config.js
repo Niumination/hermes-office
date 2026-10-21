@@ -124,7 +124,46 @@ export const config = {
   // owner-authored; nothing in a request can point this somewhere else.
   desksFile: process.env.OFFICE_DESKS_FILE || "",
   desksPollMs: parseInt(process.env.OFFICE_DESKS_POLL_MS || "30000", 10),
+
+  // --- Where an agent lives ----------------------------------------------
+  // `OFFICE_AGENT_HOMES=mac=mac/root,cloud=lightvela/root,boss=mac/root`
+  //
+  // Until this existed, every agent that proved it was alive was placed in
+  // `defaultRoom` and nowhere else, so a working fleet rendered as a crowd
+  // standing in "Belum dipetakan" while twelve labelled rooms stayed empty.
+  // The floor plan is the policy; a floor plan that cannot say where the
+  // Mac agent sits is not describing this building.
+  //
+  // This is owner-authored configuration — the same trust level as
+  // OFFICE_POLICY_FILE — and it is still NOT a way around the door gate:
+  // a home pointing at a room with `entryApproval` is refused at placement
+  // time and the agent falls back to defaultRoom. See policy.homeRoomFor().
+  agentHomes: parseAgentHomes(process.env.OFFICE_AGENT_HOMES || ""),
 };
+
+/**
+ * Parse `a=room,b=room` into a map. Malformed entries are dropped with a
+ * warning rather than throwing: a typo in one agent's home must not stop the
+ * office from booting, and a silent drop would be worse than a loud one.
+ * Room *names* are not validated here — config.js does not know the policy.
+ */
+export function parseAgentHomes(raw) {
+  const out = {};
+  for (const part of String(raw).split(",")) {
+    const entry = part.trim();
+    if (!entry) continue;
+    const eq = entry.indexOf("=");
+    if (eq <= 0 || eq === entry.length - 1) {
+      console.warn(`[config] OFFICE_AGENT_HOMES: entri diabaikan (bukan agen=ruang): ${entry}`);
+      continue;
+    }
+    const agent = entry.slice(0, eq).trim();
+    const room = entry.slice(eq + 1).trim();
+    if (!agent || !room) continue;
+    out[agent] = room;
+  }
+  return out;
+}
 
 try { mkdirSync(config.dataDir, { recursive: true }); } catch {}
 

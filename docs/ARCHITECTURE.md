@@ -36,8 +36,8 @@ Tiga pilar yang sudah berdiri:
 ### Server (`server/`, ~4.300 baris)
 
 ```
-index.js      1289   entry: HTTP + WS + static, semua rute, shutdown bersih
-policy.js     613   Fase 3 — denah lantai sebagai kebijakan, persetujuan
+index.js      1342   entry: HTTP + WS + static, semua rute, shutdown bersih
+policy.js     650   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 eventbus.js   384   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       397   Fase 1 — OTel GenAI → event Hermes
 ledger.js     422   Fase 4 — rantai hash append-only
@@ -48,7 +48,7 @@ dossier.js    355   Fase 4 — rantai → dokumen untuk petugas kepatuhan
 chat.js       240   rute /chat/*, proxy gateway Hermes (SSE → WS)
 desks.js      393   Fase 5 — pos jaga eksternal; tahap 2: aksi berpagar (argv, cooldown, requireOwner)
 proof.js      140   Fase 6 — bukti: gerbang tercatat + pengikatan bundel yang disajikan
-config.js     141   seluruh konfigurasi env, validasi wajib saat boot
+config.js     180   seluruh konfigurasi env, validasi wajib saat boot
 github.js     116   poller repo (mati kecuali token DAN org terisi)
 chat-db.js    101   SQLite (WAL) untuk riwayat chat
 auth.js       221   Bearer per-sumber, SHA-256
@@ -255,8 +255,8 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **306** | `npm test` |
-| Frontend | **232** | `cd frontend && npx vitest run` |
+| Backend | **314** | `npm test` |
+| Frontend | **242** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

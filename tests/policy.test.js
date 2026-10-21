@@ -418,3 +418,85 @@ test("placing an agent in the default room puts it in that room's occupants", ()
   assert.deepEqual(after.occupants.map((o) => o.agent), ["cloud"]);
   assert.equal(after.occupants[0].grantedBy, "auto");
 });
+
+// --- home rooms ------------------------------------------------------------
+//
+// OFFICE_AGENT_HOMES answers "where does this agent stand when it wakes up".
+// Before it existed, every live agent was placed in the holding room and the
+// twelve labelled rooms rendered empty on a working instance.
+
+test("homeRoomFor returns the configured room", () => {
+  const { p } = mk({ agentHomes: { mac: "mac/root", cloud: "lightvela/root" } });
+  assert.equal(p.homeRoomFor("mac"), "mac/root");
+  assert.equal(p.homeRoomFor("cloud"), "lightvela/root");
+});
+
+test("homeRoomFor returns null for an agent with no home", () => {
+  const { p } = mk({ agentHomes: { mac: "mac/root" } });
+  assert.equal(p.homeRoomFor("stranger"), null);
+});
+
+test("homeRoomFor refuses a room that does not exist", () => {
+  // A typo must not invent a room, and must not strand the agent off the
+  // floor plan either — the caller falls back to defaultRoom on null.
+  const { p } = mk({ agentHomes: { mac: "mac/roooot" } });
+  assert.equal(p.homeRoomFor("mac"), null);
+});
+
+test("homeRoomFor refuses a room behind an entry gate", () => {
+  // This is the whole reason the function exists rather than a bare map
+  // lookup. mac/dinas and lightvela/infra carry entryApproval: a human signs
+  // off on entering. A config line must not walk an agent through that door.
+  const { p } = mk({ agentHomes: { asn: "mac/dinas", ops: "lightvela/infra" } });
+  assert.equal(p.room("mac/dinas").entryApproval, true);
+  assert.equal(p.room("lightvela/infra").entryApproval, true);
+  assert.equal(p.homeRoomFor("asn"), null);
+  assert.equal(p.homeRoomFor("ops"), null);
+});
+
+test("an owner can still move an agent into a gated room by hand", () => {
+  // The refusal above must not be mistaken for "gated rooms are unreachable".
+  // The owner path raises an approval, a human answers, the agent moves.
+  const { p } = mk({ agentHomes: { asn: "mac/dinas" } });
+  const r = p.assign("asn", "mac/dinas", "owner");
+  assert.equal(r.ok, false);
+  assert.equal(r.pending, true);
+  p.resolveApproval(r.approvalId, true, "owner");
+  assert.equal(p.roomFor("asn"), "mac/dinas");
+});
+
+test("placement by home is recorded as grantedBy 'home', not 'auto'", () => {
+  // "The owner's config put it here" and "nobody knew where it goes" are
+  // different answers to an auditor, so they must not share a label.
+  const { p } = mk({ agentHomes: { mac: "mac/root" } });
+  p.assign("mac", p.homeRoomFor("mac") || p.defaultRoom(), "home");
+  const room = p.snapshot().rooms.find((r) => r.room === "mac/root");
+  assert.deepEqual(room.occupants.map((o) => o.agent), ["mac"]);
+  assert.equal(room.occupants[0].grantedBy, "home");
+});
+
+test("no homes configured leaves the previous behaviour exactly as it was", () => {
+  const { p } = mk();
+  assert.equal(p.homeRoomFor("mac"), null);
+  p.assign("mac", p.homeRoomFor("mac") || p.defaultRoom(), "auto");
+  assert.equal(p.roomFor("mac"), "belum-dipetakan");
+});
+
+// --- OFFICE_AGENT_HOMES parsing -------------------------------------------
+
+test("parseAgentHomes reads agent=room pairs and ignores junk", async () => {
+  const { parseAgentHomes } = await import("../server/config.js");
+  assert.deepEqual(parseAgentHomes("mac=mac/root,cloud=lightvela/root"), {
+    mac: "mac/root",
+    cloud: "lightvela/root",
+  });
+  // Whitespace is an operator's, not a typo.
+  assert.deepEqual(parseAgentHomes(" mac = mac/root , boss = mac/root "), {
+    mac: "mac/root",
+    boss: "mac/root",
+  });
+  assert.deepEqual(parseAgentHomes(""), {});
+  // A malformed entry is dropped, not thrown: one typo must not stop the
+  // office from booting. It is warned about, which is the loud part.
+  assert.deepEqual(parseAgentHomes("mac,=room,agent=,ok=mac/labs"), { ok: "mac/labs" });
+});

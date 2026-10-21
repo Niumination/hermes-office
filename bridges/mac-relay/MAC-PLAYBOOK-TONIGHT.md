@@ -82,24 +82,82 @@ launchctl load ~/Library/LaunchAgents/com.niumination.office-relay.plist
 # (scan ~/Desktop/Niumination tiap 60s → event git_push)
 ```
 
-## TAHAP 5 — Bukti akhir (lapor balik ke cloud)
+## TAHAP 4f — SISI SERVER: beri tahu kantor di mana `mac` berdiri
 
-Kumpulkan dan laporkan:
-1. `lsof -iTCP:9900 -sTCP:LISTEN` (setelah Tahap 2) — listen di IP Tailscale
-2. `grep -c '^A2A_BEARER_TOKEN=' ~/.hermes/.env` → 1 ; `plutil -lint` → OK
-3. `launchctl list | grep office` → PID ada
-4. `tail -5 ~/Library/Logs/office-relay.log` → heartbeat terkirim
+Tanpa langkah ini relay akan berhasil dan agennya tetap mendarat di
+**Belum dipetakan**, bukan di Root Ekosistem. Di mesin yang menjalankan
+office-server, tambahkan satu baris env lalu restart:
+
+```bash
+OFFICE_AGENT_HOMES='mac=mac/root,cloud=lightvela/root,boss=mac/root'
+```
+
+Bukti baris boot menerimanya — angka kiri harus sama dengan angka kanan:
+
+```bash
+# di log boot office-server
+… "agentHomes":"3/3"
+```
+
+`3/2` atau `2/3` berarti ada home yang menunjuk ruang tak dikenal atau ruang
+bergerbang; lihat `docs/POLICY.md`.
+
+---
+
+## TAHAP 5 — Bukti akhir: BERHENTI DI LAYAR, BUKAN DI `launchctl`
+
+`launchctl list | grep office` yang mengembalikan PID hanya membuktikan ada
+proses hidup. Ia tidak membuktikan tokennya benar, tidak membuktikan event
+sampai, dan tidak membuktikan ada yang terlihat. Relay dengan token basi
+memberi PID yang sama persis dengan relay yang bekerja — itulah cara
+kegagalan ini bertahan berhari-hari.
+
+Rantai buktinya ada empat mata, dan **tiga pertama tidak boleh dilaporkan
+tanpa yang keempat**:
+
+```bash
+# 1. proses hidup (perlu, jauh dari cukup)
+launchctl list | grep office
+
+# 2. relay tidak sedang membuang event — DROP = token salah atau URL salah
+tail -20 ~/Library/Logs/office-relay.log | grep -c DROP   # harus 0
+
+# 3. server benar-benar menganggap mac hidup
+curl -s http://<office-host>:7333/presence \
+  -H "Authorization: Bearer $OFFICE_OWNER_TOKEN" | python3 -m json.tool
+#    -> "mac": { "online": true, ... }
+
+# 4. server menempatkan mac di ruang yang benar
+curl -s http://<office-host>:7333/policy \
+  -H "Authorization: Bearer $OFFICE_OWNER_TOKEN" \
+  | python3 -c 'import json,sys; [print(r["room"],"->",[o["agent"] for o in r.get("occupants",[])]) for r in json.load(sys.stdin)["rooms"] if r.get("occupants")]'
+#    -> mac/root -> ['"'"'mac'"'"']
+```
+
+Mata rantai terakhir, dan satu-satunya yang menjawab pertanyaan aslinya:
+**buka kantornya, tab 💻 Mac, dan lihat `mac` berdiri di Root Ekosistem.**
+Kalau ia tidak ada di layar, tiga langkah di atas tidak berarti apa-apa.
+
+Lapor balik juga:
+- `lsof -iTCP:9900 -sTCP:LISTEN` (setelah Tahap 2) — listen di IP Tailscale
+- `grep -c '^A2A_BEARER_TOKEN=' ~/.hermes/.env` → 1 ; `plutil -lint` → OK
 
 ---
 
 ## Checklist status akhir yang akan cloud verifikasi dari sisi server
 
-- [ ] Karakter **Hermes Mac 💻 online** di Hermes Office (heartbeat 30s masuk)
+- [ ] `/presence` menyebut `mac` dengan `online: true`
+- [ ] `/policy` menempatkan `mac` di `mac/root` dengan `grantedBy: "home"`
+- [ ] Karakter **mac** TERLIHAT berdiri di Root Ekosistem pada tab 💻 Mac
 - [ ] Event `a2a_task_in` muncul saat ada aktivitas A2A
 - [ ] (Opsional) **Octo 🐙** versi Mac muncul saat ada git_push dari repo Mac
 
 ## Catatan penting
 
 - **Jangan pernah** menyalin token ke chat/commit/screenshot. Laporkan hanya hasil (status/exit code).
+- Kalau `office-relay.log` tidak pernah terbentuk, relay akan tetap jalan: ia
+  kini membuat `~/Library/Logs` bila perlu dan jatuh ke `$TMPDIR` bila tidak
+  bisa. Dulu `FATAL: no OFFICE_MAC_TOKEN` ditulis ke berkas yang tidak bisa
+  ditulis, sehingga token yang hilang terbaca sebagai "kantornya memang sepi".
 - Kalau `launchctl kickstart` gagal karena format label, gunakan: `launchctl bootout gui/$(id -u)/ai.hermes.gateway 2>/dev/null; launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/ai.hermes.gateway.plist`
 - Restart Hermes gateway lengkap (lewat dashboard LightVela untuk cloud) TIDAK diperlukan — kickstart launchd Mac cukup.

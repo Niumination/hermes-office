@@ -43,10 +43,27 @@ export function isKnownEventType(type: string): boolean {
  */
 export function targetRoomFor(env: HermesEnvelope): RoomRef {
   const d = env as any
-  const machine = (who: unknown): RoomRef =>
-    who === 'mac' ? roomRef('mac', 'root')
-      : who === 'cloud' ? roomRef('lightvela', 'root')
+  // `agent` is a bare string ("mac") OR the object form {name, id, role} that
+  // the event contract also allows — the cloud hook sends the object, the mac
+  // relay sends the string. Comparing the raw value meant every object-form
+  // event resolved to UNMAPPED_ROOM, so the cloud agent was placed correctly
+  // by the server and then immediately displaced by its own heartbeat.
+  // agentForEnvelope() below already learned this lesson; this function had
+  // the same bug and nothing caught it, because both halves have to be wrong
+  // the same way before anything visibly breaks.
+  const nameOf = (who: unknown): string =>
+    typeof who === 'string'
+      ? who
+      : who && typeof who === 'object'
+        ? String((who as { name?: unknown; id?: unknown }).name ??
+                 (who as { id?: unknown }).id ?? '')
+        : ''
+  const machine = (who: unknown): RoomRef => {
+    const n = nameOf(who)
+    return n === 'mac' ? roomRef('mac', 'root')
+      : n === 'cloud' ? roomRef('lightvela', 'root')
       : UNMAPPED_ROOM
+  }
   switch (env.type) {
     case 'service_status':
       return d.host === 'mac' ? roomRef('mac', 'root') : roomRef('lightvela', 'infra')

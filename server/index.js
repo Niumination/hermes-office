@@ -339,6 +339,7 @@ if (config.policyFile) {
 
 const floor = new FloorPlanPolicy(policyDoc, {
   approvalTtlMs: Math.max(1, config.approvalTtlMin) * 60_000,
+  agentHomes: config.agentHomes,
   onEvent: (ev) => {
     emitInternal(ev);
     // One hook covers all three governance events, so a new event type cannot
@@ -799,6 +800,7 @@ app.get("/roster", requireAny, (_req, res) => {
     const sid = createSession(getBearer(req));
     if (!sid) return res.status(429).json({ error: "Terlalu banyak sesi" });
     res.setHeader("Set-Cookie", sessionCookieHeader(sid, { secure: isSecureRequest(req) }));
+    if (identity.role === "owner") markOwnerPresent();
     res.json({ ok: true, role: identity.role });
   });
 
@@ -1087,6 +1089,12 @@ wss.on("connection", (ws, req) => {
   // Handshake (EVENTS.md §7)
   ws.send(JSON.stringify(bus.hello()));
 
+  // AFTER the handshake, never before. markOwnerPresent() broadcasts, and
+  // this socket is already in wsClients, so marking first made the very first
+  // frame a `event` instead of `hello` — a protocol violation for every
+  // client, caught by the integration test that reads frame 1 by position.
+  if (identity.role === "owner") markOwnerPresent();
+
   ws.on("close", () => wsClients.delete(ws));
   ws.on("error", () => wsClients.delete(ws));
   ws.on("message", (raw) => {
@@ -1104,6 +1112,36 @@ wss.on("connection", (ws, req) => {
 
 const lastHeartbeat = new Map(); // agent -> ts
 const lastSeenTs = new Map(); // agent -> ts (kept after away, for "terakhir aktif HH:MM")
+
+/**
+ * The boss is in the office when the boss is looking at it.
+ *
+ * `boss` is in PERMANENT_CAST, so it has always appeared in /roster — but
+ * nothing ever emitted an event attributable to it, so it never had a
+ * heartbeat, never got placed, and rendered as a permanently-away name in a
+ * list. Every other agent on the floor earns its presence by doing something
+ * the server can see; this is the owner's equivalent, and it is a true
+ * signal rather than a decorative one: an owner session was authenticated
+ * just now.
+ *
+ * Deliberately NOT wired to every owner request. Presence means "someone is
+ * here", and the two moments that actually mean that are opening a session
+ * and holding a socket. Polling /presence in a background tab should not
+ * keep a closed laptop looking occupied — the 90s watchdog is what makes the
+ * away state honest, and a per-request hook would defeat it.
+ */
+let lastOwnerMark = 0;
+function markOwnerPresent() {
+  const now = Date.now();
+  if (now - lastOwnerMark < 15_000) return; // one event per socket storm
+  lastOwnerMark = now;
+  emitInternal({
+    type: "agent_status",
+    agent: { name: "boss", id: "boss", role: "reviewer" },
+    state: "idle",
+    ts: now,
+  });
+}
 
 bus.on("event", (ev) => {
   // Any event attributable to an agent proves it is alive. Previously only
@@ -1155,7 +1193,12 @@ bus.on("event", (ev) => {
   // rather than relying on that, because a future caller should be able to
   // see the recursion is handled without tracing the event bus.
   if (!floor.isAssigned(agent)) {
-    floor.assign(agent, floor.defaultRoom(), "auto");
+    // Where it belongs if the owner said so, otherwise the holding room.
+    // `grantedBy` keeps the two apart in the ledger and in GET /policy,
+    // because "the owner's config put it here" and "nobody knew where it
+    // goes" are different answers to an auditor.
+    const home = floor.homeRoomFor(agent);
+    floor.assign(agent, home || floor.defaultRoom(), home ? "home" : "auto");
   }
 });
 
@@ -1216,6 +1259,16 @@ httpServer.listen(config.port, config.host, () => {
         // never have to read source to find out whether that is on.
         autoSession: autoSessionEnabled() ? "network" : (accessConfigured() ? "off" : "off"),
         cfAccess: accessConfigured() ? "on" : "off",
+          // How many agents have a home room, and how many of those the
+          // policy actually honours. The two differ when a home names an
+          // unknown or gated room, and an operator should read that at boot
+          // instead of discovering it by watching agents pile up in the
+          // holding room.
+          agentHomes: (() => {
+            const want = Object.keys(config.agentHomes || {});
+            if (want.length === 0) return "off";
+            return `${want.filter((a) => floor.homeRoomFor(a)).length}/${want.length}`;
+          })(),
     })
   );
 });
