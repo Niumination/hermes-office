@@ -65,7 +65,7 @@ Yang ada: `GET /ledger`, `GET /ledger/head`, `GET /ledger/verify`,
 `GET /ledger/anchors`, `POST /ledger/anchor` — semuanya `requireOwner`.
 
 Tidak ada jalur tulis manual. Ledger diisi **dari jalur keputusan**
-(`POST /policy/check`, `POST /budget/check`). Itulah desainnya.
+(`POST /policy/check`). Itulah desainnya.
 
 ### 2.4 `synchronous: NATIVE` — bukan mode SQLite
 
@@ -99,7 +99,7 @@ Broadcast sudah disaring untuk tamu.
 
 ### 2.7 `OFFICE_GUEST_TOKEN` — bukan "hanya temperature view"
 
-Tamu punya akses ke **10 rute `requireAny`**: `/burn`, `/policy`, `/approvals`,
+Tamu punya akses ke **10 rute `requireAny`**: `/policy`, `/approvals`,
 `/kiosk`, `/roster`, `/presence`, `/chat`, `/desks`, `/proof`, dan keluarga
 OTLP. Yang membatasi adalah **redaksi angka**, bukan penolakan halaman.
 
@@ -150,7 +150,7 @@ Tidak ada awalan `/api` di mana pun. Rute baru **wajib** didaftarkan di
 
 ## 3. Yang benar dari versi lama (tetap dikerjakan)
 
-- ✅ `POST /budget/check` adalah enforcement, bukan observability.
+- ✅ `POST /policy/check` adalah enforcement, bukan observability.
 - ✅ Default `ALLOWED_ORIGINS` mencakup 3333/5173/7333 (`server/config.js:63`).
   Sejarahnya benar seperti dikhawatirkan: dulu 5173 saja → WS 403 tiap
   `npm run dev`, terlihat seperti "socket flaky".
@@ -209,8 +209,9 @@ menjalankan satu perintah dan mendapat 18/18.
 
 ## 5. Arah produk (keputusan 12 Okt 2026)
 
-Hermes Office adalah **produk tata kelola armada agen yang dijual**
-($0 / $39 / $299 / $2.000+). Kebutuhan monitoring agroclimate Niu Gayo hidup
+Hermes Office adalah **alat tata kelola armada agen**. (Empat tingkat harga
+yang dulu tertulis di sini dicabut 20 Okt 2026 — satu pemilik, satu token,
+tidak ada yang dijual.) Kebutuhan monitoring agroclimate Niu Gayo hidup
 sebagai **satu contoh konfigurasi** desk eksternal, bukan kode khusus
 `@mitigasi`.
 

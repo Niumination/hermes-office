@@ -2,7 +2,7 @@
 
 - **Fase 0** — perbaikan fondasi (di bawah)
 - **Fase 1** — ingest OTLP ([lompat ke bagian ini](#fase-1--ingest-otlp))
-- **Fase 2** — burn-rate governance ([lompat ke bagian ini](#fase-2--burn-rate-governance))
+- **Fase 2** — ~~burn-rate governance~~ **dicabut 20 Okt 2026** ([lompat ke bagian ini](#fase-2--burn-rate-governance--dicabut-seluruhnya-2026-10-20))
 - **Fase 3** — policy as floor plan ([lompat ke bagian ini](#fase-3--policy-as-floor-plan))
 - **Fase 4** — flight recorder & compliance dossier ([lompat ke bagian ini](#fase-4--flight-recorder--compliance-dossier))
 - **Audit pra-Fase 4** — regresi kebocoran guest & utang P3 ([lompat ke bagian ini](#audit-pra-fase-4--perbaikan-regresi--utang-okt-2026))
@@ -290,20 +290,12 @@ server menyintesis `agent_spawned` (ditandai `synthetic: true`), mendaftarkannya
 ke watchdog liveness, dan memasukkannya ke `GET /roster` agar tetap tampil
 setelah halaman dimuat ulang.
 
-## Atribusi biaya
+## ~~Atribusi biaya~~ — DICABUT 2026-10-20
 
-`tool_done`, `agent_finished`, dan `mcp_call` kini membawa `inputTokens`,
-`outputTokens`, `totalTokens`, dan `costUsd`.
-
-- Biaya yang dilaporkan provider (`gen_ai.usage.cost`) selalu menang.
-- Selain itu diestimasi dari `server/pricing.js` dengan pencocokan prefiks
-  terpanjang, sehingga `gpt-4o-mini-2024-07-18` tidak pernah ditagih dengan
-  tarif `gpt-4`.
-- Provider lokal (`ollama`, `vllm`, `llamacpp`, `lmstudio`) → `0`.
-- Model tak dikenal → **tidak ada** `costUsd`, bukan angka yang salah.
-
-Ini estimasi untuk visualisasi dan sinyal anggaran, bukan penagihan. Diskon
-cached-token dan batch belum dimodelkan, jadi angkanya condong lebih tinggi.
+Bagian ini mencatat `costUsd` pada `tool_done`/`agent_finished`/`mcp_call`,
+kemenangan `gen_ai.usage.cost` atas estimasi, dan tabel harga prefiks-terpanjang
+di `server/pricing.js`. Seluruhnya dihapus; `server/pricing.js` tidak ada lagi
+dan ingest OTLP membuang atribut biaya.
 
 ## Privasi
 
@@ -346,161 +338,34 @@ node --test tests/     50/50 lulus, keluar 3,6 dtk
 ```
 
 28 test baru: 22 di `tests/otlp.test.js` (decoding primitif, presisi nanodetik
-19 digit, tiga generasi atribut, pemetaan span, kebocoran konten, batas batch,
-tarif harga) dan 6 di `tests/integration.test.js` (auth, bentuk respons OTLP,
-atribusi biaya end-to-end, auto-spawn, penolakan protobuf, span non-GenAI).
+19 digit, tiga generasi atribut, pemetaan span, kebocoran konten, batas batch)
+dan 6 di `tests/integration.test.js` (auth, bentuk respons OTLP, auto-spawn,
+penolakan protobuf, span non-GenAI). Test tarif harga dan atribusi biaya
+dicabut 20 Okt 2026.
 
 ## Berkas baru
 
-`server/otlp.js`, `server/pricing.js`, `tests/otlp.test.js`, `docs/OTLP.md`.
+`server/otlp.js`, `tests/otlp.test.js`, `docs/OTLP.md` — dan `server/pricing.js`,
+yang dihapus 20 Okt 2026.
 
 ---
 
-# Fase 2 — Burn-Rate Governance
+# ~~Fase 2 — Burn-Rate Governance~~ — DICABUT SELURUHNYA 2026-10-20
 
-Data biaya sudah mengalir sejak Fase 1. Fase ini mengubahnya dari *angka yang
-dilaporkan* menjadi *batas yang ditegakkan* — lalu merendernya sebagai fisika
-ruangan.
+Fase ini membangun `server/burnrate.js` (442 baris): tangga keadaan
+`normal → warm → hot → critical → tripped`, aksi
+`allow | advise | restrict | throttle | deny`, event `budget_state`, rute
+`GET /burn` dan `POST /budget/check`, plafon per agen dan global, serta
+lapisan fisika suhu di UI yang membaca keadaan itu.
 
-Dokumentasi lengkap: `docs/BURN-RATE.md`.
+**Semuanya dihapus atas perintah pemilik, dan buktinya membenarkan perintah
+itu: lapisan ini tidak pernah menolak apa pun di produksi.** `burn.record()`
+tidak pernah terpanggil — `hermes_emit.py` tak pernah mengirim `costUsd`,
+jalur OTLP yang bisa menaksir biaya tak pernah dinyalakan, dan nol berkas di
+`bridges/` memanggil `/policy/check` atau `/budget/check`.
 
-## Mengapa penegakan, bukan grafik lagi
-
-Observability melapor setelah fakta. Saat grafik menunjukkan loop liar, uangnya
-sudah habis — ada insiden 2026 terdokumentasi yang membakar puluhan ribu dolar
-dalam satu akhir pekan sebelum ada yang melihat.
-
-- IDC (Des 2025): **96% perusahaan melampaui proyeksi biaya AI**, hanya **44%**
-  yang punya pagar finansial apa pun.
-- **Tidak ada framework agen besar yang menyertakan batas dolar bawaan.**
-- OWASP mencatatnya sebagai **LLM10 — Unbounded Consumption / "Denial of Wallet"**.
-
-Maka anggaran harus bisa dijawab **di jalur permintaan**, dalam mikrodetik,
-dari memori. Itulah `POST /budget/check`.
-
-## Menyetir, bukan menghentikan
-
-Riset TokenOps Microsoft menemukan tata kelola tingkat-run yang **menyetir** —
-turunkan model, pendekkan konteks, buang tool call opsional — memangkas biaya
-per tugas **~78%** sekaligus menaikkan penyelesaian dari **67% ke 96%**.
-Penghentian keras melakukan kebalikannya: ia "menghemat" dengan menggagalkan
-pekerjaan, yang hanya memindahkan biayanya ke manusia.
-
-| Rasio | Status | Perilaku |
-|---|---|---|
-| < 50% | `normal` | izinkan |
-| < 75% | `warm` | izinkan, sarankan model lebih murah |
-| < 90% | `hot` | izinkan model murah, **tolak premium** |
-| < 100% | `critical` | batasi ke tier termurah |
-| ≥ 100% | `tripped` | **tolak**, sertakan `retryAfterS` |
-
-Tiga cakupan dievaluasi bersamaan — **yang paling ketat yang berlaku**: per-agen
-per jam, global per jam, global per hari.
-
-## Endpoint baru
-
-- **`POST /budget/check`** — keputusan penegakan. Selalu `200`, bahkan saat
-  menolak: ini jawaban kebijakan, bukan kegagalan transport. Mengembalikan
-  `429`/`402` akan membuat klien HTTP yang taat aturan mengulang keputusan yang
-  tidak akan berubah. Baca `allow`.
-- **`GET /burn`** — snapshot global dan per-agen: belanja, batas, rasio, status,
-  jumlah panggilan dan token, plus kebijakan aktif.
-
-`estimatedUsd` penting: biaya proyeksi panggilan **ini** ikut dihitung, jadi
-pemanggil dihentikan **tepat di** batas, bukan satu panggilan setelahnya.
-
-## Akuntansi
-
-Setiap event yang membawa `costUsd` memberi makan tracker — span OTLP maupun
-event bridge Hermes. Jendela waktu memakai ring buffer resolusi tetap (60 bucket
-per jam, 96 per hari), jadi **memori terbatas berapa pun volume trafiknya**;
-tidak ada daftar transaksi yang tumbuh. Ada test yang menjalankan 20.000
-transaksi dan memastikan strukturnya tetap 60 dan 96 slot.
-
-## Event `budget_state`
-
-Perlintasan ambang disiarkan sebagai event, jadi kantor bereaksi langsung tanpa
-polling. Hanya **transisi** yang dipancarkan, bukan setiap transaksi.
-
-`budget_state` bersifat **internal-only**. Bridge yang mencoba mem-POST-nya ke
-`/event` mendapat `400 … is internal-only`. Status anggaran otoritatif di sisi
-server: bridge yang disusupi tidak boleh bisa memalsukan "aman" atau memutus
-breaker agen lain.
-
-## Lapisan fisika
-
-`BurnOverlay.tsx` membaca `GET /burn` dan merender status sebagai suhu ruangan.
-Angka di dasbor mudah diabaikan; ruangan yang terbakar tidak.
-
-| Status | Visual |
-|---|---|
-| `normal` | tidak ada |
-| `warm` | semburat kuning tipis |
-| `hot` | semburat oranye, denyut lambat |
-| `critical` | semburat merah, denyut cepat, **api menjilat dari lantai** |
-| `tripped` | guyuran biru, **sprinkler menyala** |
-
-HUD di sudut menampilkan belanja terhadap batas per jam, dan melebar saat
-diklik untuk rincian per agen. `prefers-reduced-motion` mematikan seluruh
-animasi dan menyembunyikan sprinkler — kontrak aksesibilitas yang sama dengan
-bagian kantor lainnya. Overlay tidak merender apa pun bila anggaran tidak diset.
-
-## Dua bug nyata yang tertangkap saat pengerjaan
-
-**1. Pencocokan substring membalik seluruh kebijakan.** Daftar model premium
-awalnya memakai `includes()`. Tapi `"gpt-4o-mini".includes("gpt-4o")` bernilai
-`true` — jadi model fallback termurah justru ikut diblokir, persis membalikkan
-mekanisme yang sedang dibangun. Test menangkapnya. Kini memakai regex dengan
-negative lookahead, dengan test yang memaku 25 id model. Masalah yang sama sudah
-saya pecahkan di `pricing.js` dan tetap terulang di sini.
-
-**2. Bug laten yang saya perkenalkan sendiri di Fase 0.** Saat saya mengalihkan
-`emitInternal` melewati `bus.ingest()`, saya tidak sadar `validateEvent` menolak
-tipe internal-only. Belum meledak hanya karena `emitChatEvent` ternyata tidak
-pernah dipanggil — tapi `budget_state` akan langsung menabraknya. `ingest()` kini
-menerima flag `internal` yang melonggarkan **hanya** gerbang internal-only;
-validasi skema, clamping, dan redaksi tetap berlaku penuh. `office_chat` juga
-ditambahkan ke `KNOWN_EVENT_TYPES` — tanpa itu `emitInternal` tidak akan pernah
-bisa memancarkannya, yang jelas bukan maksud penulis aslinya.
-
-## Verifikasi
-
-```
-node --test tests/     73/73 lulus, keluar 3,9 dtk
-```
-
-23 test baru: 18 di `tests/burnrate.test.js` (tangga status, akuntansi, peluruhan
-jendela, event transisi, lima tingkat keputusan, lookahead biaya, cakupan paling
-ketat menang, override per-agen, batas memori, tiering model) dan 5 di
-`tests/integration.test.js` (auth, penolakan guest, bridge tidak bisa memalsukan
-`budget_state`, dan satu uji end-to-end penuh).
-
-Uji end-to-end langsung pada server berjalan, anggaran global $0,50/jam:
-
-```
-GLOBAL  critical  $0.468 / $0.50  (94%)
-  burner      critical  $0.279 / $0.30
-  planner     warm      $0.156 / $0.30
-  researcher  normal    $0.033 / $0.30
-
-claude-opus-4    allow=False throttle  → premium models are blocked  [pakai claude-sonnet-4-5]
-gpt-4o-mini      allow=True  throttle  → use the cheapest viable model
-```
-
-Persis perilaku yang diinginkan: pekerjaan **berlanjut** di tier murah sementara
-model mahal diblokir.
-
-Test eventbus lama (`validates every known event type with golden payload`) ikut
-pecah karena penambahan tipe event — itu memang tugasnya. Diperbarui agar
-eksplisit menyatakan tipe mana yang internal-only, dan kini juga menegaskan tipe
-tersebut **ditolak** dari jalur eksternal.
-
-## Berkas baru
-
-`server/burnrate.js`, `frontend/src/components/BurnOverlay.tsx`,
-`tests/burnrate.test.js`, `docs/BURN-RATE.md`.
-
----
+Catatan rinci fase ini sengaja tidak dipertahankan. Yang perlu diingat satu
+kalimat: **mekanisme yang belum pernah menolak apa pun bukan kendali.**
 
 # Fase 3 — Policy as Floor Plan
 
@@ -510,7 +375,6 @@ yang tak pernah dibaca siapa pun. Hermes Office sudah menggambar sebuah gedung
 
 ```
 ruangan                      = zona kepercayaan (alat & model apa yang terjangkau)
-anggaran ruangan             = amplop belanja   (ruangan kecil tak bisa membakar banyak)
 pintu                        = gerbang kebijakan (sebagian transisi butuh manusia)
 memindahkan agen ke ruangan  = memberikan scope
 ```
@@ -529,15 +393,15 @@ rendah. Kebijakan yang gagal-terbuka bukan kebijakan.
 
 ## Denah bawaan
 
-| Ruangan | Trust | Alat | Model maks | Anggaran/jam | Gerbang |
-|---|---|---|---|---|---|
-| `lobby` | untrusted | `web_search`, `read_file`, `fetch`, `llm:*` | cheap | $0,25 | — |
-| `main-office` | standard | `*` minus shell/deploy/infra | premium | $2,00 | — |
-| `meeting-room` | standard | sama | premium | $1,00 | — |
-| `ceo-office` | standard | `*` minus shell/deploy/infra | premium | $10,00 | masuk |
-| `mac-studio` | privileged | `*` minus terraform | premium | $3,00 | masuk, `deploy` `bash` |
-| `server-room` | privileged | `*` | premium | $5,00 | masuk, `deploy` `kubectl` `terraform` `psql` `bash` |
-| `kitchen`, `nap-room` | idle | tidak ada | — | $0 | — |
+| Ruangan | Trust | Alat | Gerbang |
+|---|---|---|---|
+| `lobby` | untrusted | `web_search`, `read_file`, `fetch`, `llm:*` | — |
+| `main-office` | standard | `*` minus shell/deploy/infra | — |
+| `meeting-room` | standard | sama | — |
+| `ceo-office` | standard | `*` minus shell/deploy/infra | masuk |
+| `mac-studio` | privileged | `*` minus terraform | masuk, `deploy` `bash` |
+| `server-room` | privileged | `*` | masuk, `deploy` `kubectl` `terraform` `psql` `bash` |
+| `kitchen`, `nap-room` | idle | tidak ada | — |
 
 Bisa ditimpa lewat `OFFICE_POLICY_FILE`. Berkas rusak atau tak terbaca memicu
 peringatan dan jatuh ke default — server tidak pernah boot tanpa kebijakan.
@@ -545,8 +409,8 @@ peringatan dan jatuh ke default — server tidak pernah boot tanpa kebijakan.
 ## Endpoint baru
 
 - **`POST /policy/check`** — gerbang terpadu. Kebijakan ruangan dulu (*boleh
-  tidak di sini?*), lalu belanja (*mampu tidak?*). Menggantikan `/budget/check`,
-  yang tetap ada untuk pemanggil yang hanya peduli uang.
+  tidak di sini?*). (Langkah belanja dan `/budget/check` yang dulu
+    menyertainya dicabut 20 Okt 2026.)
 - **`GET /policy`** — denah sebagai data. Inilah artefak auditnya, bukan YAML.
 - **`POST /agents/:agent/room`** — memindahkan agen. **Owner saja**, karena
   memindahkan *adalah* memberi scope. `202` bila ruangan butuh tanda tangan.
@@ -586,18 +450,19 @@ mendapat tombol approve/deny; yang lain melihat "owner decision required".
 ## Dua temuan saat pengerjaan
 
 **1. Test saya sendiri yang salah, dan itu membuktikan desainnya benar.** Satu
-test memindahkan agen ke `ceo-office` lalu menegaskan anggaran per-agen berlaku.
+test memindahkan agen ke `ceo-office` lalu menegaskan batas per-agen berlaku.
 Test-nya gagal — ternyata `ceo-office` butuh persetujuan masuk, jadi agennya tak
 pernah benar-benar pindah dan tetap tertahan di lobby. Gerbangnya bekerja persis
 seperti seharusnya; saya yang lupa. Test diperbaiki agar menyetujui dulu, dan
 kini menegaskan `roomFor` secara eksplisit sebelum melanjutkan.
 
 **2. Urutan evaluasi mengubah kualitas pesan.** Dapur punya `tools.allow: []`
-dan anggaran `0`. Awalnya penolakan datang dari gerbang alat: *"write_file is
+dan ditandai idle. Awalnya penolakan datang dari gerbang alat: *"write_file is
 outside the scope of Kitchen"* — benar, tapi tidak informatif. Pemeriksaan
-anggaran-nol dipindah ke paling depan sehingga jawabannya menjadi *"Kitchen has
-no spend allowance (agents here are idle)"*, yang menjelaskan jauh lebih banyak
-kepada operator.
+ruang-idle dipindah ke paling depan sehingga jawabannya menyebut keadaan
+ruangnya lebih dulu, yang menjelaskan jauh lebih banyak kepada operator.
+(Saat itu "idle" masih dinyatakan sebagai anggaran `0`; penandanya baru
+menjadi `idle: true` pada 20 Okt 2026.)
 
 ## Verifikasi
 
@@ -605,12 +470,12 @@ kepada operator.
 node --test tests/     108/108 lulus, keluar 4,1 dtk
 ```
 
-35 test baru: 24 di `tests/policy.test.js` (pencocokan glob, tiering model,
+35 test baru: 24 di `tests/policy.test.js` (pencocokan glob,
 fallback kebijakan rusak, deny-by-default, ruangan tak dikenal tidak gagal-buka,
 hint penolakan, deny-list mengalahkan allow-list, perpindahan mengubah izin,
-pencatatan pemberi izin, plafon tier model, ruangan idle, gerbang pintu,
-persetujuan ditolak/kedaluwarsa/ganda, anti-replay, batas memori, amplop
-belanja ruangan, interaksi dengan anggaran agen, snapshot) dan 11 di
+pencatatan pemberi izin, ruangan idle, gerbang pintu,
+persetujuan ditolak/kedaluwarsa/ganda, anti-replay, batas memori,
+snapshot) dan 11 di
 `tests/integration.test.js` (auth tiap endpoint, 202 di pintu, bridge tidak bisa
 memutuskan, dua gerbang berurutan, anti-replay lintas alat, 409 resolusi ganda,
 bridge tidak bisa memalsukan event tata kelola, 404 untuk id palsu).
@@ -645,17 +510,15 @@ dan **membatalkan kontrak itu**. Diverifikasi langsung dengan token guest:
 
 | Endpoint | Yang bocor sebelum perbaikan |
 |---|---|
-| `GET /burn` | `spentHourUsd`, `limitHourUsd`, `lifetimeUsd` — pengeluaran AI bisnis ini |
-| `GET /policy` | daftar tool server-room lengkap, tool yang digerbangi, anggaran tiap ruang |
+| `GET /policy` | daftar tool server-room lengkap, dan tool mana yang digerbangi |
 | `GET /approvals` | nama agen + ruang + alasan permintaan privilese |
 
 Lebih buruk: `sanitizeForGuest` hanya mengenali `git_push`, `a2a_task_*`,
-`office_chat`, `service_status`. Empat tipe event baru — `budget_state`,
+`office_chat`, `service_status`. Tipe-tipe event baru dari Fase 2–3 —
 `agent_moved`, `approval_requested`, `approval_resolved` — **lolos mentah ke
 WebSocket guest**. Jadi meredaksi REST saja tidak akan cukup.
 
-Perbaikan: guest kini menerima **suhu tanpa nominal** dan **denah tanpa peta
-privilese**. Ruang masih bisa terlihat terbakar; angkanya tidak ikut.
+Perbaikan: guest kini menerima **denah tanpa peta privilese**.
 `GET /approvals/:id` diturunkan ke `bridge|owner` (403 untuk guest) karena
 tampilan detail akan membuka kembali persis yang diredaksi daftar.
 
@@ -848,15 +711,15 @@ guest read-only untuk browser tanpa token. Dipasang di fork ini apa adanya.
 Konsekuensinya mengubah taruhan audit pra-Fase 4 secara fundamental: server
 dipublikasikan lewat Tailscale Funnel, jadi **"pengunjung anonim di internet
 publik" dan "guest" sekarang principal yang sama**. Kebocoran yang ditemukan
-audit kemarin — `/burn`, `/policy`, `/approvals` menyajikan pengeluaran per jam
-dan peta privilese lengkap ke token guest — dengan auto-guest aktif berarti
+audit kemarin — `/policy` dan `/approvals` menyajikan peta privilese lengkap
+ke token guest — dengan auto-guest aktif berarti
 **terbaca siapa pun di internet, tanpa kredensial apa pun**. Perbaikan itu
 berhenti menjadi defence-in-depth dan menjadi satu-satunya batas.
 
 Ditambahkan **4 test** yang menegaskannya dari sudut pandang browser anonim
 sungguhan (ambil cookie dari `GET /`, lalu pakai cookie itu): permukaan audit
-403, angka belanja nol, tidak ada `kubectl`/`terraform` di mana pun, dan
-session owner yang sudah ada **tidak pernah diturunkan** menjadi guest.
+403, tidak ada `kubectl`/`terraform` di mana pun, dan session owner yang
+sudah ada **tidak pernah diturunkan** menjadi guest.
 
 **2. `agent_status.agent` boleh string atau objek `{name, id, role}`.**
 Upstream memperbaiki Map presence yang mengunci dengan objek mentah sehingga
@@ -892,8 +755,8 @@ alpha), dan `server-room-day` hanya berbeda 0,9/255 — murni artefak kompresi.
 
 ### Tidak ada konflik pada Fase 1–4
 
-Tidak satu pun perubahan upstream menyentuh `otlp.js`, `burnrate.js`,
-`policy.js`, `ledger.js`, `dossier.js`, atau kontrak event baru. Satu-satunya
+Tidak satu pun perubahan upstream menyentuh `otlp.js`, `burnrate.js`
+(dihapus 20 Okt 2026), `policy.js`, `ledger.js`, `dossier.js`, atau kontrak event baru. Satu-satunya
 titik temu adalah `server/index.js` (dua sisipan, keduanya di luar blok
 Fase 1–4) dan `OfficeStage.tsx`, yang disisipi secara bedah agar
 `BurnOverlay` / `ApprovalGate` / `AuditBadge` tetap terpasang.
@@ -982,10 +845,10 @@ berulang tidak menumpuk efek.
 ray volumetrik searah pencahayaan pelat, debu di **tiga bidang parallax** (satu
 bidang saja terbaca sebagai kotoran lensa), vignette, gradasi sinematik.
 
-Yang membuatnya bukan hiasan: shader membaca **burn state Fase 2**, sehingga
-kantor berubah suhu seiring belanja naik — sian tenang → amber → oranye → merah
-→ biru dingin saat tripped. Lapisan tata kelola dan arah seni menjadi satu hal
-yang sama.
+Yang saat itu membuatnya bukan hiasan: shader membaca **burn state Fase 2**,
+sehingga kantor berubah suhu seiring belanja naik — sian tenang → amber →
+oranye → merah → biru dingin saat tripped. **Pembacaan itu dicabut 20 Okt
+2026** bersama seluruh lapisan biaya; shader-nya tetap, suhunya tidak.
 
 Pertahanan yang dipasang: cap DPR 1,5 (lapisan lembut, resolusi retina penuh
 tidak menambah apa pun tapi memakan baterai), berhenti saat tab tersembunyi,
@@ -1053,8 +916,8 @@ placeholder.
 # Fase 6 — Bisa dipasang orang lain (6 Okt 2026)
 
 Fokus: menghapus setiap hal yang membuat repo ini hanya bisa dijalankan oleh
-penulisnya. Tanpa ini harga $2.000+/bulan tidak bisa dipertahankan — produk
-yang alamat IP-nya milik satu orang bukan produk, melainkan instalasi pribadi.
+penulisnya. Repo yang alamat IP-nya milik satu orang bukan repo yang bisa
+diserahkan, melainkan instalasi pribadi.
 
 ## Default yang diam-diam menunjuk mesin orang lain
 
@@ -1092,36 +955,17 @@ sanitizer tepat tidak meredaksinya. Mengganti alamat di fixture ternyata
 mengubah makna pengujiannya. Diganti ke `100.64.0.1` — basis rentang CGNAT,
 tetap "internal" bagi sanitizer tapi bukan mesin siapa pun.
 
-## Poller ganda yang saya buat sendiri
+## ~~Poller ganda yang saya buat sendiri~~ — MOOT 2026-10-20
 
-Fase 5 menambahkan poll `/burn` tiap 5 detik di `OfficeStage` untuk menyuplai
-shader atmosfer. `BurnOverlay` ternyata **sudah** memolling endpoint yang sama
-tiap 3 detik. Jadi ada dua poller independen ke satu endpoint dalam satu
-halaman — sekitar **1.440 request/jam per tab** — untuk data yang server
-**sudah push** lewat WebSocket (`burnrate.js:226` memancarkan `budget_state`
-saat transisi).
+Fase 5 menambahkan poll `/burn` tiap 5 detik di `OfficeStage`, dan
+`BurnOverlay` sudah memolling endpoint yang sama tiap 3 detik: ~1.440
+request/jam per tab untuk data yang sudah didorong WebSocket.
+`useBurnState.ts` menggantinya dengan seed-sekali + push.
 
-Akibat kedua lebih halus: dua timer berarti HUD dan pencahayaan ruangan bisa
-berselisih sampai lima detik, jadi ruangan masih tampak tenang sementara HUD
-sudah menyatakan `hot`.
-
-`useBurnState.ts` menggantinya. Polanya tidak bisa murni WS karena dua alasan
-yang keduanya nyata: socket **tidak me-replay history**, jadi tab yang dibuka
-setelah transisi terakhir akan menampilkan `normal` sampai transisi berikutnya
-yang mungkin berjam-jam lagi; dan `budget_state` sengaja hanya membawa
-`{scope, state, from, source, ts}` tanpa angka dolar, karena guest tidak boleh
-menerimanya. Jadi: **seed sekali saat mount, label didorong seketika oleh
-socket, dan snapshot lengkap diambil ulang hanya saat transisi benar-benar
-terjadi.** Keadaan diam berbiaya nol request. Hari sibuk dengan 20 transisi
-berbiaya 21.
-
-Transisi ber-scope agen sengaja diabaikan untuk keadaan global — shader dan
-HUD sama-sama mendeskripsikan ruangan secara keseluruhan.
-
-Penggabungan ini juga memaksa satu tipe `BurnSnapshot`. Sebelumnya ada dua
-definisi yang sudah menyimpang (satu menjadikan `spentDayUsd` opsional), dan
-TypeScript baru melaporkannya di titik pemanggilan — tempat yang salah untuk
-mengetahuinya.
+Rute, komponen, dan hook-nya semua dihapus 20 Okt 2026. **Polanya tetap
+berlaku dan dipakai di tempat lain**: seed sekali saat mount, dorong lewat
+socket, ambil ulang hanya saat ada transisi nyata. Keadaan diam harus
+berbiaya nol request.
 
 ## Koreksi ketiga soal CI — dan kali ini penyebabnya
 
@@ -1228,11 +1072,11 @@ kesalahpahaman penulisnya.
 
 Ditemukan sambil menyiapkan Vitest. `vite.config.ts` memproksikan `/chat`,
 `/roster`, `/event`, `/health`, `/presence`, `/github`, `/auth` — dan tidak
-satu pun dari `/burn`, `/budget`, `/policy`, `/approvals`, `/agents`,
-`/ledger`, `/dossier`, `/v1`.
+satu pun dari `/policy`, `/approvals`, `/agents`, `/ledger`, `/dossier`,
+`/v1` (dan, saat itu, `/burn` dan `/budget`).
 
-Artinya di bawah `npm run dev`, **HUD burn, gerbang persetujuan dan badge
-audit diam-diam tidak berfungsi**, sementara semuanya sempurna di build
+Artinya di bawah `npm run dev`, **gerbang persetujuan dan badge audit
+diam-diam tidak berfungsi**, sementara semuanya sempurna di build
 produksi. Daftar ini sudah salah dua kali sebelumnya (port keliru, lalu lima
 rute hilang), jadi sekarang menjadi satu daftar `HTTP_ROUTES` eksplisit
 berkomentar fase — bentuk yang membuat kelalaian terlihat saat ditinjau.
@@ -1249,7 +1093,7 @@ workflow cocok · nol host hardcoded.
 ## Masalahnya bukan dokumen yang tipis
 
 `docs/ARCHITECTURE.md` sebelumnya 193 baris dan menggambarkan repo sebelum
-Fase 1–7 ada: tanpa OTLP, tanpa burn-rate, tanpa policy, tanpa flight
+Fase 1–7 ada: tanpa OTLP, tanpa policy, tanpa flight
 recorder, tanpa donghua. Orang yang membacanya akan membangun model mental
 yang salah tentang separuh sistem.
 
@@ -1467,13 +1311,14 @@ dibangun" justru membangunnya.
 
 11 bagian. Bahasa visual donghua (lima isyarat cahaya, mana yang dipanggang ke
 sprite vs mana yang dari shader), tumpukan z-index dan alasan shader duduk di
-z=2, tabel burn-state → suasana ruangan, token OKLCH, komponen tata kelola,
+z=2, token OKLCH, komponen tata kelola,
 dan §11 daftar koreksi terhadap v1.
 
 Satu catatan aksesibilitas yang diperluas: `prefers-reduced-motion`
-**membekukan waktu, tidak menghapus lapisannya** — karena god ray membawa
-burn state. Menghapusnya demi pengguna sensitif gerak akan menghapus
-informasi tata kelola. Buang animasinya, pertahankan sinyalnya.
+**membekukan waktu, tidak menghapus lapisannya** — saat itu karena god ray
+membawa burn state, dan menghapusnya demi pengguna sensitif gerak akan
+menghapus informasi tata kelola. Sinyalnya sudah dicabut 20 Okt 2026; aturan
+"buang animasinya, pertahankan lapisannya" tetap.
 
 ## Dibawa ke dalam cakupan pemeriksa
 
@@ -1482,9 +1327,9 @@ dokumen. Yang baru diperiksa: hitungan rute (tingkat-atas + sub-rute chat),
 ruangan/pelat/sprite, hitungan baris keempat berkas CSS, token OKLCH,
 **hitungan `!important`** (utang yang diketahui tidak boleh dikecilkan diam-
 diam), hitungan baris komponen, arah cahaya `LIGHT_DX/LIGHT_DY` yang harus
-sepakat antara dokumen dan `stylize-donghua.py`, serta dua kalimat pendirian
-yang wajib tetap tertulis ("tidak pernah membaca isi prompt", "jangan pernah
-per-kursi").
+sepakat antara dokumen dan `stylize-donghua.py`, serta kalimat pendirian yang
+wajib tetap tertulis ("tidak pernah membaca isi prompt" — dan, sampai
+dicabut 20 Okt 2026, "jangan pernah per-kursi").
 
 ### Dua bug di pemeriksa, lagi
 
@@ -1656,7 +1501,7 @@ dan kini tertulis.
 ## Lipat ledger, dapatkan kantor
 
 `server/replay.js` melipat perekam penerbangan ke depan menjadi urutan frame:
-siapa di ruangan mana, burn state saat itu, persetujuan yang menggantung,
+siapa di ruangan mana, persetujuan yang menggantung,
 apa yang diizinkan dan ditolak. `GET /replay?from=&to=`, owner saja.
 
 44 test baru → **229 backend**.
@@ -1703,7 +1548,8 @@ PR, dan tiket insiden tanpa negosiasi codec. Kalau MP4 nanti dibutuhkan, satu
 panggilan ffmpeg atas frame yang sama cukup — bagian sulitnya sudah selesai.
 
 `scripts/replay-to-gif.py` dijalankan atas sesi sungguhan (tiga agent, tangga
-burn `normal → warm → hot → critical → tripped`, 7 penolakan) → 24 frame,
+burn `normal → warm → hot → critical → tripped` — dicabut 20 Okt 2026 —
+7 penolakan) → 24 frame,
 `/home/user/time-machine.gif`.
 
 ## Dua bug saya sendiri, ditemukan dengan melihat hasilnya
@@ -1715,18 +1561,16 @@ dipakai semua frame, karena GIF yang kanvasnya berubah di tengah pemutaran
 ditolak separuh penampil.
 
 **2. Header berkata `BURN: HOT` di samping `$1,12`** — dan angka itu berasal
-dari transisi `warm` beberapa record sebelumnya. Burn diperbarui pada setiap
-keputusan; belanja terealisasi hanya pada transisi anggaran. Bukan bug di
-lipatan, tapi menyandingkan keduanya seolah terukur bersamaan adalah
-kebohongan kecil yang akan ditangkap auditor.
+dari transisi beberapa record sebelumnya. Burn diperbarui pada setiap
+keputusan; belanja terealisasi hanya pada transisi. Bukan bug di lipatan, tapi
+menyandingkan keduanya seolah terukur bersamaan adalah kebohongan kecil yang
+akan ditangkap auditor. Perbaikannya: `spentAsOfSeq` di tiap frame, dan
+renderer menulis `(per seq 14)` saat angkanya basi. Lalu perbaikan itu sendiri
+punya bug — ia menyamakan **"field tidak ada"** dengan **"nol"**.
 
-Perbaikan: setiap frame kini membawa `spentAsOfSeq`, dan renderer menulis
-`(per seq 14)` saat angkanya basi. Dua test baru memasak itu.
-
-**Lalu perbaikan itu sendiri punya bug:** render berikutnya mencetak
-*"belum ada belanja tercatat"* di atas frame senilai $1,12. Renderer
-menyamakan **"field tidak ada"** (berkas replay lama) dengan **"nol"**.
-Keduanya hal yang berbeda, dan sekarang dibedakan.
+Seluruh kolom uang itu dicabut 20 Okt 2026. **Pelajarannya tidak**: "field
+tidak ada" dan "nol" adalah dua hal berbeda, dan dua angka yang diukur pada
+waktu berbeda tidak boleh dicetak seolah diukur bersamaan.
 
 Ketiganya ketahuan karena saya **membuka berkas GIF-nya dan melihat**, bukan
 karena ada test yang gagal. Test tidak merender.
@@ -1833,11 +1677,8 @@ agent.
 
 | Mutasi di `kiosk.js` | Test gagal |
 |---|---|
-| `reveal` diabaikan — dolar selalu tampil | 1 |
 | escaping `<` dimatikan (XSS) | 2 |
 | escaping kutip dimatikan | 2 |
-| bar rasio tak di-clamp | 1 |
-| burn state tak dikenal → halaman rusak | 2 |
 | occupant kosong tak disaring/diurutkan | 2 |
 | fallback `noscript` dihapus | 1 |
 
@@ -1900,18 +1741,17 @@ uang sungguhan dan butuh pagar"* tidak boleh membakar token untuk memberi
 tahu Anda berapa token yang Anda bakar. Memasang LLM di sini berarti
 menggugurkan argumen sendiri di depan calon pembeli.
 
-## Yang tidak bisa diklaim rantai
+## ~~Yang tidak bisa diklaim rantai~~ — MOOT 2026-10-20
 
-Tidak ada biaya terealisasi per panggilan di ledger — event biaya masuk ke
-burn tracker. Rantai hanya memegang `budget_transition.spentUsd` (belanja
-sejauh ini **di dalam jendela anggaran itu**, pada saat transisi) dan
-`policy_decision.estimatedUsd` (perkiraan **pra-eksekusi** untuk tindakan
-yang mungkin ditolak dan mungkin tak pernah berjalan).
+Rantai tidak pernah memegang biaya terealisasi per panggilan, hanya
+`budget_transition.spentUsd` (puncak di dalam satu jendela) dan
+`policy_decision.estimatedUsd` (perkiraan pra-eksekusi). Maka laporan tidak
+pernah mencetak "total belanja kemarin", dan ada test yang mencoba
+menjumlahkan keduanya dan harus gagal.
 
-Maka laporan ini tidak pernah mencetak "total belanja kemarin". Ia mencetak
-puncak dan melabeli perkiraan sebagai perkiraan. Menjumlahkan field itu
-menghasilkan angka yang percaya diri, salah, dan terekam permanen. Ada test
-yang mencoba menjumlahkannya dan harus gagal.
+Kedua field itu dicabut 20 Okt 2026. **Kehati-hatiannya tetap berlaku untuk
+angka apa pun**: menjumlahkan puncak dan perkiraan menghasilkan angka yang
+percaya diri, salah, dan terekam permanen.
 
 ## Dua temuan yang tak terlihat di tempat lain
 
@@ -1933,7 +1773,6 @@ pembanding: keduanya menghasilkan nol event.
 | ambang penolakan 3→1 (alarm palsu) | 1 |
 | hari sepi tak pernah sepi (padding) | 4 |
 | status terakhir, bukan terburuk | 1 |
-| belanja puncak → belanja terakhir | 1 |
 | bagi nol pada hari pertama | 2 |
 | urutan temuan ikut urutan kedatangan | 1 |
 | peringkat keparahan dihapus | 1 |
@@ -1981,8 +1820,7 @@ urutan sumber saja sudah menang. Flag itu dipasang "untuk jaga-jaga".
 
 Itu bukan sekadar kerapian. Lapisan tema yang berteriak `!important`
 meninggalkan pelanggan yang me-reskin produk tanpa tempat eskalasi lagi,
-yang persis meniadakan guna punya lapisan tema — dan "bisa di-skin" adalah
-bagian dari apa yang dibayar pembeli $2.000.
+yang persis meniadakan guna punya lapisan tema.
 
 Yang bertahan satu, sengaja: `transition: none` di dalam
 `@media (prefers-reduced-motion: reduce)`. Beda jenis — jaminan
@@ -2073,8 +1911,9 @@ PASS (41 klaim) · `donghua.css` 176 baris, **1 `!important`**.
 
 # Fase 16 — Paket penjualan
 
-Produk ini punya empat artefak kuat dan nol materi yang menjelaskan mengapa
-harganya $2.000. Fase ini menutup celah itu. Tidak ada kode server yang
+Produk ini punya empat artefak kuat dan nol materi yang menjelaskan apa
+gunanya. Fase ini menutup celah itu. (Argumen harga di dalamnya dicabut
+20 Okt 2026.) Tidak ada kode server yang
 berubah; `check-docs.py` **41 → 52 klaim**.
 
 ## `scripts/demo.sh` — satu perintah, 90 detik
@@ -2088,9 +1927,9 @@ yang ada.
 
 Jadi skrip ini menyemai insiden yang spesifik dan terbaca: citra meminta
 masuk ruang server dan keputusannya menunggu manusia, budi terjebak loop
-retry melawan `kubectl` sembilan kali, belanja ana menembus anggaran per jam
-sampai tripped. Itu cerita yang langsung dikenali setiap pembeli dari log
-mereka sendiri.
+retry melawan `kubectl` sembilan kali. Itu cerita yang langsung dikenali
+siapa pun dari log mereka sendiri. (Babak ketiga — belanja ana menembus
+anggaran per jam sampai tripped — dicabut 20 Okt 2026.)
 
 Berjalan di direktori data buangan dan port non-default. Demo yang bisa
 merusak bukti produksi bukan demo yang pantas dijalankan siapa pun.
@@ -2102,9 +1941,8 @@ dengan tumpukan `ERR_MODULE_NOT_FOUND`. Demo yang membuka dengan stack trace
 sudah kalah sebelum mulai.
 
 Setiap pemberhentian tur diverifikasi berjalan sungguhan, bukan diasumsikan:
-`/` 200 · kiosk `tripped` dengan **0** tanda dolar dan `$2.25 / $2.00` saat
-reveal · standup 3 temuan · replay 23 frame `peakBurn: tripped` · dossier 131
-baris terverifikasi.
+`/` 200 · standup 3 temuan · replay 23 frame · dossier 131 baris
+terverifikasi.
 
 ## `README.md` ditulis ulang
 
@@ -2115,34 +1953,23 @@ salah untuk produk yang dijual. Diarsipkan ke `docs/LEGACY-README.md`
 daripada dibuang.
 
 Yang baru memimpin dengan tiga angka dan satu tanggal: 96% perusahaan
-melampaui proyeksi biaya AI dan hanya 44% punya pagar pengaman; tidak ada
-framework agen besar yang mengirim pembatas dolar native (OWASP LLM10,
-Denial of Wallet); kewajiban berisiko-tinggi EU AI Act berlaku sejak 2
-Agustus 2026 dengan denda €15 juta atau 3%.
+kewajiban berisiko-tinggi EU AI Act berlaku sejak 2 Agustus 2026 dengan denda
+€15 juta atau 3%. (Dua angka biaya yang menemaninya dicabut 20 Okt 2026.)
 
 Bagian **"Apa yang TIDAK dilakukannya"** ditaruh di muka, bukan disembunyikan
 di bawah. Tidak membaca isi prompt, tidak bersaing dengan Agent View vendor,
-tidak per kursi, bukan SaaS multi-tenant, dan **tahan-rusak bukan
-anti-rusak**. Untuk pembeli kepatuhan, kejujuran soal batas justru
-diferensiasinya — siapa pun yang menjual "anti-rusak" sedang berbohong, dan
-asesor tahu itu.
+bukan SaaS multi-tenant, dan **tahan-rusak bukan anti-rusak**. Kejujuran soal
+batas justru diferensiasinya — siapa pun yang menjual "anti-rusak" sedang
+berbohong, dan asesor tahu itu.
 
-Tabel perbandingan menyebut pesaing dengan harga aslinya, termasuk yang jauh
-lebih besar (Langfuse 35,4k★ di $2.499 Enterprise). README yang berpura-pura
-tidak punya pesaing membuat pembaca berhenti memercayai sisanya.
+Tabel perbandingan pesaing yang menyertainya (lengkap dengan harga tiap
+vendor) dicabut 20 Okt 2026.
 
-## `docs/PRICING.md`
+## ~~`docs/PRICING.md`~~ — BERKASNYA DIHAPUS 2026-10-20
 
-$0 / $39 Solo Pro / $299 Team / $2.000+ Enterprise. Lisensi abadi, bukan
-langganan: pembeli ini tidak membeli layanan, mereka membeli kemampuan
-membuktikan sesuatu nanti — dan artefak yang buktinya lenyap saat kartu
-kredit kedaluwarsa bukan bukti.
-
-**Flight recorder tetap di tingkat gratis.** Memindahkan integritas log ke
-balik paywall berarti menjual keselamatan kepada yang paling mampu membayar,
-dan membuat proyek ini kehilangan hak berargumen seperti yang ia lakukan di
-`SECURITY.md`. Yang berbayar adalah lapisan artefak di atas rantai, tidak
-satu pun diperlukan agar rantai itu benar.
+Bagian ini menetapkan empat tingkat lisensi abadi. Berkasnya, versi
+Indonesianya, dan seluruh argumen harganya dihapus. Tidak ada yang dijual:
+satu pemilik, satu token, MIT.
 
 ## Dokumen penjualan ikut dipagari mesin
 
@@ -2151,9 +1978,9 @@ yang terakhir masuk pemeriksa. Setiap dokumen lain membusuk hanya
 memalukan developer; dua ini menyesatkan pembeli.
 
 Sebelas klaim baru: jumlah test ditanyakan ke runner-nya, perintah
-quickstart harus menunjuk skrip yang ada, keempat tingkat harga harus sama
-di README dan PRICING, dan tiga janji — privasi prompt, tanpa-per-kursi,
-tahan-rusak — harus masih tertulis.
+quickstart harus menunjuk skrip yang ada, dan janji-janji pendirian harus
+masih tertulis. (Klaim yang menyangkut tingkat harga dicabut 20 Okt 2026
+bersama berkasnya.)
 
 Klaim ke-52 memeriksa dirinya sendiri: jumlah klaim yang dikutip README
 harus sama dengan jumlah yang benar-benar diperiksa run itu, dihitung
@@ -2168,10 +1995,8 @@ busuk, karena setiap pemeriksa baru membatalkannya.
 | quickstart menunjuk skrip yang tak ada | ✅ |
 | janji privasi prompt dihapus | ✅ |
 | tahan-rusak dinaikkan jadi anti-rusak | ✅ |
-| harga berbeda dari PRICING.md | ✅ |
-| komitmen tanpa-per-kursi dicabut | ✅ |
 
-Mutasi harga awalnya terbaca "lolos". Ia tidak lolos — pola `sed`-nya tidak
+Mutasi tabel harga awalnya terbaca "lolos". Ia tidak lolos — pola `sed`-nya tidak
 cocok apa pun, jadi mutasinya tidak pernah terpasang. Persis kegagalan yang
 sama dengan mutasi `\u0000` di Fase 14, dua fase berturut-turut: **mutasi
 yang gagal dijalankan dan mutasi yang selamat terlihat identik.** Selalu
@@ -2187,24 +2012,23 @@ pastikan mutasinya benar-benar masuk sebelum memercayai hasilnya.
 
 # Fase 17 — Dua bahasa
 
-`README.md` dan `docs/PRICING.md` kini berbahasa Inggris sebagai versi utama;
-versi Indonesia dipertahankan berdampingan sebagai `README.id.md` dan
-`docs/PRICING.id.md`, dengan penukar bahasa di kepala masing-masing. Pembeli
-$2.000 untuk alat kepatuhan EU AI Act kemungkinan besar bukan penutur
-Indonesia; dokumen internal tetap Indonesia.
+`README.md` kini berbahasa Inggris sebagai versi utama; versi Indonesia
+dipertahankan berdampingan sebagai `README.id.md`, dengan penukar bahasa di
+kepala masing-masing. Pembaca internasional alat kepatuhan EU AI Act
+kemungkinan besar bukan penutur Indonesia; dokumen internal tetap Indonesia.
+(Kedua berkas `PRICING` yang ikut diterjemahkan saat itu dihapus 20 Okt 2026.)
 
 ## Terjemahan adalah tempat kedua bagi klaim untuk membusuk
 
 Dan ia membusuk lebih diam-diam daripada aslinya, karena yang menyunting
 versi Inggris sering tidak bisa membaca yang satunya. Maka pemeriksa
 dokumen diperluas jadi **pemeriksa paritas**: kedua versi harus menyebut
-harga yang sama, jumlah test yang sama, dan masih memuat janji yang sama.
+angka yang sama dan masih memuat janji yang sama.
 Kata-katanya bebas; komitmennya tidak.
 
-Yang dijaga: tiga janji (privasi prompt, tanpa-per-kursi, tahan-rusak) di
-kedua bahasa · jumlah test ditanyakan ke runner dan harus cocok di keduanya ·
-perintah quickstart harus menunjuk skrip yang ada · penukar bahasa harus
-hidup di keempat berkas · baris tabel harga harus menyebut keempat tingkat.
+Yang dijaga: janji pendirian (privasi prompt, tahan-rusak) di kedua bahasa ·
+jumlah test ditanyakan ke runner dan harus cocok di keduanya · perintah
+quickstart harus menunjuk skrip yang ada · penukar bahasa harus hidup.
 
 ## Tiga cacat di alat saya sendiri
 
@@ -2221,12 +2045,13 @@ rusak. Ia menyesatkan penulis fungsi itu sendiri, yang persis bagaimana
 perbaikannya ditulis: sekarang ia membaca `# fail` dulu dan berkata *"perbaiki
 test-nya, bukan README-nya"*.
 
-**3. Pemeriksa harga hijau di atas tabel harga yang salah.** Versi pertama
-mencari tiap tingkat di **mana saja** dalam dokumen. Ia meloloskan tabel yang
-sudah dimutasi ke $2.400 karena angka $2.000 yang benar masih muncul dua
-paragraf kemudian di prosa. Pemeriksa hijau di atas dokumen yang mengutip
-harga salah lebih buruk daripada tidak punya pemeriksa. Sekarang ia menuntut
-**satu baris tabel** yang memuat keempat tingkat sekaligus.
+**3. Pemeriksa hijau di atas tabel yang salah.** Versi pertama mencari tiap
+nilai di **mana saja** dalam dokumen, jadi ia meloloskan tabel yang sudah
+dimutasi karena nilai yang benar masih muncul dua paragraf kemudian di prosa.
+Pemeriksa hijau di atas dokumen yang salah lebih buruk daripada tidak punya
+pemeriksa. Sekarang ia menuntut **satu baris tabel** yang memuat seluruh nilai
+sekaligus. (Dokumen yang diperiksa saat itu adalah tabel harga; berkasnya
+dihapus 20 Okt 2026, aturannya tidak.)
 
 Cacat ketiga ditemukan hanya karena mutasi kelima awalnya terbaca kosong —
 dan menyelidikinya mengungkap dua hal sekaligus: mutasi itu sebenarnya
@@ -2237,12 +2062,9 @@ pemeriksanya memang tidak melihatnya.
 
 | Mutasi | Terdeteksi |
 |---|---|
-| terjemahan ID diam-diam mencabut tanpa-per-kursi | ✅ |
 | terjemahan ID menaikkan jadi anti-rusak | ✅ |
-| harga ID menyimpang dari EN | ✅ |
 | jumlah test ID tertinggal dari EN | ✅ |
 | penukar bahasa mati | ✅ |
-| tabel harga PRICING EN menyimpang | ✅ |
 | jumlah test backend dipalsukan | ✅ |
 | quickstart menunjuk skrip yang tak ada | ✅ |
 
@@ -2256,9 +2078,8 @@ menemukan cacat nyata ketiga di atas.
 ## Baseline
 
 304 backend · 129 frontend · lint bersih · 5 skrip PASS · **61 klaim
-dokumen** (turun dari 73: pemeriksa harga yang diperkuat menggantikan 16
-pemeriksaan presence-anywhere yang lemah dengan 4 pemeriksaan baris-tabel
-yang kuat).
+dokumen** (turun dari 73: pemeriksa baris-tabel yang diperkuat menggantikan
+16 pemeriksaan presence-anywhere yang lemah dengan 4 yang kuat).
 
 ## Fase 18 — Plate ruangan: integritas, provenance, penerimaan
 
@@ -2680,7 +2501,7 @@ Dua yang menggantikannya lebih tidak nyaman:
    prosa itu dua arah — kalau ada yang menyambungkan app ke cast lama,
    `check-docs.py` gagal.
 2. **Liabilitas HKI.** 108 sprite `office/characters` adalah rupa yang dapat
-   dikenali dari sebuah serial televisi, di dalam produk berharga $2.000+.
+   dikenali dari sebuah serial televisi, di dalam repo yang diserahkan apa adanya.
    Cast orisinal ini ada sebagian besar untuk alasan itu. Menghapus
    direktori lama menutup paparannya; menyimpannya menjaga jalur mundur.
    Itu keputusan komersial, dan belum diambil.
@@ -2722,7 +2543,7 @@ diulang dan langsung hijau lagi.
 ### Hal yang paling mudah diabaikan
 
 Larian berikutnya hijau. Larian setelahnya hijau. Godaannya jelas: catat
-"flaky", lanjutkan. Dalam produk yang dijual $2.000+ itu pilihan yang mahal,
+"flaky", lanjutkan. Dalam artefak yang dipakai untuk membuktikan sesuatu itu pilihan yang mahal,
 karena suite yang kadang merah mengajari orang menekan *re-run* sampai hijau
 — dan itu persis kebiasaan yang membuat kegagalan sungguhan ikut lolos.
 
@@ -2826,18 +2647,11 @@ Tujuh mutasi, semua menyala, termasuk yang terakhir itu. Refactor-nya
 *count-neutral* — total tetap 83 sebelum dan sesudah, bukti tidak ada
 pemeriksa yang tercipta atau hilang diam-diam.
 
-### `docs/PRICING.md` masuk ke dalam pemeriksa
+### ~~`docs/PRICING.md` masuk ke dalam pemeriksa~~ — MOOT 2026-10-20
 
-Ia duduk di luar `check-docs.py` dan membusuk persis seperti yang diramalkan
-docstring skrip itu untuk PRD dan UI-SPEC di Fase 10. Ia masih menjual
-*"304 backend tests and 61 machine-verified documentation claims"* ketika
-angka sebenarnya 305 dan 87.
-
-Itu dokumen yang dibaca pembeli. Angka yang terlalu rendah pun tetap klaim
-yang salah, dan satu-satunya alasan ia tidak ketahuan adalah karena tidak ada
-yang menjalankannya. Kedua berkas harga kini mengutip angka yang sama dengan
-README, diperiksa terhadap runner yang sama. Tiga mutasi, semua menyala —
-termasuk melebihkan jumlah tes menjadi 450.
+Pemeriksa untuk kedua berkas harga ikut dihapus bersama berkasnya. Pelajaran
+yang tetap berlaku: dokumen yang tidak dijalankan pemeriksa akan membusuk,
+dan angka terlalu rendah pun tetap klaim yang salah.
 
 ### Lint menangkap bug perbaikan saya sendiri
 

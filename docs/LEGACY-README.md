@@ -1,8 +1,8 @@
 # 🏢 Hermes Office
 
 > Kantor isometrik **bergaya donghua 3D** tempat denah lantai **adalah**
-> kebijakan: setiap ruangan membawa tingkat kepercayaan, daftar alat,
-> plafon tier model, anggaran per jam, dan aturan persetujuan sendiri.
+> kebijakan: setiap ruangan membawa tingkat kepercayaan, daftar alat, dan
+> aturan persetujuan sendiri.
 > Memindahkan agen antar ruangan mengubah apa yang boleh ia lakukan.
 
 > Pixel-art virtual office yang memvisualisasikan ekosistem [Niumination](https://github.com/Niumination) secara **real-time** — agent, channel messaging, tautan A2A, dan aktivitas repo GitHub, semuanya hidup dalam satu kantor isometrik.
@@ -77,10 +77,8 @@ Penting: tambahkan origin publik (mis. `https://<hostname>.ts.net`) ke `ALLOWED_
 | Endpoint | Peran | Fungsi |
 |---|---|---|
 | `POST /v1/traces` | bridge (`OFFICE_OTLP_TOKEN`) | Ingest OTLP GenAI, JSON saja (protobuf → 415) |
-| `POST /policy/check` | bridge, owner | **Gerbang utama**: ruang → tool → tier model → anggaran |
-| `POST /budget/check` | bridge, owner | Hanya anggaran. Digantikan `/policy/check`; dipertahankan untuk kompatibilitas |
-| `GET /burn` | semua | Keadaan bakar. **Guest diredaksi** (tanpa nominal) |
-| `GET /policy` | semua | Denah. **Guest diredaksi** (tanpa daftar tool/anggaran) |
+| `POST /policy/check` | bridge, owner | **Gerbang utama**: ruang → tool → persetujuan |
+| `GET /policy` | semua | Denah. **Guest diredaksi** (tanpa daftar tool) |
 | `GET /approvals` | semua | Antrian persetujuan. **Guest diredaksi** (tanpa agen/tool) |
 | `GET /approvals/:id` | bridge, owner | Detail satu permintaan |
 | `POST /approvals/:id` | owner | Putuskan (409 bila sudah diputus) |
@@ -141,9 +139,9 @@ Kesan 3D tidak datang dari geometri real-time melainkan dari **cahaya**:
 volumetrik, debu di tiga bidang parallax, dan gradasi sinematik. Harganya
 **+7,8 kB** pada bundle, dibanding ~250 kB untuk runtime 3D sungguhan.
 
-Shader membaca **burn state** dari pelacak anggaran, jadi kantor berubah suhu
-seiring belanja naik: sian tenang → amber → oranye → merah → biru dingin saat
-breaker jatuh. Tata kelola dan arah seni adalah hal yang sama.
+Dulu shader membaca **burn state** dari pelacak anggaran, sehingga kantor
+berubah suhu seiring belanja naik. **Seluruh lapisan biaya dicabut 20 Okt
+2026**; shader-nya tetap, suhunya tidak lagi menandakan apa pun soal uang.
 
 Tanpa WebGL2 lapisan ini tidak merender apa pun dan ruangan tetap tampil baik.
 `prefers-reduced-motion` membekukan waktu, bukan menghapus informasinya.

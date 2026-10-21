@@ -82,7 +82,7 @@ Disarankan sebagai cara aman menulis ledger. Rute `/ledger` yang benar-benar
 ada: `GET /ledger`, `GET /ledger/head`, `GET /ledger/verify`,
 `GET /ledger/anchors`, `POST /ledger/anchor` — semuanya `requireOwner`.
 Tidak ada jalur tulis manual; ledger diisi **dari jalur keputusan**
-(`POST /policy/check`, `POST /budget/check`), dan itu memang desainnya.
+(`POST /policy/check`), dan itu memang desainnya.
 
 ### 2.4 ⛔ `synchronous: NATIVE` bukan mode SQLite
 
@@ -130,7 +130,7 @@ function broadcast(event) {
 
 ### 2.7 ⛔ "`OFFICE_GUEST_TOKEN` → hanya temperature view"
 
-Tamu punya akses ke **10 rute `requireAny`**, antara lain `/burn`, `/policy`,
+Tamu punya akses ke **10 rute `requireAny`**, antara lain `/policy`,
 `/approvals`, `/kiosk`, dan seluruh keluarga `/chat`. Yang membatasi mereka
 bukan daftar rute, melainkan **redaksi**: angka dicoret, bukan halaman ditolak.
 Keliru memahami ini berbahaya — `docs/SECURITY.md §3` mencatat bahwa lewat
@@ -199,7 +199,7 @@ giliran lalu:
 
 | Usul | Status sebenarnya |
 |---|---|
-| **6. Budget tracking display** | **Ada** — `useBurnState` + `QiRing`; bilah atas menampilkan *Atur Napas · $0.00 · tanpa pagu*, dan rail Tataran menampilkan pagu per-aula ($10/$5/$3/$2/$1/$0,25) |
+| **6. Budget tracking display** | **Ada** saat telaah ini ditulis — `useBurnState` + `QiRing` + rail Tataran. **Seluruhnya dihapus 20 Okt 2026**; tidak ada lagi tampilan anggaran di produk ini |
 | **7. Approval gate indicators** | **Ada** — `Writ.tsx` (Titah), lengkap dengan status tertunda/kedaluwarsa dan perilaku tamu |
 | **8. Gateway health widget** | **Sebagian** — status soket sudah di bilah atas (`terhubung · v1.0` / `menyambung…` / `luring`). Yang **belum** ada hanya **latensi**. |
 
@@ -212,7 +212,7 @@ latensi.
 
 Ini bukan dokumen yang buruk — beberapa bagiannya tajam:
 
-- ✅ **`POST /budget/check` adalah jalur enforcement, bukan observability**
+- ✅ **`POST /policy/check` adalah jalur enforcement, bukan observability**
   (§7). Benar, dan penting.
 - ✅ **Default `ALLOWED_ORIGINS` memang sudah mencakup 3333/5173/7333** —
   diverifikasi di `server/config.js:63`. Sejarahnya bahkan persis seperti yang
@@ -237,10 +237,10 @@ Ini bukan dokumen yang buruk — beberapa bagiannya tajam:
 Yang perlu Anda putuskan sadar-sadar, bukan saya putuskan diam-diam.
 
 Hermes Office yang kita kerjakan sembilan fase terakhir adalah **produk tata
-kelola armada agen yang bisa dijual** — PRD-nya $0 / $39 Solo Pro / $299 Team /
-$2.000+ Enterprise, dengan tiga prinsip: *replay = tata kelola*, *policy as
+kelola armada agen**, dengan tiga prinsip: *replay = tata kelola*, *policy as
 floor plan*, dan *UI tidak boleh mengarang penolakan, menyembunyikan angka yang
-diketahui, maupun mengarang lokasi*.
+diketahui, maupun mengarang lokasi*. (Empat tingkat harga yang disebut di sini
+dicabut 20 Okt 2026: satu pemilik, satu token, tidak ada yang dijual.)
 
 `UPGRADE-PLAN.md` menggambarkan sesuatu yang lain: **dasbor monitoring internal
 untuk Niu Gayo Agroclimate** — `@mitigasi` me-restart `agroclimate-api`,
@@ -260,7 +260,7 @@ Tiga arah yang masuk akal:
 2. **Jadikan generik.** Bukan `@mitigasi`, melainkan "desk eksternal" yang
    didefinisikan lewat config: sumber status (HTTP/systemd/cron) + aksi yang
    diizinkan. Agroclimate jadi *satu contoh konfigurasi*, bukan kode khusus.
-   Ini yang akan **menaikkan** harga jual, bukan menurunkannya.
+     Ini yang membuatnya bisa dipakai ulang, bukan sekali pakai.
 3. **Tunda.** Dorong dulu dua commit yang sudah hijau, baru buka babak baru.
 
 Saya condong ke **(2) dengan (3) lebih dulu**.

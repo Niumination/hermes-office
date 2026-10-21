@@ -27,8 +27,8 @@ tebakan.
 Kenapa "bukti" bukan "ringkasan": klaim yang tidak dijalankan apa pun adalah
 cacat paling gigih di proyek ini — CHANGELOG pernah mengklaim workflow CI
 tiga job yang tidak ada, README pernah menjelaskan poller GitHub ke
-organisasi yang sebenarnya akun pengguna, dan halaman harga menjual "61
-klaim terverifikasi" saat angkanya 87. Semuanya bertahan lama karena terbaca
+organisasi yang sebenarnya akun pengguna, dan satu halaman dokumen (sejak
+dihapus) mengklaim "61 klaim terverifikasi" saat angkanya 87. Semuanya bertahan lama karena terbaca
 meyakinkan.
 
 ---
@@ -89,7 +89,7 @@ Mutasi untuk gerbang baru `check-handoff.sh`, empat, semua menyala:
 
 - Dua keputusan produk sengaja tidak saya ambil, keduanya di `HANDOFF.md`
   §4: (a) hapus atau simpan 150 sprite cast lama — menyimpannya berarti
-  menahan paparan HKI di produk $2.000+; (b) `art/` tetap di repo atau
+  menahan paparan HKI; (b) `art/` tetap di repo atau
   tidak — rekomendasi saya tetap, dengan alasan.
 - 8 `setTimeout` tetap di `integration.test.js` sebentuk dengan dua flake
   yang sudah diperbaiki, tapi **belum terbukti** flaky: bertahan 5 larian
@@ -274,7 +274,7 @@ Jadi patch ini berhenti mengurai prosa:
 ### Temuan 3 — klaim runtime tidak dijaga siapa pun
 
 README mengiklankan `Node ≥ 20` dan tidak ada yang memeriksanya. Untuk
-produk $2.000+ itu pernyataan keamanan, bukan catatan gaya: Node 20 EOL
+itu pernyataan keamanan, bukan catatan gaya: Node 20 EOL
 30 April 2026 dan tidak menerima patch lagi.
 
 Sekarang dibaca dari `package.json`. **Klaim dokumen 87 → 88.** Mutasi:
@@ -535,13 +535,14 @@ kedua.**
 ### Satu aturan yang memegang seluruh desain
 
 **Ketinggian tidak pernah ditulis.** `SECT_HALLS` hanya memuat nama —
-tidak ada harga, tidak ada urutan, tidak ada tier. Tangganya adalah fungsi
-dari `budgetHourlyUsd` milik kebijakan:
+tidak ada urutan yang dikodekan di UI. Tangganya adalah fungsi dari
+kebijakan server.
 
-```ts
-sectLadder(policy.rooms)  // 齋堂·靜室 $0 → 山門 $0.25 → 議事堂 $1
-                          // → 修煉場 $2 → 丹房 $3 → 陣法室 $5 → 掌門殿 $10
-```
+> **Dicabut 20 Okt 2026.** Saat itu tangga diturunkan dari
+> `budgetHourlyUsd`, dan contoh di sini mencetak deret ruangan beserta
+> plafon dolarnya. Seluruh lapisan biaya dihapus; `sectLadder` kini
+> mengurutkan menurut nama ruang dan hanya membawa penanda `idle`.
+> `SECT_HALLS` sendiri ikut dicabut.
 
 "Policy as floor plan" sudah jadi prinsip produk sejak Fase 3 — selama ini
 sebagai metafora, karena denahnya kantor datar. Sekarang denahnya vertikal
@@ -673,16 +674,17 @@ pengecualian untuk luminans dan tidak akan saya ciptakan untuk satu berkas.
 
 **Komponen React, bukan prototipe lagi.** `SectLadder.tsx` menggambar tangga
 dari `sectLadder(policy.rooms)`; urutannya milik kebijakan, bukan milik
-komponen. Aula di atas tier penonton **tidak** diredupkan — ia dikunci,
-`aria-disabled`, dan klik-nya ditolak, karena server memang akan 403.
+komponen. Aula yang tertutup bagi penonton **tidak** diredupkan — ia
+dikunci, `aria-disabled`, dan klik-nya ditolak, karena server memang akan
+403. (Konsep tier penonton dicabut bersama mode tamu.)
 `plates.ts` memilih seni per tema dengan jatuh-kembali diam untuk ruangan
 tanpa aula. `sect.css` memberi token, kabut, dan aura.
 
-**Qi menamai, tidak menambah.** Repo sudah punya `AtmosphereLayer` (shader
-WebGL) yang bereaksi pada lima state burn. `QI_NAMES` diketik sebagai
-`Record<AtmosphereState, …>` — tambah state keenam dan berkas ini berhenti
+**Qi menamai, tidak menambah.** `QI_NAMES` diketik dari tipe state
+`AtmosphereLayer` yang sudah ada — tambah satu state dan berkas ini berhenti
 dikompilasi. Tidak ada skala kedua; dua tangga untuk satu besaran adalah
-awal sebuah UI berbohong.
+awal sebuah UI berbohong. (State yang dinamainya adalah lima state burn;
+keduanya dicabut 20 Okt 2026, aturan "satu besaran, satu tangga" tidak.)
 
 **Gerbang 14 — `check-contrast.py`.** Kontras tema diukur dalam **APCA Lc**,
 bukan rasio WCAG 2.x, karena model 1998 itu meleset di UI gelap ke dua arah.
@@ -983,14 +985,14 @@ ambil" menjadi catatan keputusan yang sudah diambil.
 `frontend/public/sprites/office/characters` (108) dan
 `frontend/public/sprites/characters` (42). Ukuran memang turun — 7,9 MB →
 3,2 MB, 282 → 132 webp — tapi itu efek samping. Alasannya: 108 berkas itu
-rupa yang dapat dikenali dari sebuah serial televisi, di dalam produk
-berharga $2.000+. Nol dirujuk `frontend/src`; aplikasi memakai 8 arketipe
+rupa yang dapat dikenali dari sebuah serial televisi, di dalam repo yang
+diserahkan apa adanya. Nol dirujuk `frontend/src`; aplikasi memakai 8 arketipe
 donghua. Jalur mundur satu baris di `Character.tsx` memang nyata, tapi
 menahan paparan HKI sebagai harga sebuah opsi yang tak akan ditebus adalah
 pertukaran yang buruk.
 
-Hasil sampingan yang justru paling berharga untuk penjualan: **`unsourced`
-sekarang nol**. Seluruh 132 sprite yang dikirim bisa dibangun ulang dari
+Hasil sampingan yang justru paling berharga: **`unsourced` sekarang nol**.
+Seluruh 132 sprite yang dikirim bisa dibangun ulang dari
 sumber yang ter-commit — 100 `derived` dari `art/originals/sprites`, 32
 `built` dari 16 render di `art/donghua-cast`. Itu klaim yang jauh lebih
 kuat daripada "282 sprite, 132 di antaranya reproducible".
@@ -1085,13 +1087,13 @@ is now true, and it was not before.
 
 - `package.json` gains `verify` and `verify:fast`. The gates existed; they
   were reachable only as `bash scripts/verify.sh`, which is not a thing you
-  put on a pricing page.
+    put in front of a reader.
 - `README.md` / `README.id.md` gain a **Verify it yourself** section: the
   four commands, the measured runtime, and a table of all 14 gates with what
   each one proves.
-- `docs/PRICING.md` / `.id.md` gain **Every number on this page is
-  executable**, placed immediately after the $2,000+ argument, because that
-  argument is the one that needs the evidence.
+- The two pricing documents gain **Every number on this page is
+    executable**, placed immediately after the argument that most needed the
+    evidence. (Both files were deleted on 20 Oct 2026.)
 - `scripts/verify.sh` gains a Node floor check before the install step.
 - `scripts/check-docs.py` gains 8 checks (94 → 102) binding the new sales
   copy to the code.
@@ -1100,7 +1102,7 @@ is now true, and it was not before.
 
 Measured from a clean tree, no `node_modules`, no `dist`, on 2 cores:
 `npm ci` 5 s, `npm run verify` 201 s — **206 s, about 3.5 minutes.** Inside
-the plan's five-minute budget.
+the plan's five-minute time budget.
 
 The first attempt at that measurement came back **5 of 14 red**: zero frontend
 tests, 56 backend failures, doc claims failing 7 of 94. I nearly wrote it up
@@ -1120,8 +1122,8 @@ it enforces, and it runs before `npm ci` so nothing expensive happens first.
 
 **Binding the new claims (the 8 checks)**
 
-A pricing page that boasts about executable claims and then misstates its own
-gate list is worse than one that never boasted, so the boast is itself under
+A page that boasts about executable claims and then misstates its own gate
+list is worse than one that never boasted, so the boast is itself under
 test:
 
 | Checks | What rots without it |
@@ -1161,7 +1163,7 @@ npm run sbom          # not required — the patch carries sbom.cdx.json
 bash scripts/verify.sh   # expect 15/15
 ```
 
-Stage 4 of RENCANA-v3: the things a $2,000+ buyer asks for before signing.
+Stage 4 of RENCANA-v3: the things a careful reviewer asks for before signing.
 Four of the five items are here. The ledger load test is not.
 
 **New gate 15 — `sbom`**
@@ -1247,7 +1249,8 @@ good-faith work on your own instance.
 
 **What is not for sale, named**
 
-Both pricing pages now say it without the euphemism: no SOC 2, no ISO 27001,
+Both pricing pages said it without the euphemism — and the sentence outlived
+them, because it is still true of this repo: no SOC 2, no ISO 27001,
 no HIPAA BAA, no signed DPA, no third-party pen test, no uptime or
 response-time SLA, no support for a Node outside the CI matrix. Each of those
 could be sold by writing one sentence, and not writing them is the only
@@ -1461,7 +1464,8 @@ prop, the gamelan music box — are still not built.
 ## 016 — the UI replacement that quietly removed two governance surfaces (patch 017)
 
 **Stage 3.4 / the sect integration.** The previous patches put the 宗門 UI in
-front of the user: a three-column shell, 境界 as altitude, 氣 as burn, 雲深不知處
+front of the user: a three-column shell, 境界 as altitude, 氣 as burn (both
+since retracted), 雲深不知處
 as 403. The office rendered, the gates were green, and the screenshot looked
 right. This entry is about what that green did not cover.
 
@@ -1476,10 +1480,11 @@ Two surprises in that list, and both mattered.
 
 **`AtmosphereLayer.tsx` and `BurnOverlay.tsx` were "live" on a technicality.**
 Each was reached by exactly one `import type`. The components were dead; their
-*type declarations* were not. `BurnOverlay` held `BurnState` and
-`BurnSnapshot` — the shape of `GET /burn` — so three live modules were
-tethered to a dead view, and deleting the view would have taken the server
-contract with it. The types moved to `hermes/burnTypes.ts` first. A data
+*type declarations* were not. `BurnOverlay` held the shape of a server
+response, so three live modules were tethered to a dead view, and deleting the
+view would have taken the server contract with it. The types moved to
+`hermes/burnTypes.ts` first. (That whole cost layer — endpoint, types, and
+all — was removed on 20 Oct 2026.) A data
 contract living inside a render component is a latent version of this problem
 in every codebase that has one.
 
@@ -2449,7 +2454,7 @@ kegagalan jaringan dilaporkan sebagai token ditolak.
 Bukan hanya unit + curl — keduanya pernah terbukti tidak cukup. Server lokal
 dijalankan dengan token uji: event bridge masuk → `/policy` menampilkan `cloud`
 dan `peneliti` di lobby dengan `grantedBy=auto`; tamu melihat penghuni yang
-sama dengan anggaran disensor; `POST /auth/session` ber-Bearer menukar token
+sama dengan angka anggaran disensor (lapisan itu dicabut 20 Okt 2026); `POST /auth/session` ber-Bearer menukar token
 jadi cookie yang membuka `/ledger`, `/dossier`, `/desks`; token salah menjawab
 401 `{"error":"Tidak terotorisasi"}` — persis string yang diharapkan tes.
 
