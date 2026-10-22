@@ -189,6 +189,13 @@ def _log_schema(event_type: str, ctx: dict) -> None:
                 text = str(val)
                 if len(text) <= 24:
                     tag += f"={text}"
+                else:
+                    # Never print nothing. A long id used to vanish entirely,
+                    # which told us a thread id arrived but not what KIND —
+                    # and "55" versus a 36-char session uuid are opposite
+                    # answers. The shape is the whole diagnosis, so show
+                    # enough to classify it and no more.
+                    tag += f"=<{len(text)}ch>{text[:8]}…"
             fields.append(tag)
         line = f"{time.strftime('%F %T')} {event_type} -> {', '.join(fields) or '(empty)'}\n"
         with (home / "office-bridge-schema.log").open("a", encoding="utf-8") as fh:

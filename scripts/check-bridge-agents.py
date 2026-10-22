@@ -72,6 +72,14 @@ CASES = [
         "nested platforms plus a top-level topic",
     ),
     ({"platforms": ["telegram"]}, "lv-utama", "a list of plain strings is not an identity"),
+    # Production sends `thread_id` as a STRING. Both shapes must resolve, and
+    # a session uuid that merely happens to live under an id-ish key must not.
+    ({"thread_id": "55"}, "lv-infra", "thread_id arrives as a string in production"),
+    (
+        {"thread_id": "c0ffee12-3456-7890-abcd-ef0123456789"},
+        "lv-utama",
+        "a session uuid is not a telegram topic",
+    ),
 ]
 
 
