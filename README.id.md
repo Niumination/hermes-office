@@ -107,7 +107,7 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 
 | | |
 |---|---|
-| Test backend | **314** |
+| Test backend | **316** |
 | Test frontend | **242** |
 | Klaim dokumen yang diverifikasi mesin | **104** (`scripts/check-docs.py`) |
 | Bundel | 295,3 kB JS · 44,0 kB CSS |
@@ -131,7 +131,7 @@ npm ci
 npm run verify
 ```
 
-**18 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
+**19 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
 melewati dua gerbang pembangunan ulang dan selesai sekitar satu menit. Exit
 code 0 berarti semua gerbang lolos — dan tidak ada gerbang yang mencetak baris
 hijau yang tidak ia dapatkan, karena setiap vonis berasal dari exit status
@@ -144,7 +144,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | handoff integrity | setiap berkas cocok `MANIFEST.sha256` byte-for-byte; tanpa berkas liar |
 | eslint | nol error lint di `server/` dan `tests/` |
 | frontend build | `tsc && vite build` — error tipe gagal di sini |
-| backend tests | 314 test |
+| backend tests | 316 test |
 | frontend tests | 170 test |
 | clean shutdown | proses keluar bersih dengan WebSocket masih tersambung |
 | ledger under load | rantai hash selamat dari 400 keputusan serentak: rapat, tanpa duplikat, verify ok |
@@ -157,6 +157,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | room plates | 26 pelat cocok hash **dan** aturan gaya rumah |
 | theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |
+| bridge agents | jembatan cloud mengatribusikan event ke agen penyebabnya, bukan ke mesin |
 | sprites (+rebuild) | 32 sprite cast dibangun ulang byte-for-byte, dan seninya terikat pada kode yang memuatnya |
 | live site | situs yang berjalan menjawab, menyajikan halaman masuk tanpa mencetak sesi, menolak setiap rute data bagi pemanggil tanpa sesi, dan menyajikan bundel dari pohon ini |
 

@@ -243,7 +243,7 @@ Aturan yang membuatnya berguna, bukan seremonial:
 | `CHANGELOG-v2.md` | 2858 baris, Fase 0–21, alasan di balik setiap keputusan |
 | `docs/ARCHITECTURE.md` · `PRD.md` · `UI-SPEC.md` | spesifikasi, semuanya diperiksa mesin |
 | `docs/SPRITES.md` · `ROOM-PLATES.md` | provenance aset + apa yang menangkap apa |
-| `scripts/verify.sh` | satu perintah, 18 gerbang |
+| `scripts/verify.sh` | satu perintah, 19 gerbang |
 | `scripts/check-handoff.sh` | integritas transfer |
 | `MANIFEST.sha256` | 561 berkas, sha256 |
 | `art/originals/sprites/` | 100 original — **jangan pernah ditimpa** |

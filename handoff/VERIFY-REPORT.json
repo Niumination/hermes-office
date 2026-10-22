@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-22T07:39:54Z",
-  "commit": "193e12ea8273e8e3b17d4030559237fd74f4967b",
+  "generatedAt": "2026-10-22T08:15:48Z",
+  "commit": "6f2e8aac936b9b88ab31302ff11a52cf638a7e0e",
   "branch": "dev",
   "dirty": true,
   "gates": [
@@ -69,6 +69,10 @@
       "ok": true
     },
     {
+      "gate": "bridge agents",
+      "ok": true
+    },
+    {
       "gate": "sprites (+rebuild)",
       "ok": true
     },
@@ -77,8 +81,8 @@
       "ok": true
     }
   ],
-  "gatesGreen": 18,
-  "gatesTotal": 18,
+  "gatesGreen": 19,
+  "gatesTotal": 19,
   "bundle": {
     "file": "index-zfeqELpG.js",
     "sha256": "e1bb10321fef5a1bc8cc8ce6df344197cfbf6179c94c2dbfbb9bafec5c746618"

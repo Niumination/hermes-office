@@ -74,10 +74,30 @@ already placed are never moved by it.
 | home points at | result |
 |---|---|
 | a room that does not exist | ignored → `defaultRoom`, boot line shows the shortfall |
-| a room with `entryApproval` (`mac/dinas`, `mac/vault`, `lightvela/infra`) | ignored → `defaultRoom` |
+| a room with `entryApproval` (`mac/vault`) | ignored → `defaultRoom` |
 
 Walking an agent through a gated door is still `POST /agents/:agent/room`
 with the owner token, which raises an approval a human has to answer.
+
+### The 2026-10-22 gate lift
+
+`mac/dinas` and `lightvela/infra` used to carry `entryApproval` too. That made
+`homeRoomFor` refuse the two agents whose work *is* those rooms — ASN and
+Infra — so both defaulted to the lobby and the floor plan quietly misreported
+where they worked. A door whose only victim is its own resident is theatre.
+
+The owner lifted both entry gates. What did **not** move:
+
+| room | entry | tools |
+|---|---|---|
+| `lightvela/infra` | open | `deploy`, `kubectl`, `terraform`, `psql`, `bash` still need a human |
+| `mac/dinas` | open | `HANDS_OFF` still denied outright |
+| `mac/vault` | **still gated** | `tools.allow` is empty anyway |
+
+The per-tool approval list was always the half doing real governance, and it
+is untouched. Two tests guard this pair so the lift cannot be silently undone:
+one asserts both agents now reach their homes, the other asserts `deploy` is
+still held for sign-off.
 
 Placement from this map is recorded as `grantedBy: "home"`, distinct from
 `"auto"` (nobody knew) and `"owner"` (somebody decided). "The owner's config

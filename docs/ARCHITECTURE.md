@@ -37,7 +37,7 @@ Tiga pilar yang sudah berdiri:
 
 ```
 index.js      1342   entry: HTTP + WS + static, semua rute, shutdown bersih
-policy.js     650   Fase 3 — denah lantai sebagai kebijakan, persetujuan
+policy.js     659   Fase 3 — denah lantai sebagai kebijakan, persetujuan
 eventbus.js   384   validasi, clamp, REDAKSI, rate limit, ring buffer
 otlp.js       397   Fase 1 — OTel GenAI → event Hermes
 ledger.js     422   Fase 4 — rantai hash append-only
@@ -255,7 +255,7 @@ terdegradasi teruji secara gratis).
 
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
-| Backend | **314** | `npm test` |
+| Backend | **316** | `npm test` |
 | Frontend | **242** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:

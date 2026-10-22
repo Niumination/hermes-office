@@ -2607,4 +2607,4 @@ di atap yang tersorot matahari.
 
 Tes: `AmanatBoard` 10 (6 mutasi ditanam, 6 tertangkap). Panel `Amanat` lama
 dan 11 tesnya dihapus — komponen mati tidak disimpan. Frontend 194.
-Klaim dokumen 114→115. Gerbang 18/18.
+Klaim dokumen 114→115. Gerbang 19/19.

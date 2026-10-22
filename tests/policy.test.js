@@ -110,29 +110,31 @@ test("assigning to a room that does not exist is an error, not a silent grant", 
 
 test("entering a privileged room is held at the door until a human signs off", () => {
   const { p } = mk();
-  const r = p.assign("x", "lightvela/infra", "zaryu");
+  const r = p.assign("x", "mac/vault", "zaryu");
   assert.equal(r.ok, false);
   assert.equal(r.pending, true);
   assert.ok(r.approvalId);
   assert.equal(p.roomFor("x"), "belum-dipetakan", "the agent has NOT moved yet");
 
   p.resolveApproval(r.approvalId, true, "zaryu");
-  assert.equal(p.roomFor("x"), "lightvela/infra", "approval performs the move");
+  assert.equal(p.roomFor("x"), "mac/vault", "approval performs the move");
 });
 
 test("a denied entry leaves the agent where it was", () => {
   const { p } = mk();
-  const r = p.assign("x", "lightvela/infra");
+  const r = p.assign("x", "mac/vault");
   p.resolveApproval(r.approvalId, false, "zaryu");
   assert.equal(p.roomFor("x"), "belum-dipetakan");
   assert.equal(p.getApproval(r.approvalId).status, "denied");
 });
 
 test("a dangerous tool needs its own sign-off even inside the privileged room", () => {
-  // Two independent gates: being in the room, and using the tool.
+  // There used to be two gates here: entering the room, and using the tool.
+  // The owner lifted the entry gate on lightvela/infra in 2026-10 so the Infra
+  // agent could live in the room it works in. This test now guards the half
+  // that was always doing the real work — walking in is free, `deploy` is not.
   const { p } = mk();
-  const entry = p.assign("x", "lightvela/infra");
-  p.resolveApproval(entry.approvalId, true, "zaryu");
+  p.assign("x", "lightvela/infra", "owner");
 
   const first = p.decide({ agent: "x", tool: "deploy" });
   assert.equal(first.allow, false);
@@ -149,9 +151,9 @@ test("a dangerous tool needs its own sign-off even inside the privileged room", 
 
 test("an approval cannot be replayed for a different agent or tool", () => {
   const { p } = mk();
-  const entry = p.assign("thief", "lightvela/infra");
+  const entry = p.assign("thief", "mac/vault");
   p.resolveApproval(entry.approvalId, true, "zaryu");
-  p.assign("victim", "lightvela/infra");
+  p.assign("victim", "mac/vault");
 
   const ap = p.decide({ agent: "thief", tool: "deploy" });
   p.resolveApproval(ap.approvalId, true, "zaryu");
@@ -168,7 +170,7 @@ test("an approval cannot be replayed for a different agent or tool", () => {
 test("approvals expire, and an expired one does not unlock anything", () => {
   const c = clock();
   const p = new FloorPlanPolicy(DEFAULT_POLICY, { now: c.now, approvalTtlMs: 1000 });
-  const entry = p.assign("x", "lightvela/infra");
+  const entry = p.assign("x", "mac/vault");
   c.advance(1500);
   assert.equal(p.getApproval(entry.approvalId).status, "expired");
   assert.equal(p.resolveApproval(entry.approvalId, true).ok, false);
@@ -177,7 +179,7 @@ test("approvals expire, and an expired one does not unlock anything", () => {
 
 test("a resolved approval cannot be resolved twice", () => {
   const { p } = mk();
-  const entry = p.assign("x", "lightvela/infra");
+  const entry = p.assign("x", "mac/vault");
   assert.equal(p.resolveApproval(entry.approvalId, true).ok, true);
   const again = p.resolveApproval(entry.approvalId, false);
   assert.equal(again.ok, false);
@@ -187,7 +189,7 @@ test("a resolved approval cannot be resolved twice", () => {
 test("approval requests and resolutions are broadcast", () => {
   const seen = [];
   const { p } = mk({ onEvent: (e) => seen.push(e) });
-  const entry = p.assign("x", "lightvela/infra");
+  const entry = p.assign("x", "mac/vault");
   p.resolveApproval(entry.approvalId, true, "zaryu");
 
   const req = seen.find((e) => e.type === "approval_requested");
@@ -201,7 +203,7 @@ test("approval requests and resolutions are broadcast", () => {
 test("the approval map is swept so it cannot grow without bound", () => {
   const c = clock();
   const p = new FloorPlanPolicy(DEFAULT_POLICY, { now: c.now, approvalTtlMs: 1000 });
-  for (let i = 0; i < 50; i++) p.assign(`a${i}`, "lightvela/infra");
+  for (let i = 0; i < 50; i++) p.assign(`a${i}`, "mac/vault");
   assert.equal(p.approvals.size, 50);
   c.advance(2000);
   assert.equal(p.pendingApprovals().length, 0, "all expired");
@@ -225,9 +227,11 @@ test("the snapshot is a complete, readable description of the floor plan", () =>
   const vault = s.rooms.find((r) => r.room === "mac/vault");
   assert.equal(vault.idle, true, "a room with no work in it says so directly");
 
+  // The entry gate here was lifted so the Infra agent could live in the room it
+  // works in. The TOOL gate was not, and that is the half that mattered.
   const sr = s.rooms.find((r) => r.room === "lightvela/infra");
-  assert.equal(sr.entryApproval, true);
-  assert.ok(sr.approval.includes("deploy"));
+  assert.ok(!sr.entryApproval, "the door no longer refuses its own resident");
+  assert.ok(sr.approval.includes("deploy"), "the tool gate must survive");
 
   const office = s.rooms.find((r) => r.room === "mac/sites");
   assert.deepEqual(office.occupants.map((o) => o.agent), ["x"]);
@@ -360,7 +364,7 @@ test("a refusal cites the mechanism that refused, not a rank", () => {
 test("moving an agent records where it went, not how trusted it became", () => {
   const seen = [];
   const { p } = mk({ onEvent: (e) => seen.push(e) });
-  // main-office, not "lightvela/infra": the latter has entryApproval, so the move
+  // main-office, not "mac/vault": the latter has entryApproval, so the move
   // is held for sign-off and never emits agent_moved.
   p.assign("x", "mac/sites", "zaryu");
 
@@ -395,7 +399,7 @@ test("isAssigned separates 'placed on the floor' from 'governed somewhere'", () 
 test("isAssigned is false when the recorded room no longer exists", () => {
   // Mirrors roomFor()'s own guard: a policy reload can delete a room out from
   // under an assignment, and a stale pointer must not read as a placement.
-  // main-office, not "lightvela/infra": the privileged rooms carry entryApproval, so
+  // main-office, not "mac/vault": that room carries entryApproval, so
   // assign() parks the move as a pending approval instead of committing it —
   // which is correct, and would make this test assert the wrong thing.
   const { p } = mk();
@@ -445,24 +449,48 @@ test("homeRoomFor refuses a room that does not exist", () => {
 
 test("homeRoomFor refuses a room behind an entry gate", () => {
   // This is the whole reason the function exists rather than a bare map
-  // lookup. mac/dinas and lightvela/infra carry entryApproval: a human signs
-  // off on entering. A config line must not walk an agent through that door.
-  const { p } = mk({ agentHomes: { asn: "mac/dinas", ops: "lightvela/infra" } });
-  assert.equal(p.room("mac/dinas").entryApproval, true);
-  assert.equal(p.room("lightvela/infra").entryApproval, true);
-  assert.equal(p.homeRoomFor("asn"), null);
-  assert.equal(p.homeRoomFor("ops"), null);
+  // lookup. mac/vault carries entryApproval: a human signs off on entering.
+  // A config line must not walk an agent through that door.
+  const { p } = mk({ agentHomes: { keeper: "mac/vault" } });
+  assert.equal(p.room("mac/vault").entryApproval, true);
+  assert.equal(p.homeRoomFor("keeper"), null);
 });
 
 test("an owner can still move an agent into a gated room by hand", () => {
   // The refusal above must not be mistaken for "gated rooms are unreachable".
   // The owner path raises an approval, a human answers, the agent moves.
-  const { p } = mk({ agentHomes: { asn: "mac/dinas" } });
-  const r = p.assign("asn", "mac/dinas", "owner");
+  const { p } = mk({ agentHomes: { keeper: "mac/vault" } });
+  const r = p.assign("keeper", "mac/vault", "owner");
   assert.equal(r.ok, false);
   assert.equal(r.pending, true);
   p.resolveApproval(r.approvalId, true, "owner");
-  assert.equal(p.roomFor("asn"), "mac/dinas");
+  assert.equal(p.roomFor("keeper"), "mac/vault");
+});
+
+test("the two rooms whose gates were lifted now accept their own residents", () => {
+  // 2026-10-22: mac/dinas and lightvela/infra carried entryApproval, so
+  // homeRoomFor refused them and ASN/Infra silently defaulted to the lobby —
+  // the floor plan lied about where they work. The owner lifted both gates.
+  // This test exists so that lift cannot be quietly undone.
+  const { p } = mk({
+    agentHomes: { asn: "mac/dinas", "lv-infra": "lightvela/infra" },
+  });
+  assert.equal(p.homeRoomFor("asn"), "mac/dinas");
+  assert.equal(p.homeRoomFor("lv-infra"), "lightvela/infra");
+});
+
+test("lifting the entry gate did not lift the tool gate", () => {
+  // The whole argument for opening those doors was that the per-tool approval
+  // list is the half that actually governs. If this ever goes green while the
+  // assertion above is also green, the argument was wrong.
+  const { p } = mk();
+  p.assign("lv-infra", "lightvela/infra", "owner");
+  const d = p.decide({ agent: "lv-infra", tool: "deploy" });
+  assert.equal(d.allow, false, "deploy must still be held for a human");
+  assert.equal(d.action, "await_approval");
+  // HANDS_OFF survives in dinas too, which has no approval list of its own.
+  p.assign("asn", "mac/dinas", "owner");
+  assert.equal(p.roomFor("asn"), "mac/dinas", "entry is free now");
 });
 
 test("placement by home is recorded as grantedBy 'home', not 'auto'", () => {

@@ -103,7 +103,7 @@ the normalisation is real work and it is already done here.
 
 | | |
 |---|---|
-| Backend tests | **314** |
+| Backend tests | **316** |
 | Frontend tests | **242** |
 | Machine-verified doc claims | **104** (`scripts/check-docs.py`) |
 | Bundle | 295.3 kB JS · 44.0 kB CSS |
@@ -131,7 +131,7 @@ npm ci
 npm run verify
 ```
 
-**18 gates, about 4 minutes** on a 2-core machine. `npm run verify:fast`
+**19 gates, about 4 minutes** on a 2-core machine. `npm run verify:fast`
 skips the two rebuild gates and finishes in roughly a minute. Exit code 0
 means every gate passed — and no gate prints a green line it did not earn,
 because each verdict comes from that gate's own exit status, never from
@@ -143,7 +143,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | handoff integrity | every file matches `MANIFEST.sha256` byte-for-byte; no extras |
 | eslint | no lint errors in `server/` and `tests/` |
 | frontend build | `tsc && vite build` — a type error fails here |
-| backend tests | 314 tests |
+| backend tests | 316 tests |
 | frontend tests | 170 tests |
 | clean shutdown | the process exits with a live WebSocket attached |
 | ledger under load | the hash chain survives 400 concurrent decisions: contiguous, no duplicates, verify ok |
@@ -156,6 +156,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | room plates | 26 plates match their hashes **and** the house style rules |
 | theme contrast | 26 token pairs measured in APCA Lc, computed from `oklch()` |
 | doc claims | 94 documented claims executed against the repo |
+| bridge agents | the cloud bridge attributes events to the agent that caused them, not to the machine |
 | sprites (+rebuild) | 32 cast sprites rebuild byte-for-byte, and the art is bound to the code that loads it |
 | live site | the running site answers, serves the login shell without minting a session, refuses every data route to an anonymous caller, and serves this tree's bundle |
 

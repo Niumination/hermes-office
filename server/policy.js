@@ -178,11 +178,15 @@ export const DEFAULT_POLICY = {
     // "which remote a commit goes to" is not one. The entry gate below is the
     // honest part — a human signs off on entering — and the rest is a human
     // rule that lives outside this file. Do not let the lock imply more.
+    // Entry gate lifted 2026-10-22 by the owner so the ASN agent can live here
+    // instead of defaulting to root. The gate was refusing its own resident
+    // silently (homeRoomFor returns null for gated rooms), which made the floor
+    // plan lie about where ASN works. HANDS_OFF still applies: the door is
+    // open, the dangerous tools are not.
     "mac/dinas": {
       label: "Dinas",
       tools: { allow: ["*"], deny: HANDS_OFF },
       approval: [],
-      entryApproval: true,
     },
     // Obsidian vault, local. Reading and writing notes, nothing else.
     "mac/brain": {
@@ -224,11 +228,16 @@ export const DEFAULT_POLICY = {
     // 9router, Hermes Gateway, Office Octo, Hermes Cron, Agro-Climate. The
     // only room in either office with production tooling, and a human stands
     // at the door.
+    // Entry gate lifted 2026-10-22 by the owner so the Infra agent can live in
+    // the room it actually works in — five repos and the heaviest traffic in
+    // the LightVela office. The per-tool approval list below is untouched and
+    // is the part that was always doing the real work: entering is now free,
+    // running deploy/kubectl/terraform/psql/bash still requires a human. A door
+    // that only ever refused its own resident was theatre; the tool gate is not.
     "lightvela/infra": {
       label: "Infrastruktur & Monitoring",
       tools: { allow: ["*"] },
       approval: ["deploy", "kubectl", "terraform", "psql", "bash"],
-      entryApproval: true,
     },
     "lightvela/content": {
       label: "Content Studio",
