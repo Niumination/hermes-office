@@ -56,6 +56,22 @@ CASES = [
     # roster is keyed by agent NAME. Without the prefix the offices collide.
     ({"agent_name": "something new"}, "lv-something-new", "unknown names are slugged and prefixed"),
     ({"agent_name": "lv-already"}, "lv-already", "an already-prefixed name is not double-prefixed"),
+    # --- nested shapes -----------------------------------------------------
+    # Production's first schema sample came back `platforms: list`, not the
+    # flat scalar soup this bridge originally assumed. A topic id one level
+    # down must not read as "no topic at all".
+    (
+        {"platforms": [{"name": "telegram", "message_thread_id": 55}]},
+        "lv-infra",
+        "topic inside a list of platform dicts",
+    ),
+    ({"message": {"message_thread_id": 838}}, "lv-studio", "topic inside a nested dict"),
+    (
+        {"platforms": [{"name": "telegram"}], "topic_id": 5},
+        "lv-contentvela",
+        "nested platforms plus a top-level topic",
+    ),
+    ({"platforms": ["telegram"]}, "lv-utama", "a list of plain strings is not an identity"),
 ]
 
 

@@ -55,7 +55,7 @@ _TOPIC_KEYS = (
 )
 _NAME_KEYS = ("agent_name", "agent", "agent_id", "persona")
 
-_SCHEMA_LOGGED = False
+_SCHEMA_SEEN: set[str] = set()
 
 # Match the mac relay (HEARTBEAT_EVERY=30); office watchdog cutoff is 90s.
 HEARTBEAT_EVERY = float(os.environ.get("OFFICE_HEARTBEAT_EVERY", "30"))
@@ -118,17 +118,36 @@ def _slug(value: str) -> str:
     return name if name.startswith("lv-") else f"lv-{name}"
 
 
+def _walk(ctx: dict):
+    """Yield (key, value) from ctx and one level into nested dicts / lists.
+
+    The gateway's context turned out not to be flat: the first production
+    sample was `platforms: list`, not the scalar soup this bridge assumed.
+    A topic id sitting one level down must not read as "no topic at all".
+    """
+    for key, val in ctx.items():
+        yield key, val
+        if isinstance(val, dict):
+            for k2, v2 in val.items():
+                yield k2, v2
+        elif isinstance(val, (list, tuple)):
+            for item in val:
+                if isinstance(item, dict):
+                    for k2, v2 in item.items():
+                        yield k2, v2
+
+
 def _agent_name(ctx: dict) -> str:
     """Resolve which of the LightVela agents produced this event."""
-    for key in _TOPIC_KEYS:
-        raw = ctx.get(key)
-        if raw is None:
+    for key, raw in _walk(ctx):
+        if key not in _TOPIC_KEYS or raw is None:
             continue
         topic = str(raw).strip()
         if topic in AGENT_TOPICS:
             return AGENT_TOPICS[topic]
-    for key in _NAME_KEYS:
-        raw = ctx.get(key)
+    for key, raw in _walk(ctx):
+        if key not in _NAME_KEYS:
+            continue
         if isinstance(raw, dict):
             raw = raw.get("name") or raw.get("id")
         if isinstance(raw, str):
@@ -138,25 +157,42 @@ def _agent_name(ctx: dict) -> str:
     return DEFAULT_AGENT
 
 
-def _log_schema_once(ctx: dict) -> None:
-    """Record the context KEYS once so the real schema stops being a guess.
+def _log_schema(event_type: str, ctx: dict) -> None:
+    """Record the context shape once PER EVENT TYPE.
 
-    Key names and value types only — never values. The privacy contract in
-    docs/EVENTS.md 3 says message content does not leave the gateway, and a
-    debug aid is not a reason to bend it.
+    The first version of this logged once, globally. In a gateway's lifetime
+    the first event through here is always `gateway:startup` — a machine
+    waking up, with no conversation attached — so it recorded
+    `platforms: list` and nothing else. That was then read as "the gateway
+    never sends a topic id", which the sample could not possibly show. The
+    one event guaranteed to carry no topic is a useless place to look for one.
+
+    So: one line per event type, appended, with nested keys one level deep.
+
+    Key names and types only, EXCEPT for keys that name an id and hold a short
+    scalar — those get their value too. A telegram thread id is routing
+    metadata, not message content, and docs/EVENTS.md 3 is about content.
+    Without the value this file tells us a topic arrived but not which one,
+    which is the same dead end one layer up.
     """
-    global _SCHEMA_LOGGED
-    if _SCHEMA_LOGGED:
+    if event_type in _SCHEMA_SEEN:
         return
-    _SCHEMA_LOGGED = True
+    _SCHEMA_SEEN.add(event_type)
     try:
         home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
         home.mkdir(parents=True, exist_ok=True)
-        fields = sorted(f"{k}:{type(v).__name__}" for k, v in ctx.items())
-        (home / "office-bridge-schema.log").write_text(
-            f"{time.strftime('%F %T')} context keys = {', '.join(fields) or '(empty)'}\n",
-            encoding="utf-8",
-        )
+        fields = []
+        for key, val in sorted(_walk(ctx), key=lambda kv: str(kv[0])):
+            tag = f"{key}:{type(val).__name__}"
+            idish = any(w in str(key).lower() for w in ("id", "topic", "thread", "chat"))
+            if idish and isinstance(val, (int, str)) and not isinstance(val, bool):
+                text = str(val)
+                if len(text) <= 24:
+                    tag += f"={text}"
+            fields.append(tag)
+        line = f"{time.strftime('%F %T')} {event_type} -> {', '.join(fields) or '(empty)'}\n"
+        with (home / "office-bridge-schema.log").open("a", encoding="utf-8") as fh:
+            fh.write(line)
     except OSError:
         pass
 
@@ -213,7 +249,7 @@ def handle(event_type: str, context: dict) -> None:
     if not mapped:
         return
     ctx = context or {}
-    _log_schema_once(ctx)
+    _log_schema(event_type, ctx)
     who = _agent_name(ctx)
     base = {
         "type": mapped,
