@@ -110,7 +110,39 @@ cp -r bridges/hermes-cloud-hook ~/.hermes/hooks/office-bridge
 # token & URL dibaca otomatis dari ~/.hermes/.env:
 #   OFFICE_CLOUD_TOKEN=...   OFFICE_URL=http://127.0.0.1:7333/event
 # aktif → perlu restart gateway dari DASHBOARD LightVela
+
+### 6.1.1 Topik Telegram → Agen (di handler.py)
+
+Bridge Cloud membaca topik Telegram dari konteks event dan menerjemahkannya
+ke nama agen LightVela:
+
+| Topik | Agen |
+|---|---|
+| (DM / default) | lv-utama |
+| 1 | lv-general |
+| 5 | lv-contentvela |
+| 55 | lv-infra |
+| 838 | lv-studio |
+
+Ubah peta di `bridges/hermes-cloud-hook/handler.py` baris `AGENT_TOPICS` jika
+nama topik atau agen berubah. Setelah itu, **restart gateway** agar handler
+dimuat ulang:
+
+```bash
+systemctl --user restart hermes-gateway
 ```
+
+### 6.1.2 Schema logging (debug)
+
+Setelah restart, handler menuliskan schema context ke
+`~/.hermes/office-bridge-schema.log` sekali per event type. Format:
+
+```
+2026-10-22 18:23:57 agent:start -> chat_id:str=2077300493, thread_id:str=, ...
+```
+
+Gunakan untuk memverifikasi gateway mengirim `thread_id` dengan benar.
+
 
 ### 6.2 Mac relay (di Mac)
 

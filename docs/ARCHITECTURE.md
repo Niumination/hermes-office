@@ -28,6 +28,7 @@ Tiga pilar yang sudah berdiri:
 | **A. Ingest OTLP** | `otlp.js` | Menerima jejak OpenTelemetry GenAI apa adanya; menormalkan ejaan atribut yang berbeda-beda antar framework |
 | **B. Tata kelola spasial** | `policy.js` | Penegakan **di jalur permintaan**, bukan laporan setelah kejadian. Mengarahkan sebelum menghentikan |
 | **C. Perekam penerbangan** | `ledger.js`, `anchor.js`, `dossier.js` | Rantai hash anti-rusak + ekspor dosier EU AI Act |
+| **D. Atribusi topik** | `bridges/hermes-cloud-hook/handler.py` | Topic→agent routing via `AGENT_TOPICS` |
 
 ---
 
@@ -110,6 +111,39 @@ sect/QiRing.tsx      92   cincin Tenaga, tiga keadaan
                                      │              │
                                      └→ AtmosphereLayer (shader membaca state)
 ```
+
+## 3.5 Atribusi agen per topik Telegram
+
+Bridge `hermes-cloud-hook` memetakan topik Telegram ke nama agen LightVela:
+
+| topik | agen |
+|---|---|
+| (default / DM) | `lv-utama` |
+| 1 | `lv-general` |
+| 5 | `lv-contentvela` |
+| 55 | `lv-infra` |
+| 838 | `lv-studio` |
+
+Peta ini dibaca dari `bridges/hermes-cloud-hook/handler.py` (`AGENT_TOPICS`).
+Gateway mengirim `thread_id` atau `message_thread_id` dalam konteks event.
+Tanpa topik (DM), event berjalan di bawah agen `lv-utama`.
+
+**Debug:** `~/.hermes/office-bridge-schema.log` mencatat schema context
+per-event-type setelah gateway di-restart. Format:
+`{ts} {event_type} -> {key}:{type}={value}, ...`
+
+## 3.6 Schema logging
+
+Untuk troubleshooting routing, handler menuliskan schema context sekali per
+event type. File: `~/.hermes/office-bridge-schema.log`.
+
+Format contoh:
+```
+2026-10-22 18:23:57 agent:start -> chat_id:str=2077300493, chat_type:str=dm, message:str, platform:str, session_id:str=..., thread_id:str=, user_id:str=2077300493
+```
+
+Jika `thread_id:str=` kosong (DM), routing ke topic agen gagal — cek apakah
+pesan berasal dari topik grup, bukan DM.
 
 **Titik yang sering disalahpahami:** redaksi terjadi **sekali**, di
 `eventbus.js`, sebelum apa pun menyentuh ring buffer atau socket. Tetapi itu

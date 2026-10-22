@@ -112,6 +112,21 @@ Field opsional (DUAL-SPACE-DESIGN §2.2, backward-compatible):
 - `lastSeenTs` — di-set server saat emit `away` (watchdog), agar UI bisa menampilkan "terakhir aktif HH:MM" tanpa query ulang. Server juga menyimpan snapshot di `GET /presence`.
 - `metrics` — objek angka bebas (mis. `disk_free_gb`, `load_1m`, `uptime_s`). Validasi longgar: hanya angka/string yang dipertahankan, nilai angka di-clamp ±1e12, field non-skalar dibuang.
 
+**Catatan penting:** di bridge Cloud Hermes (`bridges/hermes-cloud-hook/handler.py`),
+field `agent` diisi otomatis berdasarkan topik Telegram — bukan nilai yang dikirim
+klien. Peta topik ada di `AGENT_TOPICS`:
+
+| topik Telegram | agen yang dihasilkan |
+|---|---|
+| (default / DM) | `lv-utama` |
+| 1 | `lv-general` |
+| 5 | `lv-contentvela` |
+| 55 | `lv-infra` |
+| 838 | `lv-studio` |
+
+Ini berarti agen yang Anda lihat di kantor ditentukan oleh topik grup tempat pesan
+datang, bukan oleh siapa yang mengirim.
+
 Field `agent` boleh berupa **string** (`"mac"`) atau **objek** (`{name, id, role}`) — server & frontend mengambil key presence dari `agent.id ?? agent.name ?? agent` (jangan pernah mem-objek langsung sebagai Map key).
 
 ### `service_status`
