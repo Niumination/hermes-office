@@ -55,7 +55,15 @@ _TOPIC_KEYS = (
 )
 _NAME_KEYS = ("agent_name", "agent", "agent_id", "persona")
 
-_SCHEMA_SEEN: set[str] = set()
+# Telegram calls a DM "private"; this gateway says "dm". Both, plus whatever a
+# future platform calls it, only ever serve to tell two samples apart.
+_CHAT_KIND_KEYS = ("chat_type", "chat_kind")
+
+# One schema line per (event type, chat kind, topic). Bounded so that a key we
+# guessed wrong about — one holding a per-message unique value — costs 40 lines
+# instead of a disk.
+_SCHEMA_SEEN: set[tuple[str, str, str]] = set()
+_SCHEMA_MAX = 40
 
 # Match the mac relay (HEARTBEAT_EVERY=30); office watchdog cutoff is 90s.
 HEARTBEAT_EVERY = float(os.environ.get("OFFICE_HEARTBEAT_EVERY", "30"))
@@ -157,8 +165,33 @@ def _agent_name(ctx: dict) -> str:
     return DEFAULT_AGENT
 
 
+def _schema_key(event_type: str, ctx: dict) -> tuple[str, str, str]:
+    """Decide whether this context shape is already on record.
+
+    Keyed on (event type, chat kind, topic id) and not on the event type
+    alone. Under the old key the first DM to reach a freshly started gateway
+    claimed `agent:start` for the whole life of the process, and every later
+    event — including the group-topic ones the file was written to capture —
+    was dropped before a single byte was formatted. The log looked settled
+    while holding exactly the sample that could not answer the question.
+    """
+    kind = ""
+    for key, raw in _walk(ctx):
+        if key in _CHAT_KIND_KEYS and isinstance(raw, str) and raw.strip():
+            kind = raw.strip()[:16]
+            break
+    topic = ""
+    for key, raw in _walk(ctx):
+        if key in _TOPIC_KEYS and raw is not None:
+            text = str(raw).strip()
+            if text:
+                topic = text[:24]
+                break
+    return (event_type, kind, topic)
+
+
 def _log_schema(event_type: str, ctx: dict) -> None:
-    """Record the context shape once PER EVENT TYPE.
+    """Record the context shape once per (event type, chat kind, topic).
 
     The first version of this logged once, globally. In a gateway's lifetime
     the first event through here is always `gateway:startup` — a machine
@@ -167,7 +200,9 @@ def _log_schema(event_type: str, ctx: dict) -> None:
     never sends a topic id", which the sample could not possibly show. The
     one event guaranteed to carry no topic is a useless place to look for one.
 
-    So: one line per event type, appended, with nested keys one level deep.
+    So: one line per distinct (event type, chat kind, topic), appended, with
+    nested keys one level deep, and a hard ceiling of _SCHEMA_MAX lines per
+    process so an unexpectedly unique key cannot turn a debug aid into a leak.
 
     Key names and types only, EXCEPT for keys that name an id and hold a short
     scalar — those get their value too. A telegram thread id is routing
@@ -175,9 +210,10 @@ def _log_schema(event_type: str, ctx: dict) -> None:
     Without the value this file tells us a topic arrived but not which one,
     which is the same dead end one layer up.
     """
-    if event_type in _SCHEMA_SEEN:
+    key = _schema_key(event_type, ctx)
+    if key in _SCHEMA_SEEN or len(_SCHEMA_SEEN) >= _SCHEMA_MAX:
         return
-    _SCHEMA_SEEN.add(event_type)
+    _SCHEMA_SEEN.add(key)
     try:
         home = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes"))
         home.mkdir(parents=True, exist_ok=True)

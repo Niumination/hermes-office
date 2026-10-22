@@ -134,14 +134,31 @@ systemctl --user restart hermes-gateway
 
 ### 6.1.2 Schema logging (debug)
 
-Setelah restart, handler menuliskan schema context ke
-`~/.hermes/office-bridge-schema.log` sekali per event type. Format:
+Handler menuliskan schema context ke `~/.hermes/office-bridge-schema.log`
+sekali per kombinasi **(event type, jenis chat, topik)** — maksimal
+`_SCHEMA_MAX` (40) baris per proses. Format:
 
 ```
-2026-10-22 18:23:57 agent:start -> chat_id:str=2077300493, thread_id:str=, ...
+2026-10-22 18:23:57 agent:start -> chat_id:str=2077300493, chat_type:str=dm, ..., thread_id:str=, ...
 ```
 
-Gunakan untuk memverifikasi gateway mengirim `thread_id` dengan benar.
+Nilai hanya dicetak untuk kunci ber-`id`/`topic`/`thread`/`chat`; isi pesan
+tidak pernah ditulis. Nilai lebih dari 24 karakter dipendekkan jadi
+`=<36ch>c0ffee12…` supaya topik `55` tetap bisa dibedakan dari uuid sesi.
+
+**Membaca routing topik:**
+
+```bash
+grep 'agent:start' ~/.hermes/office-bridge-schema.log
+```
+
+- `chat_id` **positif** = DM; `thread_id` kosong di sini wajar, routing jatuh
+  ke `lv-utama` dan itu benar.
+- `chat_id` **negatif** = grup/supergroup; di situlah `thread_id` harus berisi
+  id topik (mis. `55`) agar event mendarat di `lv-infra`.
+
+Satu DM tidak lagi menutup jalan sampel grup: sejak kunci lognya memuat jenis
+chat dan topik, keduanya mendapat barisnya masing-masing tanpa perlu restart.
 
 
 ### 6.2 Mac relay (di Mac)

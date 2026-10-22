@@ -19,8 +19,10 @@ Run: python3 scripts/check-bridge-agents.py
 from __future__ import annotations
 
 import importlib.util
+import os
 import pathlib
 import sys
+import tempfile
 
 HANDLER = pathlib.Path(__file__).resolve().parents[1] / "bridges" / "hermes-cloud-hook" / "handler.py"
 
@@ -83,6 +85,95 @@ CASES = [
 ]
 
 
+DM = {
+    "chat_id": 2077300493,
+    "chat_type": "dm",
+    "message": "halo",
+    "platform": "telegram",
+    "session_id": "20261017_150749_e462ccf0",
+    "thread_id": "",
+    "user_id": 2077300493,
+}
+GROUP_55 = dict(DM, chat_id=-1004204696417, chat_type="supergroup", thread_id="55")
+GROUP_838 = dict(GROUP_55, thread_id="838")
+
+
+def read_log(mod, home) -> list[str]:
+    path = pathlib.Path(home) / "office-bridge-schema.log"
+    if not path.exists():
+        return []
+    return [ln for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()]
+
+
+def check_schema_log(mod, failures) -> int:
+    """The debug log must survive its own first sample.
+
+    This is the gate the previous round was missing. `_log_schema` recorded
+    one line per event type, so the first DM to reach a fresh gateway claimed
+    `agent:start` permanently and every group-topic event after it was
+    discarded before formatting. The file read as settled while holding the
+    one sample that could not answer the question it existed for: which topic
+    id does a forum message carry? A diagnostic that drops the evidence is
+    worse than no diagnostic, because it is trusted.
+    """
+    checks = 0
+
+    def fresh():
+        home = tempfile.mkdtemp()
+        os.environ["HERMES_HOME"] = home
+        mod._SCHEMA_SEEN.clear()
+        return home
+
+    # 1. A DM first, then the same event type from a group topic: BOTH recorded.
+    home = fresh()
+    mod._log_schema("agent:start", DM)
+    mod._log_schema("agent:start", GROUP_55)
+    lines = read_log(mod, home)
+    checks += 1
+    if len(lines) != 2:
+        failures.append(
+            f"    a group-topic agent:start after a DM was dropped: {len(lines)} line(s), expected 2"
+        )
+    elif "thread_id:str=55" not in lines[1]:
+        failures.append(f"    the group line does not carry the topic id: {lines[1]!r}")
+
+    # 2. Deduplication still holds — the log must not grow once per event.
+    checks += 1
+    for _ in range(5):
+        mod._log_schema("agent:start", DM)
+        mod._log_schema("agent:start", GROUP_55)
+    if len(read_log(mod, home)) != 2:
+        failures.append("    repeating identical contexts kept appending lines")
+
+    # 3. A second topic in the same chat is a separate sample, not a duplicate.
+    checks += 1
+    mod._log_schema("agent:start", GROUP_838)
+    lines = read_log(mod, home)
+    if len(lines) != 3 or "thread_id:str=838" not in lines[2]:
+        failures.append(f"    a second topic did not produce its own line: {lines!r}")
+
+    # 4. Bounded. If `thread_id` ever turns out to hold a per-message unique
+    #    value, this costs _SCHEMA_MAX lines instead of unbounded disk.
+    checks += 1
+    home = fresh()
+    for i in range(mod._SCHEMA_MAX * 3):
+        mod._log_schema("agent:step", dict(GROUP_55, thread_id=str(900000 + i)))
+    if len(read_log(mod, home)) > mod._SCHEMA_MAX:
+        failures.append(f"    schema log is unbounded (> {mod._SCHEMA_MAX} lines)")
+
+    # 5. A long id is still classified rather than hidden: "55" and a session
+    #    uuid are opposite answers, so the shape has to survive truncation.
+    checks += 1
+    home = fresh()
+    mod._log_schema("agent:start", dict(DM, thread_id="c0ffee12-3456-7890-abcd-ef0123456789"))
+    lines = read_log(mod, home)
+    if not lines or "thread_id:str=<36ch>c0ffee12" not in lines[0]:
+        failures.append(f"    a long thread id lost its shape: {lines!r}")
+
+    os.environ.pop("HERMES_HOME", None)
+    return checks
+
+
 def main() -> int:
     mod = load()
     failures = []
@@ -104,12 +195,17 @@ def main() -> int:
     if len(names) != len(set(names)):
         failures.append(f"    AGENT_TOPICS maps two topics onto one agent: {names}")
 
+    schema_checks = check_schema_log(mod, failures)
+
     if failures:
         print("FAIL: bridge agent attribution")
         print("\n".join(failures))
         return 1
 
-    print(f"PASS: bridge agent attribution ({len(CASES)} cases, {len(names)} topics mapped)")
+    print(
+        f"PASS: bridge agent attribution ({len(CASES)} cases, {len(names)} topics mapped, "
+        f"{schema_checks} schema-log checks)"
+    )
     return 0
 
 

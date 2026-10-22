@@ -128,14 +128,22 @@ Peta ini dibaca dari `bridges/hermes-cloud-hook/handler.py` (`AGENT_TOPICS`).
 Gateway mengirim `thread_id` atau `message_thread_id` dalam konteks event.
 Tanpa topik (DM), event berjalan di bawah agen `lv-utama`.
 
-**Debug:** `~/.hermes/office-bridge-schema.log` mencatat schema context
-per-event-type setelah gateway di-restart. Format:
+**Debug:** `~/.hermes/office-bridge-schema.log` mencatat schema context sekali
+per kombinasi (event type, jenis chat, topik). Format:
 `{ts} {event_type} -> {key}:{type}={value}, ...`
 
 ## 3.6 Schema logging
 
 Untuk troubleshooting routing, handler menuliskan schema context sekali per
-event type. File: `~/.hermes/office-bridge-schema.log`.
+kombinasi **(event type, jenis chat, topik)**, dengan batas keras
+`_SCHEMA_MAX` baris per proses. File: `~/.hermes/office-bridge-schema.log`.
+
+Kunci ini pernah hanya event type, dan itu merusak diagnosanya: DM pertama
+yang masuk ke gateway yang baru hidup mengklaim `agent:start` selama proses
+itu hidup, lalu setiap event dari topik grup dibuang sebelum satu byte pun
+diformat. Berkasnya tampak tenang padahal justru menyimpan satu-satunya
+sampel yang tidak bisa menjawab pertanyaannya sendiri. Dijaga lima
+pemeriksaan di `scripts/check-bridge-agents.py`.
 
 Format contoh:
 ```
