@@ -34,5 +34,9 @@ __pycache__/
 *.pyc
 *.env.office.bak*
 
+# Salinan cadangan editor: jangan pernah ter-commit. Berkas .bak milik
+# skrip jembatan adalah tempat token bocor ke repo publik tanpa disadari.
+*.bak
+
 # Keluaran reporter vitest — artefak jalannya tes, bukan sumber.
 frontend/.vitest/
