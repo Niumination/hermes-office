@@ -207,3 +207,18 @@ Lisensi: MIT. Satu pemilik, satu token, tidak ada yang dijual.
 
 Sebagian besar dokumen ditulis dalam bahasa Indonesia; README tersedia dalam
 dua bahasa.
+
+## Data Backup
+
+Data runtime (database, logs) disimpan di repo private terpisah:
+
+- **Repo Data**: `https://github.com/Niumination/hermes-office-data` (private)
+- **Script Deploy**: `hermes-office-data/deploy.sh`
+
+Untuk restore data ke server baru:
+```bash
+git clone https://github.com/Niumination/hermes-office.git
+git clone git@github.com:Niumination/hermes-office-data.git
+cd hermes-office
+bash ../hermes-office-data/deploy.sh
+```
