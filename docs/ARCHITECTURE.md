@@ -376,3 +376,36 @@ Dicatat karena masing-masing sudah pernah menghabiskan waktu nyata:
 - `docs/PRD.md` (359 baris) dan `docs/UI-SPEC.md` masih menggambarkan v1.
 - `bridges/mac-relay/MAC-PLAYBOOK-TONIGHT.md` bersifat situasional.
 - Belum ada Time Machine (replay + ekspor video), status page, multiplayer.
+
+---
+
+## Data Persistence
+
+### Storage Architecture
+```
+Server: 100.65.20.34 (LightVela VPS)
+├── Source Code: ~/niumination/hermes-office/ (public repo)
+├── Runtime Data: ~/niumination/hermes-office/data/ (gitignored)
+└── Backup: https://github.com/Niumination/hermes-office-data (private repo)
+```
+
+### Data Flow
+```
+Production → SQLite (ledger.db, office.db)
+     ↓
+Manual/Auto Backup → hermes-office-data repo
+     ↓
+Restore → deploy.sh → server baru
+```
+
+### Why Not Vercel?
+- SQLite requires writable filesystem (serverless = read-only)
+- WebSocket needs persistent connection (stateless = disconnects)
+- Local-first architecture doesn't fit serverless model
+
+### Current Stack
+- Backend: Node.js + Express (persistent VPS)
+- Database: SQLite (local file)
+- Frontend: Vite + React (static build)
+- Real-time: WebSocket (ws library)
+- Security: Cloudflare Tunnel + CIDR allowlist
