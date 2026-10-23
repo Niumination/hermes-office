@@ -298,7 +298,7 @@ terdegradasi teruji secara gratis).
 | Lapisan | Jumlah | Perintah |
 |---|---|---|
 | Backend | **316** | `npm test` |
-| Frontend | **242** | `cd frontend && npx vitest run` |
+| Frontend | **244** | `cd frontend && npx vitest run` |
 
 Gerbang skrip, semuanya dijalankan CI:
 

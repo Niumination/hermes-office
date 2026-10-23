@@ -56,8 +56,14 @@ boots with no policy at all.
 ## `OFFICE_AGENT_HOMES` — where an agent stands when it wakes up
 
 ```bash
-OFFICE_AGENT_HOMES='mac=mac/root,cloud=lightvela/root,boss=mac/root'
+OFFICE_AGENT_HOMES='mac=mac/root,cloud=lightvela/root,boss=mac/root,lv-utama=lightvela/root,lv-general=lightvela/root,lv-infra=lightvela/infra,lv-studio=lightvela/content,lv-contentvela=lightvela/content'
 ```
+
+The five `lv-*` entries are the LightVela topic agents, which began arriving
+on 2026-10-23 once the bridge learned to read `thread_id`. This exact line is
+machine-read by `scripts/check-cast-ids.py`, which proves no two agents sharing
+a room are drawn with the same sprite. Change the line and the gate re-checks
+it; the guarantee only covers the deployment this document describes.
 
 Until 2026-10-21 every agent that proved it was alive was placed in
 `defaultRoom` and nowhere else. A working fleet therefore rendered as a crowd

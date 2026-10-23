@@ -108,7 +108,7 @@ jadi normalisasinya nyata dan sudah dikerjakan di sini.
 | | |
 |---|---|
 | Test backend | **316** |
-| Test frontend | **242** |
+| Test frontend | **244** |
 | Klaim dokumen yang diverifikasi mesin | **104** (`scripts/check-docs.py`) |
 | Bundel | 295,3 kB JS · 44,0 kB CSS |
 | CI | 4 job, sumber kanonik di `ci/workflow.yml` |
@@ -131,7 +131,7 @@ npm ci
 npm run verify
 ```
 
-**19 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
+**20 gerbang, sekitar 4 menit** di mesin 2 inti. `npm run verify:fast`
 melewati dua gerbang pembangunan ulang dan selesai sekitar satu menit. Exit
 code 0 berarti semua gerbang lolos — dan tidak ada gerbang yang mencetak baris
 hijau yang tidak ia dapatkan, karena setiap vonis berasal dari exit status
@@ -158,6 +158,7 @@ memutuskan lulus/gagal dengan mencari kata PASS, dan dengan riang melaporkan
 | theme contrast | 26 pasangan token diukur dalam APCA Lc, dihitung dari `oklch()` |
 | doc claims | 94 klaim dokumen dieksekusi terhadap repo |
 | bridge agents | jembatan cloud mengatribusikan event ke agen penyebabnya, bukan ke mesin |
+| cast ids | setiap agen yang bisa dikirim jembatan digambar sebagai dirinya sendiri, dan tidak ada dua agen seruangan yang sama rupa |
 | sprites (+rebuild) | 32 sprite cast dibangun ulang byte-for-byte, dan seninya terikat pada kode yang memuatnya |
 | live site | situs yang berjalan menjawab, menyajikan halaman masuk tanpa mencetak sesi, menolak setiap rute data bagi pemanggil tanpa sesi, dan menyajikan bundel dari pohon ini |
 

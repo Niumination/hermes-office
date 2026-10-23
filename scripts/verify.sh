@@ -108,6 +108,7 @@ gate "room plates"         python3 scripts/check-plates.py
 gate "theme contrast"      python3 scripts/check-contrast.py
 gate "doc claims"          python3 scripts/check-docs.py
 gate "bridge agents"       python3 scripts/check-bridge-agents.py
+gate "cast ids"            python3 scripts/check-cast-ids.py
 if [[ $FAST -eq 1 ]]; then
   gate "sprites (hash only)" python3 scripts/check-sprites.py
   echo "  (--fast: skipped the byte-exact sprite rebuild)"

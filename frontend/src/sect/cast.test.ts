@@ -129,17 +129,43 @@ describe('names this office does not have', () => {
 })
 
 describe('the agents this ecosystem actually has', () => {
-  it('names every Telegram topic agent rather than hashing it', () => {
+  /*
+    This test used to list `lightvela/infra`, `mac/qa` and thirteen more in
+    the office/room spelling, and it passed — because all it asked was
+    whether the table answered the same way for two different roles, which a
+    table entry does by construction. It never asked the only question that
+    mattered: can an id in that spelling ever arrive? It cannot. `_slug()` in
+    the cloud hook sends `lv-infra`. So the table missed on every lookup, all
+    five LightVela agents were drawn as the same cultivator, and this test
+    watched it happen and stayed green.
+
+    A test can be worse than no test, and this is how: it was guarding a
+    vocabulary nobody speaks.
+  */
+  it('names the agents the bridge can actually emit', () => {
     // kantor → ruang → meja → agen = mesin → kategori → repo → topik telegram.
-    const named = [
-      'mac/utama', 'mac/orkestrator', 'mac/research', 'mac/builder', 'mac/qa',
-      'mac/kreator', 'mac/serbaguna', 'mac/cron', 'mac/edu', 'mac/asn',
-      'lightvela/utama', 'lightvela/infra', 'lightvela/general',
-      'lightvela/studio', 'lightvela/contentvela',
-    ]
-    for (const id of named) {
+    // These five are exactly AGENT_TOPICS + DEFAULT_AGENT in
+    // bridges/hermes-cloud-hook/handler.py. scripts/check-cast-ids.py reads
+    // that file directly so the two cannot drift apart unnoticed.
+    const emitted = ['lv-utama', 'lv-general', 'lv-infra', 'lv-studio', 'lv-contentvela']
+    for (const id of emitted) {
       // A named agent ignores the role entirely; a hashed one would not.
       expect(archetypeFor(id, 'generalist')).toBe(archetypeFor(id, 'reviewer'))
+    }
+  })
+
+  it('draws the five LightVela agents as five different people', () => {
+    const emitted = ['lv-utama', 'lv-general', 'lv-infra', 'lv-studio', 'lv-contentvela']
+    const looks = emitted.map((id) => archetypeFor(id, 'generalist'))
+    expect(new Set(looks).size).toBe(emitted.length)
+  })
+
+  it('does not answer to the office/room spelling that never arrived', () => {
+    // A regression lock, not a style preference. If these ever resolve from
+    // the table again it means someone re-added keys no bridge emits, and the
+    // real ids will quietly go back to falling through to the role fallback.
+    for (const id of ['lightvela/infra', 'lightvela/studio', 'mac/qa']) {
+      expect(archetypeFor(id, 'generalist')).not.toBe(archetypeFor(id, 'reviewer'))
     }
   })
 

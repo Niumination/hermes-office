@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-10-22T10:58:54Z",
-  "commit": "7ddca273d962d36d2d1ebf5061ea3c91e2cdacc6",
+  "generatedAt": "2026-10-23T07:13:47Z",
+  "commit": "7a13376e688d396547bf0d59bce89e0f8725e356",
   "branch": "dev",
   "dirty": true,
   "gates": [
@@ -73,6 +73,10 @@
       "ok": true
     },
     {
+      "gate": "cast ids",
+      "ok": true
+    },
+    {
       "gate": "sprites (+rebuild)",
       "ok": true
     },
@@ -81,10 +85,10 @@
       "ok": true
     }
   ],
-  "gatesGreen": 19,
-  "gatesTotal": 19,
+  "gatesGreen": 20,
+  "gatesTotal": 20,
   "bundle": {
-    "file": "index-zfeqELpG.js",
-    "sha256": "e1bb10321fef5a1bc8cc8ce6df344197cfbf6179c94c2dbfbb9bafec5c746618"
+    "file": "index-Dc4Hfm0k.js",
+    "sha256": "a6bd2e63a0533f5c6db219296fa1fcff60f775bf1c408b02887b0d546c4e223d"
   }
 }

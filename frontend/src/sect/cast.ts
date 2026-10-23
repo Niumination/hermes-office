@@ -76,26 +76,36 @@ const BY_ID: Record<string, Archetype> = {
   /*
     The Telegram topics, which are what an "agent" means in this ecosystem:
     kantor → ruang → meja → agen = mesin → kategori → repo → topik telegram.
-    None of these reaches the floor yet — the server still speaks the fork's
-    vocabulary — but when one does it must arrive as itself rather than as a
-    hash. The archetype follows what the topic is for, nothing more.
-  */
-  'mac/utama': 'elder',
-  'mac/orkestrator': 'elder',
-  'mac/research': 'scholar',
-  'mac/builder': 'forge',
-  'mac/qa': 'alchemist',
-  'mac/kreator': 'weaver',
-  'mac/serbaguna': 'cultivator',
-  'mac/cron': 'physician',
-  'mac/edu': 'scholar',
-  'mac/asn': 'guardian',
 
-  'lightvela/utama': 'elder',
-  'lightvela/infra': 'physician',
-  'lightvela/general': 'cultivator',
-  'lightvela/studio': 'weaver',
-  'lightvela/contentvela': 'weaver',
+    THESE KEYS WERE WRONG, AND THE FAILURE WAS SILENT
+    -------------------------------------------------
+    They used to be spelled `lightvela/infra`, `mac/qa`, and so on — the
+    office/room form. No bridge has ever emitted that. `_slug()` in
+    bridges/hermes-cloud-hook/handler.py prefixes the topic name and sends
+    `lv-infra`. So every lookup here missed, every agent fell through to the
+    role table below, and all five LightVela agents resolved to one single
+    file: cultivator-front-left.webp.
+
+    Nothing threw. The office just drew the same character five times — which
+    is precisely the bug this whole line of work exists to kill: a fleet
+    rendered as one worker. A lookup table cannot report its own miss, so the
+    miss has to be found from outside, by scripts/check-cast-ids.py.
+
+    The ten mac/* keys are deleted rather than re-spelled. There is no Mac
+    topic hook yet, so every id written here today would be a guess, and this
+    file's own history is a record of what guessed-ahead tables cost. The gate
+    fails the build the moment a bridge can emit a name this table does not
+    know, so it grows on evidence instead of ahead of it.
+
+    Room-mates must not collide: two identical figures standing side by side
+    read as a rendering fault even when the attribution underneath is correct.
+    The gate checks that too, against the home map in docs/POLICY.md.
+  */
+  'lv-utama': 'elder',           // main chat / DM — speaks for the machine
+  'lv-general': 'scholar',       // topic 1
+  'lv-infra': 'physician',       // topic 55 — keeps the services healthy
+  'lv-studio': 'weaver',         // topic 838
+  'lv-contentvela': 'alchemist', // topic 5 — the contentvela repo
 }
 
 /**

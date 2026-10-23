@@ -104,7 +104,7 @@ the normalisation is real work and it is already done here.
 | | |
 |---|---|
 | Backend tests | **316** |
-| Frontend tests | **242** |
+| Frontend tests | **244** |
 | Machine-verified doc claims | **104** (`scripts/check-docs.py`) |
 | Bundle | 295.3 kB JS · 44.0 kB CSS |
 | CI | 4 jobs, canonical source in `ci/workflow.yml` |
@@ -131,7 +131,7 @@ npm ci
 npm run verify
 ```
 
-**19 gates, about 4 minutes** on a 2-core machine. `npm run verify:fast`
+**20 gates, about 4 minutes** on a 2-core machine. `npm run verify:fast`
 skips the two rebuild gates and finishes in roughly a minute. Exit code 0
 means every gate passed — and no gate prints a green line it did not earn,
 because each verdict comes from that gate's own exit status, never from
@@ -157,6 +157,7 @@ word PASS, and cheerfully reported "lint clean" over two real errors.
 | theme contrast | 26 token pairs measured in APCA Lc, computed from `oklch()` |
 | doc claims | 94 documented claims executed against the repo |
 | bridge agents | the cloud bridge attributes events to the agent that caused them, not to the machine |
+| cast ids | every agent a bridge can emit is drawn as itself, and no two agents sharing a room are the same figure |
 | sprites (+rebuild) | 32 cast sprites rebuild byte-for-byte, and the art is bound to the code that loads it |
 | live site | the running site answers, serves the login shell without minting a session, refuses every data route to an anonymous caller, and serves this tree's bundle |
 
