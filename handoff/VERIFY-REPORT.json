@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-10-23T07:13:47Z",
-  "commit": "7a13376e688d396547bf0d59bce89e0f8725e356",
+  "generatedAt": "2026-10-23T14:25:06Z",
+  "commit": "db5c182353e5580c97f03013eac00d4c1ee9fc8b",
   "branch": "dev",
-  "dirty": true,
+  "dirty": false,
   "gates": [
     {
       "gate": "handoff integrity",
