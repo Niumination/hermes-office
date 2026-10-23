@@ -222,3 +222,34 @@ git clone git@github.com:Niumination/hermes-office-data.git
 cd hermes-office
 bash ../hermes-office-data/deploy.sh
 ```
+
+---
+
+## 📦 Data Backup Repository
+
+Data runtime disimpan di repo private terpisah untuk keamanan:
+
+- **URL**: https://github.com/Niumination/hermes-office-data
+- **Isi**: Database, config, handler, deploy script
+- **Akses**: Private — hanya pemilik
+
+### Restore ke Server Baru
+
+```bash
+# Clone source code
+git clone https://github.com/Niumination/hermes-office.git
+
+# Clone data backup
+git clone https://github.com/Niumination/hermes-office-data.git
+
+# Deploy otomatis
+cd hermes-office
+bash ../hermes-office-data/deploy.sh
+```
+
+### Backup Otomatis
+
+Tambahkan ke crontab (`crontab -e`):
+```bash
+0 2 * * * cd ~/niumination/hermes-office-data && git add -A && git commit -m "daily backup $(date +\%Y\%m\%d)" && git push
+```
