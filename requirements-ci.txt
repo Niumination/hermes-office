@@ -8,4 +8,4 @@
 # than floating because --regen rebuilds 100 sprites and compares hashes: a
 # Pillow encoder change rewrites every byte and turns the gate red on a commit
 # that touched nothing.
-pillow==12.3.0
+pillow==13.0.0
