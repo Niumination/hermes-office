@@ -1141,7 +1141,7 @@ def main() -> int:
     # measured twice (once per palette) — a reader of the source gets it
     # wrong, and so would a regex.
     out, err = _run(["python3", os.path.join("scripts", "check-contrast.py")], ROOT)
-    m = re.search(r"PASS: (\d+) token pairs", out + err)
+    m = re.search(r"PAIRS: (\d+)", out + err)
     if m is None:
         failures.append(
             "scripts/check-contrast.py did not report a pair count, so the "

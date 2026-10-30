@@ -287,6 +287,7 @@ def main():
             print(line)
 
     total = 2 * len(PAIRS)
+    print('PAIRS: %d' % total)
     if bad:
         print('\nFAIL: %d pair(s) below their APCA level. Fix the tokens in '
               'sect.css -- do not lower the levels here.' % bad)
