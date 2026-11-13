@@ -20,11 +20,11 @@
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "express": "^5.2.1",
-    "ws": "^8.18.0"
+    "ws": "^8.22.2"
   },
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^10.13.0",
-    "globals": "^17.13.0"
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0"
   }
 }
