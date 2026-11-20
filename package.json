@@ -18,13 +18,13 @@
     "node": ">=22"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^13.2.0",
     "express": "^5.2.1",
-    "ws": "^8.18.0"
+    "ws": "^8.23.0"
   },
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^10.13.0",
-    "globals": "^17.13.0"
+    "eslint": "^10.15.0",
+    "globals": "^17.14.0"
   }
 }
